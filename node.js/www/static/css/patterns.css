@@ -1,0 +1,232 @@
+
+@import url(site.css);
+
+/* --------------------------------- FOOTER MENU PATTERNS MENU --------------------------------- */
+
+#patterns-menu {
+    font-family: var(--font);
+    font-size: 0.8em;
+    font-weight: 400;
+/*     width: 33vw; */
+    left: 33vw;
+    top: 12.5vh;
+    padding: 1em 1em;
+    display: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: var(--index-menu);
+}
+
+#patterns-menu-title {
+    font-size: var(--font-size-title);
+/*     padding-left: 1em; */
+    padding-bottom: 1em;
+}
+
+#patterns-menu-close {
+    right: 2em;
+    top: 1em;
+    position: absolute;
+}
+
+#patterns-menu-content > * {
+    margin-left: -01em;
+}
+
+#patterns-menu input {
+    color: var(--font-color);
+    text-align: right;
+}
+
+#patterns-menu-content {
+    max-height: 75%;
+    padding: 0 1em 0 1em;
+    margin: 1em 0em 1em 0em;
+    border-top: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--border-color);
+}
+
+#patterns-menu-add {
+    margin-left: 4em;
+    margin-right: 1em;
+    margin-top: 1em;
+    /* display: inline-block; */
+    float: left;
+    cursor: pointer;
+}
+
+#patterns-menu-save {
+    margin-right: 1em;
+    margin-top: 1em;
+    /* display: inline-block; */
+    float: left;
+    cursor: pointer;
+}
+
+#patterns-menu-clear {
+    margin-right: 1em;
+    margin-top: 1em;
+    /* display: inline-block; */
+    float: left;
+    cursor: pointer;
+}
+
+#patterns-menu-submit {
+    margin-right: 1em;
+    margin-top: 1em;
+    float: right;
+    /* display: inline-block; */
+    cursor: pointer;
+}
+
+.stored-rets > * {
+    font-family: var(--font);
+    font-size: 0.8em;
+}
+
+#patterns-menu-select-type-combo {
+    font-size: 100%;
+}
+
+#patterns-menu-ret-search-in-menu > * {
+    max-width: 10em;
+}
+
+#patterns-menu-ret-search-in-menu label {
+    font-size: 85%;
+}
+
+#search-in-retracements > * {
+    max-width: 8em;
+}
+
+/* --------------------------------- PATTERNS RESULTS --------------------------------- */
+
+#patterns-results-panel {
+    background-color: var(--back);
+    border: 1px solid var(--border-invisible);
+    /* min-width: 10em; */
+    /* min-height: 9em; */
+    left: 20vw;
+    top: 20vh;
+    position: absolute;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: none;
+    z-index: var(--z-panel);
+}
+
+#patterns-results-panel > * {
+    margin: 1em;
+}
+
+#patterns-results-panel-handler {
+    font-size: 0.8em;
+    width: auto;
+    height: 1em;
+    display: block;
+}
+
+#patterns-results-panel-handler * {
+    float: right;
+}
+
+#patterns-results-panel-handler-results {
+    position: absolute;
+    margin: 0em;
+    top: 0.5em;
+    left: 1em;
+}
+
+#patterns-results-section-visualization > * {
+    font-size: 0.8em;
+}
+
+#patterns-results-selected {
+    display: none;
+}
+
+.visualization-selection-op {
+    display: none;
+}
+
+#patterns-results-section-explorer {
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.5em;
+    margin: 1em;
+    text-align: center;
+}
+
+#patterns-results-section-explorer div {
+    margin: 0.3em 0;
+}
+
+#patterns-results-section-explorer-show {
+    font-size: 0.85em;
+    display: inline-block;
+}
+
+#patterns-results-section-explorer-show-ok-count {
+    font-size: 0.85em;
+    width: 3em;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    display: inline-block;
+}
+
+#patterns-results-section-explorer-show-nok-count {
+    font-size: 0.85em;
+    width: 3em;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    display: inline-block;
+}
+
+#patterns-results-section-explorer-trend-bull {
+    display: inline-block;
+    cursor: arrow;
+}
+
+.patterns-results-section-explorer-trend-bull-selected {
+    color: #09f209;
+    font-weight: bold;
+}
+
+#patterns-results-section-explorer-trend-bull:hover {
+    font-weight: bold;
+}
+
+#patterns-results-section-explorer-trend-bear {
+    display: inline-block;
+    cursor: arrow;
+}
+
+#patterns-results-section-explorer-trend-bear:hover {
+    font-weight: bold;
+}
+
+.patterns-results-section-explorer-trend-bear-selected {
+    color: var(--error);
+    font-weight: bold;
+}
+
+#patterns-results-section-explorer-show-current {
+    margin: 0 0.5em;
+    width: 3em;
+    padding: 0.3em 0;
+    color: var(--font-color);
+    /* border: 1px solid var(--selected); */
+    border: 0px;
+    outline: 1px solid var(--selected);
+    text-align: center;
+    display: inline-block;
+}
+
+#patterns-results-panel-tables {
+    display: block;
+}
+ 
+/*#patterns-results-panel-tables th:first-child {
+    
+} */

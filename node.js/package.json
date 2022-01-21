@@ -1,0 +1,35 @@
+{
+  "name": "tkride",
+  "version": "1.0.0",
+  "description": "Trading Kinematics Reasearch IDE",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "keywords": [
+    "trading",
+    "pattern",
+    "market",
+    "node",
+    "ide"
+  ],
+  "author": "rrm",
+  "license": "ISC",
+  "dependencies": {
+    "binance-api-node": "^0.11.29",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^11.0.0",
+    "express": "^4.17.2",
+    "jquery": "^3.6.0",
+    "jsdom": "^19.0.0",
+    "moment": "^2.29.1",
+    "mysql": "^2.18.1",
+    "node-binance-api": "^0.13.1",
+    "node-static": "^0.7.11",
+    "nodemon": "^2.0.15",
+    "npm": "^8.3.0",
+    "yarn": "^1.22.17"
+  }
+}

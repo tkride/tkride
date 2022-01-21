@@ -1,0 +1,28 @@
+
+
+{
+    "ACTION": "ACTION",
+    "GET_TICKERS": "GET_TICKERS",
+    "LOAD_HISTORIC": "LOAD_HISTORIC",
+    "SELECT": "SELECT",
+    "GET_REL_MAX": "GET_REL_MAX",
+    "GET_MOVEMENTS": "GET_MOVEMENTS",
+    "GET_RETRACEMENTS": "GET_RETRACEMENTS",
+
+    "ID": "ID",
+    "BROKER": "BROKER",
+    "TICKER": "TICKER",
+    "INTERVAL": "INTERVAL",
+    "FROM": "FROM",
+    "START": "START",
+    "END": "END",
+    "LEVEL": "LEVEL",
+
+    "SEARCH_IN": "SEARCH_IN",
+    "VALUES": "VALUES",
+    "SENSE": "SENSE",
+    "ITERATE": "ITERATE",
+    "ONLY_MAX": "ONLY_MAX",
+    "STOP_SOURCE": "STOP_SOURCE",
+    "STOP_AT": "STOP_AT"
+}

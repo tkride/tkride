@@ -1,0 +1,153 @@
+
+@import url(site.css);
+
+/* --------------------------------- DROPDOWN --------------------------------- */
+
+.dropdown {
+    color: var(--font-color);
+    /* border-bottom: 3px solid var(--selected); */
+    position: relative;
+    padding: 0.5em 1em;
+    display: inline-block;
+}
+
+/* .dropdown::after {
+    content: "";
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--selected) transparent transparent transparent;
+    top: 100%;
+    left: 30%;
+    position: absolute;
+} */
+
+.dropdown-content {
+    box-shadow: 0px 5px 10px 1px rgba(0,0,0,0.2);
+    /* left:-50%; */
+    top:100%;
+    background-color: var(--back);
+    position:absolute;
+    display: none;
+    z-index: var(--index-panel-over);
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* dropdown items */
+.dropdown-content * {
+    padding: 0.5em;
+    display: block; /* forces line per item */
+}
+
+.dropdown-content *:hover {
+    background-color: var(--hover-back);
+}
+
+/* --------------------------------- COMBOBOX --------------------------------- */
+
+.combobox {
+    color: var(--font-color);
+    border-width: 1px;
+    border-radius: 3px;
+    border-color: var(--hover-back);
+    border-width: 2px;
+    border-style: solid;
+    padding: 0.1em 0.5em;
+    position: relative;
+    display: inline-block;
+}
+
+.combobox-handler {
+    display: inline-block;
+}
+
+.combobox-handler-arrow {
+    margin-left: 0.5em;
+}
+
+.combobox-content {
+    box-shadow: 0px 5px 10px 1px rgba(0,0,0,0.2);
+    top:100%;
+    background-color: var(--back);
+    position:absolute;
+    display: none;
+    z-index: var(--z-panel-top);
+}
+
+/* combobox items */
+.combobox-content * {
+    padding: 0.5em 0em;
+    display: block; /* forces line per item */
+}
+
+.combobox-content *:hover {
+    background-color: var(--hover-back);
+}
+
+/* --------------------------------- TABLE --------------------------------- */
+
+table, th, td {
+    border-collapse: collapse;
+}
+
+th, td:first-child {
+    background-color: var(--button-back);
+}
+
+th, td {
+    text-align: center;
+    padding: 0.2em 1em;
+}
+
+th:first-child {
+    border-radius: 10px 0 0 0;
+    padding: 0.3em;
+}
+
+th:last-child {
+    border-radius: 0 10px 0 0;
+}
+
+tr:last-child td:first-child {
+    border-radius: 0 0 0 10px;
+}
+
+/* --------------------------------- DISPLAY --------------------------------- */
+
+.display-control {
+    font-family: var(--font);
+    background-color: var(--back);
+    border: var(--border-width) var(--border-style) var(--border-color);
+    border-radius: var(--border-radius);
+    display: none;
+    position: absolute;
+    z-index: var(--z-panel);
+}
+
+.display-control-handle {
+    height: 1em;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.display-control-handle > * {
+    font-size: var(--font-size-handle);
+    color: var(--font-color);
+    margin-top: 0.3em;
+    padding: 0.2em;
+    float: right;
+}
+
+.display-control-title {
+    font-size: var(--font-size-title);
+    /* font-weight: var(--font-weight-title); */
+    color: var(--font-color);
+    width: 100%;
+    margin-top: 2em;
+    margin-left: 1em;
+    margin-bottom: 1em;
+}

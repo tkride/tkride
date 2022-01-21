@@ -1,0 +1,15 @@
+
+
+{
+    "login": {
+                "name": "login",
+                "paths": ["/", "/login"],
+                "controller": ["login"]
+    },
+
+    "TSQL": {
+        "name": "tsql",
+        "paths": ["/tsql"],
+        "controller": ["\\TSQL\\TSQL"]
+    }
+}

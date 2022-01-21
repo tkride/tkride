@@ -1,0 +1,587 @@
+
+
+@import url(https://fonts.googleapis.com/css?family=Droid+Sans:regular,bold);
+
+
+/* --------------------------------- ROOT VARS --------------------------------- */
+:root {
+    --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --back: #1f232d;
+    --font-size-title: 1.1em;
+    --font-size-handle: 0.85em;
+    --font-weight-title: bold;
+    --font-color: #b0b2bd;
+    --menu-back: #1f232d;
+    
+    --border-color: #353535;
+    --border-invisible: black;
+    --border-radius: 10px;
+    --border-width: 1px;
+    --border-style: solid;
+
+    --close: #830202;
+    --error: #fc0100;
+    --button-back: #353535;
+    --selected: #2962ff;
+    
+    --hover-back: #525252e8;
+    --text-hover: white;
+
+    --z-content: 100;
+    --z-content-over: 101;
+    --z-menu: 200;
+    --z-menu-over: 201;
+    --z-panel: 300;
+    --z-panel-over: 301;
+    --z-panel-top: 302;
+
+}
+
+/* --------------------------------- MAIN LAYOUT --------------------------------- */
+body {
+    font-family: var(--font); /*sans-serif;*/
+    overflow: hidden;
+}
+
+input {
+    background-color: transparent;
+}
+
+#main {
+    color: var(--font-color);
+    /* font:62.5%/1 "Droid Sans", "Lucida Sans Unicode", "Lucida Grande", Verdana, Arial, Helvetica, sans-serif; */
+    /* font: bold 6em/2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif; */
+    /* font: 6em/2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif; */
+    font-size: 16px;
+    background-color: var(--back);/*rgba(18,23,35,255);*/
+    border-color: var(--border-color);
+    width: 100vw;
+    height: 100vh;
+}
+
+#header-menu {
+    top:0px;
+    width: 100vw;
+    /* height: 10vh; */
+    height: 5vh;
+    position: absolute;
+    opacity: 1;
+    z-index: var(--index-content);
+}
+
+#chart-main {
+    width: 96.5vw;
+    width: 100vw;
+    height: 94vh; /*100vh;*/
+    bottom: 6vh;
+    left: 0;
+    background-color: #ff000088;
+    display: block;
+}
+
+/* --------------------------------- SIDE MENU --------------------------------- */
+
+.side-menu {
+    width: 3.5vw;
+    height: 100vh;
+    right: 0;
+    border-left: solid;
+    border-color:  inherit;
+    background-color: inherit;
+    cursor: pointer;
+    position: absolute;
+    z-index: var(--index-menu);
+}
+
+.side-menu > * {
+    font-size: 1.8em;
+    margin-left: 0.25em;
+}
+
+.side-menu *:first-child {
+    margin-top: 0.5em;
+}
+
+/* --------------------------------- GENERAL, EFFECTS --------------------------------- */
+
+.flip-horizontal {
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+}
+
+.flip-vertical {
+    transform: rotate(90deg);
+    -webkit-transform: rotate(90deg);
+}
+
+select {
+    background-color: var(--button-back);
+    color: inherit;
+}
+
+/* Different input types */
+.short-num-input {
+    margin-left: 1em;
+    width:2em;
+}
+
+.text-input {
+    margin-left: 1em;
+    width: 10em;
+}
+
+/* Radio button */
+
+.radio-button > label {
+    background-color: var(--button-back);
+    border: 1px solid var(--border-invisible);
+    color: var(--font-color);
+    padding: 0.1em 1em;
+    margin: 0 0 0 0.5em;
+}
+
+.radio-button > label:hover {
+    /* background-color: var(--selected); */
+    color:var(--text-hover);
+    border: 1px solid var(--text-hover);
+}
+
+.radio-button > label:first-of-type {
+    margin-left: 1em;
+    border-radius: 0.8em 0 0 0.8em;
+}
+
+.radio-button > label:last-of-type {
+    border-radius: 0 0.8em 0.8em 0;
+}
+
+input[type="radio"]:checked + label {
+    background-color: var(--selected);
+}
+
+
+/* Buttons */
+
+.button-general {
+    /* border: 1px solid black; */
+    background-color: var(--button-back);
+    color: var(--font-color);
+    border-radius: 5px;
+    padding: 0.5em 1em;
+}
+
+.button-general p {
+    font-size: 100%;
+    text-align: center;
+}
+
+.button-general:hover {
+    background-color: var(--selected);
+}
+
+.button-menu {
+    font-size: 80%;
+    border-radius: 0 0 0.6em 0.6em;
+}
+
+.custom-button {
+    background-color: var(--button-back);
+    padding: 0.3em 0.5em;
+}
+
+.custom-button:hover {
+    background-color: var(--selected);
+}
+
+/* .custom-button.left { */
+/*     border-radius: 0.8em 0 0 0.8em; */
+/* } */
+
+/* .custom-button.center { */
+/*     border-radius: 0.2em; */
+/* } */
+
+/* .custom-button.right { */
+/*     border-radius: 0 0.8em 0.8em 0; */
+/* } */
+
+.custom-button:first-child {
+    border-radius: 0.8em 0 0 0.8em;
+}
+
+.custom-button:last-child {
+    border-radius: 0 0.8em 0.8em 0;
+}
+
+/* Loader */
+
+.loader {
+    border: 0.2em solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 0.2em solid var(--border-color);
+    width: 0.75em;
+    height: 0.75em;
+    -webkit-animation: spin 2s linear infinite; /* Safari */
+    animation: spin 0.75s linear infinite;
+    display: none;
+    margin-top: -0.5em;
+    margin-left: 1em;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --------------------------------- HEADER MENU --------------------------------- */
+
+#header-menu-title {
+    color: var(--font-color);
+    font-size: 200%;
+    font-family: var(--font);
+    margin-top: 1.5vh;
+    margin-left: 1.5vw;
+    display: inline-block;
+}
+
+.head-menu {
+    width: 40%;
+    height: 40%;
+    top: 40px;
+    left: 100px;
+}
+
+#float-menu {
+    width: 200px;
+    height: 40px;
+    border: solid;
+    border-width: 0.5px;
+    border-radius: 4px;
+    border-color: black;
+    position: fixed;
+    bottom:10vh;
+    left: 5vw;
+    background-color: red;
+    z-index: var(--index-menu);
+}
+
+/* --------------------------------- FOOTER MENU --------------------------------- */
+
+#footer {
+    height: 6vh;
+    width: 100vw;
+    bottom: 0vh;
+    left: 0vw;
+    position: absolute;
+    border-top: solid;
+    border-bottom: solid;
+    border-color: var(--border-color);
+    background-color: var(--back);
+    display: inline-block;
+}
+
+#footer-menu {
+    height: 100%;
+    border-right: 1px solid var(--border-color);
+    padding-right: 1em;
+    padding-left: 1em;
+    display: inline-block;
+    cursor: pointer;
+}
+
+#footer-menu > * {
+    margin-top: 0.12em;
+    font-size: 1.5em;
+}
+
+.footer-menu-item:last-child {
+    margin-right: 0.5em;
+}
+
+#footer-menu-options {
+    border-right: 1px solid var(--border-color);;
+    display: inline-flex;
+}
+
+#footer-status {
+    width: 43vw;
+    height: 100%;
+    border-right: 1px solid var(--border-color);
+    float: right;
+    margin-right: 3.5em;
+    display: inline-flex;
+}
+
+#footer-status > * {
+    margin-top: 0.75em;
+}
+
+.footer-status-error {
+    color: var(--error);
+}
+
+/* --------------------------------- FOOTER MENU MOVS MENU --------------------------------- */
+
+.menu-title {
+    font-size: 120%;/*20px;*/
+    color: inherit;
+    height: 10%;
+    width: 100%;
+    margin: 2% 1% 0% 2%;
+    float: left;
+}
+
+.menu-body {
+    color: var(--font-color);
+    background-color: var(--back);
+    border-color: black;
+    -webkit-box-shadow: 0px 1px 2px 0px var(--border-invisible);
+    -moz-box-shadow: 0px 1px 2px 0px var(--border-invisible);
+    box-shadow: 0px 1px 2px 0px var(--border-invisible);
+    border-radius: 5px;
+    border-width: 5px;
+    position: fixed;
+}
+
+input[type=radio] {
+    width: 0px;
+    margin: -0.6em;
+}
+
+.menu-field {
+    font-size: 120%;
+    margin: 1em 0.2em 1em 2em;
+    display: block;
+}
+
+.menu-field > * {
+    font-size: 100%;
+    margin-left: 1em;
+    display: inline-block;
+}
+
+.menu-field input {
+    border: var(--border-width) var(--border-style) var(--font-color);
+    border-radius: 3px;
+}
+
+.menu-field input[type="radio"]+label {
+    border-radius: 3px;
+    padding: 0.1em 0.2em;
+    background-color: var(--hover-back);
+}
+
+.menu-field input[type="radio"]:checked + label {
+    background-color: var(--selected);
+}
+
+.menu-field-label {
+    display: inline-block;
+}
+
+/* --------------------------------- CUSTOM SCROLL BAR --------------------------------- */
+
+.scroll-custom {
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--hover-back) var(--back);
+}
+
+.scroll-custom::-webkit-scrollbar {
+    width: 15px;
+}
+
+.scroll-custom::-webkit-scrollbar-track {
+    width: 15px;
+    color: var(--hover-back);
+    background: var(--back);
+}
+
+.scroll-custom::-webkit-scrollbar-track:hover {
+    background: var(--back);
+}
+
+.scroll-custom::-webkit-scrollbar-thumb {
+    border-radius: 15px;
+    background-color: var(--hover-back);
+    border: 3px solid var(--back);
+}
+
+/* --------------------------------- FOOTER MENU MOVS MENU --------------------------------- */
+
+#show-movs-menu {
+    height: 100%;
+    display: inline-flex;
+}
+
+#show-movs-menu > * {
+    margin-right: 1em;
+    position: relative;
+    bottom: 0.4em;
+}
+
+#show-movs-menu:first-child {
+    margin-left: 1em;
+    margin-top: 0.5em;
+}
+
+#show-movs-menu-level-selector {
+    width: 5em;
+}
+
+#show-movs-menu-level-max {
+    font-size: 90%;
+    width: 1.5em;
+    height: 0.4em;
+}
+
+/* #show-movs-menu-level-selector .ui-slider .ui-slider-handle {
+    width:2em;
+    left:-.6em;
+    text-decoration:none;
+    text-align:center;
+} */
+
+/* --------------------------------- FOOTER MENU ICONS EFFECTS --------------------------------- */
+
+.hoverable-text {
+    color:var(--font-color);
+}
+
+.hoverable-text:hover {
+    color: white; /*var(--selected);*/
+    /* background-color: var(--hover-back); */
+    cursor: pointer;
+}
+
+.hoverable-text-selected {
+    color: var(--selected);
+}
+
+.hoverable-icon {
+    padding: 4px;
+}
+
+.hoverable-icon:hover {
+    /* border-radius: 0.15em; */
+    border-radius: 3px; /*0 5px 0 5px;*/
+    background-color: var(--hover-back);
+}
+
+.hoverable-icon-selected {
+    background-color:var(--selected);
+    /* border-radius: 0.15em; */
+    border-radius: 3px; /*5px 0 5px 0;*/
+    padding: 4px;
+}
+
+.hoverable-close {
+    padding: 4px;
+    border-radius: 5px;
+}
+
+.hoverable-close:hover {
+    color: white;
+    background-color: var(--close);
+}
+
+.disabled {
+    color: gray;
+    cursor: not-allowed;
+}
+
+.ui-tooltip.ui-widget-content {
+    font-family: var(--font);
+    font-size: 90%;
+    font-weight: 500;
+    color: var(--font-color);
+    background-color: #222222AD;/*var(--back);*/    
+    box-shadow: none;
+    border-color: #000000;
+}
+
+
+/* --------------------------------- TERMINAL --------------------------------- */
+
+/* --------------------------------- TEXTURES --------------------------------- */
+
+/* Metal ------------------------- */
+
+.metal {
+    position: relative;
+    /* margin: 40px auto; */
+    outline: none;
+    
+    /* font: bold 6em/2em "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif; */
+    /* text-align: center; */
+    color: hsla(0,0%,20%,1);
+    text-shadow: hsla(0,0%,40%,.5) 0 -1px 0, hsla(0,0%,100%,.6) 0 2px 1px;
+    
+    background-color: hsl(0,0%,90%);
+    box-shadow: inset hsla(0,0%,15%,  1) 0  0px 0px 4px, /* border */
+      inset hsla(0,0%,15%, .8) 0 -1px 5px 4px, /* soft SD */
+      inset hsla(0,0%,0%, .25) 0 -1px 0px 7px, /* bottom SD */
+      inset hsla(0,0%,100%,.7) 0  2px 1px 7px, /* top HL */
+      
+      hsla(0,0%, 0%,.15) 0 -5px 6px 4px, /* outer SD */
+      hsla(0,0%,100%,.5) 0  5px 6px 4px; /* outer HL */ 
+    
+    transition: color .2s;
+  }
+  
+  /* Radial ------------------------- */
+  
+  .radial.metal {
+    background-image: -webkit-radial-gradient(  50%   0%,  8% 50%, hsla(0,0%,100%,.5) 0%, hsla(0,0%,100%,0) 100%),
+      -webkit-radial-gradient(  50% 100%, 12% 50%, hsla(0,0%,100%,.6) 0%, hsla(0,0%,100%,0) 100%),
+      -webkit-radial-gradient(   0%  50%, 50%  7%, hsla(0,0%,100%,.5) 0%, hsla(0,0%,100%,0) 100%),
+      -webkit-radial-gradient( 100%  50%, 50%  5%, hsla(0,0%,100%,.5) 0%, hsla(0,0%,100%,0) 100%),
+      
+      -webkit-repeating-radial-gradient( 50% 50%, 100% 100%, hsla(0,0%,  0%,0) 0%, hsla(0,0%,  0%,0)   3%, hsla(0,0%,  0%,.1) 3.5%),
+      -webkit-repeating-radial-gradient( 50% 50%, 100% 100%, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0)   6%, hsla(0,0%,100%,.1) 7.5%),
+      -webkit-repeating-radial-gradient( 50% 50%, 100% 100%, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0) 1.2%, hsla(0,0%,100%,.2) 2.2%),
+      
+      -webkit-radial-gradient( 50% 50%, 200% 50%, hsla(0,0%,90%,1) 5%, hsla(0,0%,85%,1) 30%, hsla(0,0%,60%,1) 100%);
+  }
+  
+  /* Linear ------------------------- */
+  
+  .metal.linear {
+    background-image: -webkit-repeating-linear-gradient(left, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0)   6%, hsla(0,0%,100%, .1) 7.5%),
+      -webkit-repeating-linear-gradient(left, hsla(0,0%,  0%,0) 0%, hsla(0,0%,  0%,0)   4%, hsla(0,0%,  0%,.03) 4.5%),
+      -webkit-repeating-linear-gradient(left, hsla(0,0%,100%,0) 0%, hsla(0,0%,100%,0) 1.2%, hsla(0,0%,100%,.15) 2.2%),
+      
+      linear-gradient(180deg, hsl(0,0%,78%)  0%, 
+      hsl(0,0%,90%) 47%, 
+      hsl(0,0%,78%) 53%,
+      hsl(0,0%,70%)100%);
+  }
+  
+  /* Oval ------------------------- */
+  
+  .metal.linear.oval {
+    border-radius: 50%;
+    /* font: italic bold 3em/50px Georgia, "Times New Roman", Times, serif; */
+  }
+  
+  /* active ------------------------- */
+  
+  .metal:active {
+    color: hsl(210, 100%, 40%);
+    text-shadow: hsla(210,100%,20%,.3) 0 -1px 0, hsl(210,100%,85%) 0 2px 1px, hsla(200,100%,80%,1) 0 0 5px, hsla(210,100%,50%,.6) 0 0 20px;
+    box-shadow: 
+      inset hsla(210,100%,30%,  1) 0  0px 0px 4px, /* border */
+      inset hsla(210,100%,15%, .4) 0 -1px 5px 4px, /* soft SD */
+      inset hsla(210,100%,20%,.25) 0 -1px 0px 7px, /* bottom SD */
+      inset hsla(210,100%,100%,.7) 0  2px 1px 7px, /* top HL */
+      
+      hsla(210,100%,75%, .8) 0  0px 3px 2px, /* outer SD */
+      hsla(210,50%,40%, .25) 0 -5px 6px 4px, /* outer SD */
+      hsla(210,80%,95%,   1) 0  5px 6px 4px; /* outer HL */
+  }

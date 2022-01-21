@@ -1,0 +1,65 @@
+
+{
+    "port": 8081,
+    "host": "",
+
+    "base_path": "",
+
+    "db_host": "localhost",
+    "db_user": "root",
+    "db_pass": "",
+    "db_ddbb": "test",
+    "db_port": "3306",
+    "db_socketPath": "/tmp/mysql.sock",
+    
+    "ERROR_404": "404 Not found.",
+
+    "GET": "GET",
+    "POST": "POST",
+    "PUT": "PUT",
+
+    "cookie_permision": "tkride_permission",
+    "cookie_remember": "cookie_remember",
+    "permission_grant": "grant",
+    "login_user": "user",
+    "login_password": "password",
+    "login_remember": "remember",
+    "remember_on": true,
+    "remember_off": false,
+    
+    "root_path": "/",
+    "app_path": "app",
+    "www_path": "www",
+    "css_path": "static/css",
+    "js_path": "static/js",
+    "public_path": "public",
+    "templates_path": "templates",
+
+    "login_html": "login.html",
+    "main_html": "main.html",
+
+    "index_init_msg_error": "Initialization failed:",
+
+    "request_msg": "Request received from:",
+    "init_msg": "Server initialized.",
+
+    "controller_path": "\\app\\controllers\\",
+
+    "router_path": "./app/routers/",
+    "route_msg": "Routing request for:",
+    "router_msg_error_init": "ROUTER ERROR: error initializing controller:",
+    "router_msg_error_undefined": "ROUTER ERROR: Router undefined:",
+    "router_msg_error_path": "ROUTER ERROR: Path not found:",
+
+    "TSQL_msg_warning_unkown_param": "WARNING: Unkown param in query will be ignored:",
+
+    "interface_brokers_path": "brokers",
+    "interface_msg_init": "Initialized broker interface",
+    "interface_msg_processing": "Processing broker action:",
+    "interface_msg_error_processing_action": "ERROR processing broker action:",
+    "interface_msg_error_broker_not_exist": "ERROR cannot find broker:",
+
+    "db_msg_connecting": "Connecting to DDBB...",
+    "db_msg_connection_success": "DDBB Connection Success.",
+    "db_msg_connection_error": "DDBB Connection Error."
+}

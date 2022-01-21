@@ -1,0 +1,53 @@
+<!-- Patterns Retracements Menu -->
+<div id='patterns-menu-ret' class='menu-options'>
+    <div id='patterns-menu-ret-search-in'  class='menu-field'>
+        <p>Buscar en</p>
+        <div id='patterns-menu-ret-search-in-combo'></div>
+        <div id='patterns-menu-ret-search-in-menu'></div>
+    </div>
+    <div id='patterns-menu-ret-name' class='menu-field'><p>Nombre</p><input id='patterns-menu-ret-name-input' class='text-input'></input></div>
+    <div id='patterns-menu-ret-values' class='menu-field'><p>Valores</p><input id='patterns-menu-ret-values-input' class='text-input'></input></div>
+    <div id='patterns-menu-ret-sense' class='menu-field'>
+        <p class='menu-field-label'>Sentido</p>
+        <div class='menu-options-radio'>
+            <input type='radio' name='patterns-menu-ret-sense' id='patterns-menu-ret-sense-radio-bull' class='button-general' value='ALCISTA' checked>
+            <label for='patterns-menu-ret-sense-radio-bull' >Alcista</label>
+            <input type='radio' name='patterns-menu-ret-sense' id='patterns-menu-ret-sense-radio-bear' class='button-general' value='BAJISTA'>
+            <label for='patterns-menu-ret-sense-radio-bear' >Bajista</label>
+            <input type='radio' name='patterns-menu-ret-sense' id='patterns-menu-ret-sense-radio-both' class='button-general' value='AMBOS'>
+            <label for='patterns-menu-ret-sense-radio-both' >Ambos</label>
+        </div>
+    </div>
+    <div id='patterns-menu-ret-from' class='menu-field'>
+        <p class='menu-field-label'>Desde</p>
+        <div class='menu-options-radio'>
+            <input type='radio' name='patterns-menu-ret-from' id='patterns-menu-ret-from-radio-init' class='button-general' value='inicio' checked>
+            <label for='patterns-menu-ret-from-radio-init' >Inicio</label>
+            <input type='radio' name='patterns-menu-ret-from' id='patterns-menu-ret-from-radio-end' class='button-general' value='fin'>
+            <label for='patterns-menu-ret-from-radio-end' >Fin</label>
+            <input type='radio' name='patterns-menu-ret-from' id='patterns-menu-ret-from-radio-correction' class='button-general' value='correccion'>
+            <label for='patterns-menu-ret-from-radio-correction' >Corrección</label>
+        </div>
+    </div>
+    <div id='patterns-menu-ret-iterate' class='menu-field'>
+        <p class='menu-field-label'>Itera búsqueda</p>
+        <input id='patterns-menu-ret-iterate-input' class='short-num-input' autocomplete="off"></input>
+    </div>
+    <div id='patterns-menu-ret-only-max' class='menu-field'>
+        <p class='menu-field-label'>Mostar solo máx</p>
+        <div class='menu-options-radio'>
+            <input type='radio' name='patterns-menu-ret-radio-only-max' id='patterns-menu-ret-radio-only-max-none' class='button-general' value='0' checked>
+            <label for='patterns-menu-ret-radio-only-max-none' >No</label>
+            <input type='radio' name='patterns-menu-ret-radio-only-max' id='patterns-menu-ret-radio-only-max-movs' class='button-general' value='1'>
+            <label for='patterns-menu-ret-radio-only-max-movs' >Movimiento</label>
+            <input type='radio' name='patterns-menu-ret-radio-only-max' id='patterns-menu-ret-radio-only-max-ret' class='button-general' value='-1'>
+            <label for='patterns-menu-ret-radio-only-max-ret' >Retroceso</label>
+        </div>
+    </div>
+    <div id='patterns-menu-submit' tabindex='1' class='patterns-menu-submit button-general'><p>Enviar</p></div>
+</div>
+
+<div id='search-in-retracements'><p>Retroceso</p><input id='search-in-ret-name' autocomplete='off'></input></div>
+<div id='search-in-trends'><p>Tendencia</p><input id='search-in-trend-name' autocomplete='off'></input></div>
+<div id='search-in-movements'><p>Nivel</p><input id='search-in-level' class='short-num-input' autocomplete='off'></input></div>
+<div id='search-in-next'><p>Siguiente</p><div class='search-in-next-combo'></div></div>
