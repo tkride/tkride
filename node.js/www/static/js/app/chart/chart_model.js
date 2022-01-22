@@ -193,8 +193,8 @@ class ModelChart {
                 //     min_y = curr_min_y;
             }
 
-            min_y = Math.min(...data_y.map(v=>v.slice(1, 4)))
-            max_y = Math.max(...data_y.map(v=>v.slice(1, 4)))
+            min_y = Math.min(...data_y.map(v=>v.slice(4, 5)))
+            max_y = Math.max(...data_y.map(v=>v.slice(3, 4)))
             
             min_x = data_y[0][0];
             max_x = data_y[data_y.length-1][0];

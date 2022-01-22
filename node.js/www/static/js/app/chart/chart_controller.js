@@ -655,8 +655,8 @@ class ChartController {
 
         let priceMin = Math.min(...price_arr_min);
         let priceMax = Math.max(...price_arr_max);
-        let dateMin = data.data_y[data.data_y.length-ChartController.DEFAULT_CHART_ZOOM][Const.IDX_CANDLE_TIME];
-        let dateMax = data.data_y[data.data_y.length-1][Const.IDX_CANDLE_TIME];
+        let dateMin = sub_data[sub_data.length - ChartController.DEFAULT_CHART_ZOOM][Const.IDX_CANDLE_TIME]; //data.data_y[data.data_y.length-ChartController.DEFAULT_CHART_ZOOM][Const.IDX_CANDLE_TIME];
+        let dateMax = sub_data[sub_data.length - 1][Const.IDX_CANDLE_TIME]; //data.data_y[data.data_y.length-1][Const.IDX_CANDLE_TIME];
         let zoom = {
             startValue: {x: dateMin, y:priceMin},
             endValue: { x: dateMax, y:priceMax},

@@ -198,7 +198,6 @@ class ChartView {
                         // type: 'datetime',
                         type: 'time',
                         // data: data.data_x,
-                        // scale: true,
                         backgroundColor: ChartView.BACKGROUND_COLOR,
                         // boundaryGap: ['-50%', '0%'],
                         position: 'bottom',
@@ -263,22 +262,6 @@ class ChartView {
                     ChartView.DATA_ZOOM_X_INSIDE,
                     ChartView.DATA_ZOOM_X_SLIDER,
                     ChartView.DATA_ZOOM_Y_INSIDE,
-                    // {
-                    //     id:'x_inside',
-                    //     type: 'inside',
-                    //     xAxisIndex: [0],
-                    //     zoomOnMouseWheel: true,
-                    //     moveOnMouseWheel: 'ctrl',
-                    //     // filterMode: 'none',
-                    // },
-                    // {
-                    //     id:'y_inside',
-                    //     type: 'inside',
-                    //     yAxisIndex: [0],
-                    //     zoomOnMouseWheel: true,
-                    //     moveOnMouseWheel: 'shift',
-                    //     filterMode: 'none',
-                    // }
                 ],
 
                 series: [
