@@ -6,9 +6,6 @@ class Const {
     static ROOT_URL = "http://tkride.com:8081/tsql";
     static POST_ID = 'POST';
 
-    static ALCISTA = 1;
-    static BAJISTA = -1;
-
     // GENERALES
     static EMPTY_STR = '';
     static NEW_LINE_STR = "\n"; //os.linesep;
@@ -16,8 +13,8 @@ class Const {
     static NO = 0;
     static IMPULSO = 1;
     static RETROCESO = -1;
-    static ALCISTA = 1; //this.IMPULSO;
-    static BAJISTA = -1; //this.RETROCESO;
+    static ALCISTA = 1;
+    static BAJISTA = -1;
     static DESCONOCIDA = 0;
     static MINIMO = -1;
     static MAXIMO = 1;
@@ -87,20 +84,8 @@ class Const {
     static FIN_ID = 'FIN';
     static CORRECCION_DESDE_ID = 'CORRECCION';
     static RESULTADO_ID = 'RESULTADO';
+    static HASTA_ID = 'HASTA';
 
-    // PRECIOS
-    static OPEN_ID = 'open';
-    static HIGH_ID = 'high';
-    static LOW_ID = 'low';
-    static CLOSE_ID = 'close';
-    static SYMBOL_ID = 'symbol';
-    static VOLUME_ID = 'volume';
-    static TRADES_ID = 'trades';
-
-    static OK_ID = 'ok';
-    static BAD_ID = 'bad';
-    static TOTAL_ID = 'total';
-    static NO_EVAL_ID = 'no_eval';
     static ESTADISTICAS_ID = 'ESTADISTICAS';
     static SALIDA_ID = 'SALIDA';
     static FICHERO_ID = 'FICHERO';
@@ -131,7 +116,7 @@ class Const {
     static SIGUIENTE_ID = 'SIGUIENTE';
     static MARCO_ID = 'MARCO';
 
-    static TIMESTAMP_ID = 'timestamp'; // Minúsculas; es una etiqueta utilizada por los datos descargados; y habría que convertilo contínuamente
+    //static TIMESTAMP_ID = 'timestamp'; // Minúsculas; es una etiqueta utilizada por los datos descargados; y habría que convertilo contínuamente
     // LISTA DICCIONARIO
     // NIVEL_ID = 'nivel'
     static FECHA_INICIO_ID = 'FECHA_INICIO';
@@ -184,9 +169,6 @@ class Const {
     static O_ID = 'O';
     static NEGADO_ID = 'NEGADO';
 
-    static RESULTS_ID = 'results';
-    static NAME_ID = 'name';
-
     // PATTERNS ELEMENTS DEFINITIONS
     static BUSCAR_EN_COMBO_ID = 'BUSCAR_EN_COMBO';
 
@@ -209,36 +191,102 @@ class Const {
     static CLASS_HOVERABLE_TEXT = 'hoverable-text';
     static CLASS_HOVERABLE_TEXT_SELECTED = 'hoverable-text-selected';
 
-    // INDEX
-    // Candles
+    // ----------------------------------------------------------- NODE ----------------------------------------------------------------------
+    // TREND LABELS
+    static BULL = 1;
+    static BEAR = -1;
+    static BOTH = [-1, 1];
+    static BULL_ID = 'bull';
+    static BEAR_ID = 'bear';
+    static BOTH_ID = 'both';
+    static SENSE_STR = {
+        [-1]: Const.BEAR_ID,
+        1: Const.BULL_ID,
+        [[-1,1]]: Const.BOTH_ID
+    }
+
+    // STATISTICS
+    static STATS_ID = 'stats';
+    static OK_ID = 'ok';
+    static BAD_ID = 'bad';
+    static TOTAL_ID = 'total';
+    static NO_EVAL_ID = 'no_eval'; //TODO BORRAR?
+    static NUM_ID = 'num';
+    static PERCENT_ID = '%';
+
+    // CANDLES PRICE INFORMATION
+    static OPEN_ID = 'open';
+    static HIGH_ID = 'high';
+    static LOW_ID = 'low';
+    static CLOSE_ID = 'close';
+    static SYMBOL_ID = 'symbol';
+    static VOLUME_ID = 'volume';
+    static TRADES_ID = 'trades';
+
+    // GENERIC DEFINITIONS
+    static DATA_ID = 'data';
+    static DATA_TYPE_ID = 'datatype';
+    static FROM_ID = 'from';
+    static LOGICAL_LOWER_THAN = '<';
+    static LOGICAL_HIGHER_THAN = '>';
+    static LOGICAL_OPERATORS = ['<', '>'];
+    static RET_LOGICAL_VALUES = { '<':Number.MIN_SAFE_INTEGER, '>': Number.MAX_SAFE_INTEGER };
+    static RESULTS_ID = 'results';
+    static NAME_ID = 'name';
+
+    static MOVS_ID = 'movs';
+    static RETRACEMENTS_ID = 'retracements';
+    static NEXT_ID = 'next';
+    static TRENDS_ID = 'trends';
+    // MOVEMENTS/RETRACEMENTS COLUMN HEADERS
+    static TIMESTAMP_ID = 'timestamp';
+    static INIT_ID = 'init';
+    static END_ID = 'end';
+    static CORRECTION_ID = 'correction';
+    static TREND_ID = 'trend';
+    static DELTA_INIT_ID = 'deltainit';
+    static DELTA_END_ID = 'deltaend';
+    static RET_ID = 'retracement';
+    static LEVEL_ID = 'level';
+    static RET_LEVELS_ID = 'levels';
+    static SEARCH_IN_ID = 'searchin';
+    static ITERATE_ID = 'iterate';
+    static ONLY_MAX_ID = 'onlymax';
+
+    // CANDLES INDEX
     static IDX_CANDLE_TIME = 0;
     static IDX_CANDLE_OPEN = Const.IDX_CANDLE_TIME + 1;
     static IDX_CANDLE_CLOSE = Const.IDX_CANDLE_OPEN + 1;
     static IDX_CANDLE_HIGH = Const.IDX_CANDLE_CLOSE + 1;
     static IDX_CANDLE_LOW = Const.IDX_CANDLE_HIGH + 1;
-    // Relative maximum
+
+    // RELATIVE MAX INDEX
     static IDX_MAX_TIMESTAMP = 0;
     static IDX_MAX_MAX = 1;
     static IDX_MAX_MIN = 2;
-    // Movements
+
+    // MOVEMENTS INDEX
     static IDX_MOV_TIMESTAMP = 0;
-    static IDX_MOV_INI = 1;
+    static IDX_MOV_INIT = 1;
     static IDX_MOV_END = 2;
     static IDX_MOV_CORR = 3;
     static IDX_MOV_SENSE = 4;
-    static IDX_MOV_DELTA_INI = 5;
+    static IDX_MOV_DELTA_INIT = 5;
     static IDX_MOV_DELTA_END = 6;
     static IDX_MOV_RET = 7;
-    // Retracements
+
+    // RETRACEMENTS INDEX
     static IDX_RET_TIMESTAMP = 0;
-    static IDX_RET_INI = 1;
+    static IDX_RET_INIT = 1;
     static IDX_RET_END = 2;
     static IDX_RET_CORR = 3;
     static IDX_RET_SENSE = 4;
-    static IDX_RET_DELTA_INI = 5;
+    static IDX_RET_DELTA_INIT = 5;
     static IDX_RET_DELTA_END = 6;
     static IDX_RET_RET = 7;
     static IDX_RET_LEVELS = 8;
+
+    static DEFAULT_LOAD_HISTORIC_TIMEOUT = 20 * 1000;
 }
     
 
@@ -375,6 +423,9 @@ class Time {
         }
         value = value * value_units_in;
         let ret = moment(time).subtract(value, units);
+        if(ret.valueOf() < 0) {
+            ret = moment(0);
+        }
 
         return ret;
     }

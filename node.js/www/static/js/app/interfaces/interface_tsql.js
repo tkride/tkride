@@ -1,34 +1,35 @@
 /**file: interace_tsql.js */
 
 // Interface between front and server
-class InterfaceTQS {
+class InterfaceTSQL {
 
     //----------------------------- STATIC, CONSTANTS -----------------------------
 
     //----------------------------- PROPERTIES -----------------------------
     #root_url = '';
-    #headers;
+    // #headers;
     // Saves each query and result as array
     #query_hist = [];
     #workers = [];
     #TSQL = TSQL_node;
 
     //----------------------------- CONSTRUCTOR -----------------------------
-    constructor(root_url, headers) {
+    // constructor(root_url, headers) {
+    constructor(root_url) {
         this.#root_url = root_url;
-        this.#headers = headers;
+        // this.#headers = headers;
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
-    send_query(query, successCb, errorCb=null, async = true, timeout, url) {
-        // if ((url === undefined) || (url == null)) {
-        if(!url) {
-            url = this.#root_url;
-        }
-        this.#query_hist.push(query);
-        console.log(query);
-        Ajax.post(url, this.#headers, query, successCb, errorCb, async, timeout);
-    }
+    // send_query(query, successCb, errorCb=null, async = true, timeout, url) {
+    //     // if ((url === undefined) || (url == null)) {
+    //     if(!url) {
+    //         url = this.#root_url;
+    //     }
+    //     this.#query_hist.push(query);
+    //     console.log(query);
+    //     Ajax.post(url, this.#headers, query, successCb, errorCb, async, timeout);
+    // }
 
     send_query_worker(query, successCb, errorCb=null, async = true, timeout, url) {
         if(!url) {
@@ -41,7 +42,8 @@ class InterfaceTQS {
             successCb(JSON.parse(e.data));
             worker.terminate();
         }
-        worker.postMessage({ query:JSON.stringify(query), headers:this.#headers, url, timeout });
+        // worker.postMessage({ query:JSON.stringify(query), headers:this.#headers, url, timeout });
+        worker.postMessage({ query:JSON.stringify(query), url, timeout });
     }
 
     get_queries() {
@@ -57,13 +59,15 @@ class InterfaceTQS {
         var that = this;
         try {
             query = cmd + this.#TSQL.CMD_CLAUSE_OPEN + ' ';
-            Object.keys(params).forEach(function(key) {
-                query += key;
-                query += that.#TSQL.PARAM_CLAUSE_OPEN;
-                query += params[key]
-                query += that.#TSQL.PARAM_CLAUSE_CLOSE;
-                query += ' ';
-            });
+            if(params) {
+                Object.keys(params).forEach(function(key) {
+                    query += key;
+                    query += that.#TSQL.PARAM_CLAUSE_OPEN;
+                    query += params[key]
+                    query += that.#TSQL.PARAM_CLAUSE_CLOSE;
+                    query += ' ';
+                });
+            }
             query += this.#TSQL.CMD_CLAUSE_CLOSE;
             query = { query: query };
         }
@@ -74,6 +78,16 @@ class InterfaceTQS {
         return query;
     }
 
+    get_brokers() {
+        return new Promise((resolve, reject) => {
+            let query = this.build_query(this.#TSQL.GET_BROKERS);
+            this.send_query_worker(query,
+                                    brokers => resolve(brokers),
+                                    error => reject(error)
+                                    );
+        });
+    }
+
     /** Get brokers tickers */
     load_all_tickers_from(broker) {
         var that = this;
@@ -82,10 +96,10 @@ class InterfaceTQS {
                 let query = this.build_query(this.#TSQL.LEE_ACTIVOS_BROKER_ID, {[this.#TSQL.BROKER_ID]: broker});
                 // this.send_query(query,
                 this.send_query_worker(query,
-                                        rawData => {
+                                        tickers => {
                                             // that.tickers = JSON.parse(rawData);
-                                            that.tickers = rawData;
-                                            resolve(that.tickers);
+                                            // that.tickers = rawData;
+                                            resolve(tickers);
                                         },
                                         error => reject(error));
             }
@@ -99,19 +113,22 @@ class InterfaceTQS {
     /** Broker historical data */
     load_historical(request, block=true, timeout=0) {
         var that = this;
-console.log(request);
+        console.log(request);
         return new Promise( (resolve, reject) => {
             var rawData;
             try {
                 let timeFrame = (this.#TSQL.MARCO_ID in request) ? request[this.#TSQL.MARCO_ID] : '';
                 let from = (this.#TSQL.DESDE_ID in request) ? request[this.#TSQL.DESDE_ID] : '';
-                let interval = (this.#TSQL.INTERVALO in request) ? request[this.#TSQL.INTERVALO] : '';
+                let interval = (this.#TSQL.INTERVALO_ID in request) ? request[this.#TSQL.INTERVALO_ID] : '';
+                // let interval = (this.#TSQL.INTERVALO in request) ? request[this.#TSQL.INTERVALO] : '';
                 if((from == '') && (interval == '')) {
-                    interval = (from != '') ? from : ((interval != '') ? interval : this.get_default_historical_interval(timeFrame));
-                    request[this.#TSQL.INTERVALO] = interval;
+                    interval = this.get_default_historical_interval(timeFrame);
+                    request[this.#TSQL.INTERVALO_ID] = interval;
                 }
+
                 if(timeout == 0) {
-                    timeout = this.calculate_timeout((interval != '') ? interval : from);
+                    timeout = Const.DEFAULT_LOAD_HISTORIC_TIMEOUT;
+                    // timeout = this.calculate_timeout((interval != '') ? interval : from);
                 }
 
                 //Builds AJAX query

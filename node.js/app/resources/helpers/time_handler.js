@@ -69,6 +69,8 @@ const get_time_queries = (params, query_size) => {
             else end_time = Date.parse(params.endtime); //params.endtime;
         }
 
+        if(start_time < 0) start_time = 0;
+
         // Get number of queries of given size
         let n_queries = ((end_time - start_time) / interval_ms) / query_size;
         if(n_queries - Math.floor(n_queries) > 0) {

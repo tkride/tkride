@@ -1,12 +1,21 @@
 /**file: movements.js */
 
-/** 'MaxRelative' */
+/** 'MaxRelative' 
+ * @data: [ [ timestamp, high, low ] ]
+ * 
+ * NOT USED --->
+ * @data: [ { timestamp, high, low} ]
+ * timestamp: EPOCH UNIX (ms)
+ * high: float
+ * low: float
+*/
 
 class MaxRelative {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
     
-    static NAME = "max-relative";
+    #dataType = "max-relative";
+    get dataType() { return this.#dataType; }
 
     //----------------------------- PROPERTIES -----------------------------
     #level = 1;
@@ -16,17 +25,21 @@ class MaxRelative {
     //----------------------------- CONSTRUCTOR -----------------------------
 
     constructor(data, level = 1) {
+        console.time('MaxRelative');
         this.#level = level;
         this.#format_data(data);
         this.#process({ data: this.#raw_data, level: this.#level});
+        console.timeEnd('MaxRelative');
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
     
     #format_data(data) {
-        if((data.data_y != undefined) && (data.data_x != undefined)) {
+        // if((data.data_y != undefined) && (data.data_x != undefined)) {
+        if(data.data_y != undefined) {
             data.data_y.map( (v, i) => {
-                this.#raw_data.push([data.data_x[i], v[Const.IDX_CANDLE_HIGH], v[Const.IDX_CANDLE_LOW]]);
+                // this.#raw_data.push([data.data_x[i], v[Const.IDX_CANDLE_HIGH], v[Const.IDX_CANDLE_LOW]]);
+                this.#raw_data.push([v[Const.IDX_CANDLE_TIME], v[Const.IDX_CANDLE_HIGH], v[Const.IDX_CANDLE_LOW]]);
             });
         }
         else {
@@ -53,31 +66,50 @@ class MaxRelative {
         if(data != undefined) {
             max_data = data.filter( v => v[Const.IDX_MAX_MAX] != undefined);
         }
-        max_data.map( (curr, i, arr) => {
+        console.time('new');
+
+        //First value
+        if(max_data[0][Const.IDX_MAX_MAX] > max_data[1][Const.IDX_MAX_MAX])
+        max.push([max_data[0][Const.IDX_MAX_TIMESTAMP], max_data[0][Const.IDX_MAX_MAX], null]);
+
+        // Iterate over all values
+        max_data.slice(1,-1).map( (curr, i) => {
             let max_curr = curr[Const.IDX_MAX_MAX];
-            if(max_curr != undefined) {
-                let prev_max = ((arr[i-1] != undefined) && (arr[i-1][Const.IDX_MAX_MAX] > max_curr)) ? false : true;
-                let next_max = ((arr[i+1] != undefined) && (arr[i+1][Const.IDX_MAX_MAX] > max_curr)) ? false : true;
-                if(prev_max && next_max) {
-                    max.push([curr[Const.IDX_MAX_TIMESTAMP], max_curr, null]);
-                }
+            let prev_max = (max_data[i][Const.IDX_MAX_MAX] > max_curr) ? false : true;
+            let next_max = (max_data[i+2][Const.IDX_MAX_MAX] > max_curr) ? false : true;
+            if(prev_max && next_max) {
+                max.push([curr[Const.IDX_MAX_TIMESTAMP], max_curr, null]);
             }
         });
 
+        //Last value
+        if(max_data[max_data.length-1][Const.IDX_MAX_MAX] > max_data[max_data.length-2][Const.IDX_MAX_MAX])
+        max.push([max_data[max_data.length-1][Const.IDX_MAX_TIMESTAMP], max_data[max_data.length-1][Const.IDX_MAX_MAX], null]);
+        
+        // Extract relative minimum
         let min = [];
         if(data != undefined) {
             min_data = data.filter( v => v[Const.IDX_MAX_MIN] != undefined);
         }
-        min_data.map( (curr, i, arr) => {
+
+        //First values
+        if(min_data[0][Const.IDX_MAX_MIN] < min_data[1][Const.IDX_MAX_MIN])
+            min.push([min_data[0][Const.IDX_MAX_TIMESTAMP], min_data[0][Const.IDX_MAX_MIN], null]);
+
+        // Iterate over all values
+        min_data.slice(1,-1).map( (curr, i) => {
             let min_curr = curr[Const.IDX_MAX_MIN];
-            if(min_curr != undefined) {
-                let prev_min = ((arr[i-1] != undefined) && (arr[i-1][Const.IDX_MAX_MIN] < min_curr)) ? false : true;
-                let next_min = ((arr[i+1] != undefined) && (arr[i+1][Const.IDX_MAX_MIN] < min_curr)) ? false : true;
-                if(prev_min && next_min) {
-                    min.push([curr[Const.IDX_MAX_TIMESTAMP], null, min_curr]);
-                }
+            let prev_min = (min_data[i][Const.IDX_MAX_MIN] < min_curr) ? false : true;
+            let next_min = (min_data[i+2][Const.IDX_MAX_MIN] < min_curr) ? false : true;
+            if(prev_min && next_min) {
+                min.push([curr[Const.IDX_MAX_TIMESTAMP], null, min_curr]);
             }
         });
+        //Last value
+        if(min_data[min_data.length-1][Const.IDX_MAX_MIN] < min_data[min_data.length-2][Const.IDX_MAX_MIN])
+        min.push([min_data[min_data.length-1][Const.IDX_MAX_TIMESTAMP], min_data[min_data.length-1][Const.IDX_MAX_MIN], null]);
+
+        console.timeEnd('new');
 
         // // Merges max and min information by timestamp (need ordered vectors)
         // let max_min = JSON.parse(JSON.stringify(max.sort()));
@@ -95,20 +127,19 @@ class MaxRelative {
         // }
 
         // Stores sorted and merged data
-        // this.#rel_max.push(max_min.sort());
         this.#rel_max.push(max.concat(min).sort());
 
         if(level > 1) {
-            if(this.#rel_max[this.#rel_max.length-1].length < 3) {
+            // if(this.#rel_max[this.#rel_max.length-1].length < 3) {
+            if((max.length < 3) || (min.length < 3)) {
                 this.#rel_max.push(this.#rel_max);
             }
             else {
-                // this.#process(this.#rel_max[this.#rel_max.length-1], (level - 1));
                 this.#process({max: max, min: min, level: (level - 1)});
             }
         }
 
-        let movs = new Movements(this.#rel_max[0]);
+        // let movs = new Movements(this.#rel_max);
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
@@ -136,12 +167,12 @@ class MaxRelative {
     }
 
     /** Return maximum relative data for level = 1 */
-    get data() { return this.#rel_max[0]; }
+    get data() { return this.#rel_max; }
 
     /** Return maximum relative data for a given level */
     get_data(level) {
         if(level <= this.#level) {
-            if(level == 0) level = 1;
+            if(level <= 0) level = 1;
             return this.#rel_max[level-1];
         }
         return null;
@@ -152,37 +183,187 @@ class MaxRelative {
 }
 
 
-/** 'Movements' */
 
+/** 'timePrice' */
+
+class timePrice {
+    //----------------------------- PROPERTIES -----------------------------
+
+    time;
+    price;
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor(time, price) {
+        this.time = time;
+        this.price = price;
+    }
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+    toString() {
+        return `${this.time}, ${this.price}`;
+    }
+
+    get data() { return [this.time, this.price]; }
+}
+
+/** 'Movements' */
+/**
+ * @data: [ { timestamp, inicio, fin, correccion, sentidomov, deltaini, deltafin, retroceso } ]
+ * timestamp: EPOCH UNIX (ms)
+ * init: timePrice
+ * end: timePrice
+ * correction: timePrice
+ * sense: (int)
+ * deltaini: float
+ * deltaend: float
+ * retracement: float
+ * 
+ */
 class Movements {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
     
-    static NAME = "movements";
+    #dataType = "movements";
+    get dataType() { return this.#dataType; }
 
     //----------------------------- PROPERTIES -----------------------------
 
+    #id = '';
+    #level = 0;
+    #rel_max = [];
     #max_filtered = [];
+    #movs = [];
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor(data) {
+    constructor(data, level = 1, id) {
         if(data == undefined) {
             let msg = String(Movements.prototype.constructor.name + ': No valid data provided');
             console.error(msg);
             throw(msg);
         }
-        let filtered = this.#consecutive_max_filter(data);
-        this.#process(filtered);
+
+        this.#id = id;
+        this.#level = level;
+        let max = new MaxRelative(data, this.level);
+        this.#rel_max = max.data;
+        console.time('Filter consecutive max');
+        this.#max_filtered = this.#filter_consecutive_max(this.#rel_max);
+        console.timeEnd('Filter consecutive max');
+        console.time('Movements');
+        this.#process(this.#max_filtered);
+        console.timeEnd('Movements');
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
-    #process(data) {
+    #process(dataLevels) {
+        dataLevels.forEach( (data, level) => {
+            let level_movs = [];
+            data.slice(2).map( (v, i) => {
+                let first;
+                let sec;
+                let sense;
+                if(data[i][Const.IDX_MAX_MIN] == null) {
+                    first = Const.IDX_MAX_MAX;
+                    sec = Const.IDX_MAX_MIN;
+                    sense = -1;
+                }
+                else {
+                    first = Const.IDX_MAX_MIN;
+                    sec = Const.IDX_MAX_MAX;
+                    sense = 1;
+                }
+                
+                let dinit = data[i+1][sec] - data[i][first];
+                let dend = v[first] - data[i+1][sec];
+                let ret = Math.abs(dend / dinit);
 
+                let mov = {
+                    [Const.TIMESTAMP_ID]: data[i][Const.IDX_MAX_TIMESTAMP],
+                    [Const.INIT_ID]: new timePrice(data[i][Const.IDX_MAX_TIMESTAMP], data[i][first]),
+                    [Const.END_ID]: new timePrice(data[i+1][Const.IDX_MAX_TIMESTAMP], data[i+1][sec]),
+                    [Const.CORRECTION_ID]: new timePrice(v[Const.IDX_MAX_TIMESTAMP], v[first]),
+                    [Const.TREND_ID]: sense,
+                    [Const.DELTA_INIT_ID]: dinit,
+                    [Const.DELTA_END_ID]: dend,
+                    [Const.RET_ID]: ret,
+                }
+                level_movs.push(mov);
+            });
+            this.#movs.push(level_movs);
+        });
     }
 
-    #consecutive_max_filter(data) {
+    #filter_consecutive_max(dataLevels) {
+        let filtered = [];
+
+        dataLevels.forEach(data => {
+            let max = data.map(v => v.slice(0, 2));
+            let min = data.map(v => [v[Const.IDX_MAX_TIMESTAMP], (v[Const.IDX_MAX_MIN] == null) ? Infinity : v[Const.IDX_MAX_MIN] ]);
+
+            let pre_len;
+            do {
+                // Filters consecutive null values
+                max = max.filter( (v, i) => (v[1] != null) || (max[i+1] == undefined) || ( (max[i+1] != undefined) && (max[i+1][1] != null) ));
+                
+                pre_len = max.length;
+
+                // Build max vector (current, prev, next)
+                let max_prev = max.slice(0, -1).map(v => v[1]);
+                max_prev.splice(0, 0, null);
+                let max_next = max.slice(1).map(v => v[1]);
+                max_next.splice(max_next.length, 0, null);
+                max = max.map( (v, i) => [ v[0], v[1], max_prev[i], max_next[i]] );
+
+                max = max.filter( v => ( (v[1] == null) || ( (v[1] >= v[2]) && (v[1] > v[3]) ) ) );
+            } while(pre_len != max.length);
+
+            do {
+                // Filters consecutive Infinity values
+                min = min.filter( (v, i) => (v[1] != Infinity) || (min[i+1] == undefined) || ( (min[i+1] != undefined) && (min[i+1][1] != Infinity) ));
+                
+                pre_len = min.length;
+
+                // Build min vector
+                let min_prev = min.slice(0, -1).map(v => v[1]);
+                min_prev.splice(0, 0, Infinity);
+                let min_next = min.slice(1).map(v => v[1]);
+                min_next.splice(min_next.length, 0, Infinity);
+                min = min.map( (v, i) => [ v[0], v[1], min_prev[i], min_next[i]] );
+
+                min = min.filter( v => ( (v[1] == Infinity) || ( (v[1] < v[2]) && (v[1] <= v[3]) ) ) );
+            } while(pre_len != min.length);
+
+            // Merge max and min results
+            max = max.map(v => [ v[0], v[1], null ]).filter(v => v[Const.IDX_MAX_MAX] != null);
+            min = min.map(v => [ v[0], null, (v[1] == Infinity) ? null : v[1] ]).filter(v => v[Const.IDX_MAX_MIN] != null);
+            filtered.push(max.concat(min).sort());
+
+            // Merge same timestamps
+            for(let i = 0; i < filtered[filtered.length-1].length - 1; i++) {
+                if( filtered[filtered.length-1][i][Const.IDX_MAX_TIMESTAMP] == filtered[filtered.length-1][i+1][Const.IDX_MAX_TIMESTAMP] ) {
+                    let v1;
+                    let v2;
+                    if(filtered[filtered.length-1][i][Const.IDX_MAX_MAX] != null)
+                        v1 = filtered[filtered.length-1][i][Const.IDX_MAX_MAX];
+                    else
+                        v1 = filtered[filtered.length-1][i+1][Const.IDX_MAX_MAX];
+
+                    if(filtered[filtered.length-1][i][Const.IDX_MAX_MIN] != null)
+                        v2 = filtered[filtered.length-1][i][Const.IDX_MAX_MIN];
+                    else
+                        v2 = filtered[filtered.length-1][i+1][Const.IDX_MAX_MIN];
+
+                    filtered[filtered.length-1][i+1] = [ filtered[filtered.length-1][i][Const.IDX_MAX_TIMESTAMP], v1, v2 ];
+                    filtered[filtered.length-1].splice(i, 1)
+                }
+            }
+        });
+
+        return filtered;
+
         // // Get all instants with max and min in one candle
         // let data_filtered = JSON.parse(JSON.stringify(data));
         // let hl = [];
@@ -218,20 +399,37 @@ class Movements {
 
         // ELIMINAR DUPLICADOS
         // LA FUNCIÓN NO SELECCIONA EL MÁXIMO O MÍNIMO, SOLO SI ESTÁ DUPLICADO!!!!! !!!!
-        this.#max_filtered = data.filter( (v, i, arr) => {
-            if(i < (data.length - 1)) {
-                if( ((v[1] != null) && (arr[i+1][1] == null))
-                    || ((v[2] != null) && (arr[i+1][2] == null))
-                    || ((v[1] != null) && (v[2] != null))
-                    || ((arr[i+1][1] != null) && (arr[i+1][2] != null)) ) {
-                        return v;
-                }
-            }
-        });
+        // this.#max_filtered = data.filter( (v, i, arr) => {
+        //     if(i < (data.length - 1)) {
+        //         if( ((v[1] != null) && (arr[i+1][Const.IDX_MAX_MAX] == null))
+        //             || ((v[2] != null) && (arr[i+1][Const.IDX_MAX_MIN] == null))
+        //             || ((v[1] != null) && (v[2] != null))
+        //             || ((arr[i+1][Const.IDX_MAX_MAX] != null) && (arr[i+1][Const.IDX_MAX_MIN] != null)) ) {
+        //                 return v;
+        //         }
+        //     }
+        // });
 
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
     //----------------------------- GETTERS & SETTERS -----------------------------
+    get id() { return this.#id; }
+
+    get level() { return this.#level };
+
+    get max() { return this.#rel_max; }
+
+    get max_filtered() { return this.#max_filtered; }
+
+    get data() { return this.#movs; }
+
+    get_data(level=1) {
+        if(level <= this.#level) {
+            if(level <= 0) level = 1;
+            return this.#movs[level-1];
+        }
+        return null;
+    }
 }

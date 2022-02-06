@@ -63,6 +63,12 @@ class PanelPatterns {
     static EVENT_PATTERNS_RESULTS_VISUALIZATION_SELECTION = 'event-patterns-results-visualization-selection';
     static EVENT_PATTERNS_RESULTS_SELECTED = 'event-patterns-results-selected';
 
+    static STATS_TEMPLATE = JSON.stringify( {
+        [Const.OK_ID]: { [Const.NUM_ID]:0, [Const.PERCENT_ID]: 0 },
+        [Const.BAD_ID]: { [Const.NUM_ID]: 0, [Const.PERCENT_ID]: 0 },
+        [Const.TOTAL_ID]: { [Const.NUM_ID]: 0, [Const.PERCENT_ID]: 0 }
+    });
+
     //----------------------------- PROPERTIES -----------------------------
 
     #models;
@@ -70,6 +76,7 @@ class PanelPatterns {
     #explorer = {};
     #data_tree = [];
     #results_dd;
+    #query = {};
 
     #model_key;
     #current_model = {};
@@ -82,7 +89,7 @@ class PanelPatterns {
     #prev_name;
     #prev_order;
     #prev_trend;
-    #visual_ops = {
+    #visual_conf = {
         movs: {
             labels:1,
             lines:1,
@@ -120,8 +127,8 @@ class PanelPatterns {
     }
 
     #update_visualization_mode(mode) {
-        if(this.#visual_ops.mode != mode) {
-            this.#visual_ops.mode = mode;
+        if(this.#visual_conf.mode != mode) {
+            this.#visual_conf.mode = mode;
             let disabled = $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER).prop('disable');
             if(disabled) {
                 this.#enable_explorer();
@@ -201,38 +208,41 @@ class PanelPatterns {
 
     #generate_both_trends() {
         try {
-            var merged_x = this.#current_model[this.#current_name].data_x[Const.ALCISTA_ID].concat(this.#current_model[this.#current_name].data_x[Const.BAJISTA_ID]).sort();
-            var merged_y = this.#current_model[this.#current_name].data_y[Const.ALCISTA_ID].concat(this.#current_model[this.#current_name].data_y[Const.BAJISTA_ID]).sort();
-            var merged_ret = this.#current_model[this.#current_name].data_ret[Const.ALCISTA_ID].concat(this.#current_model[this.#current_name].data_ret[Const.BAJISTA_ID]).sort();
-            var merged_ret_levels = this.#current_model[this.#current_name].data_ret_levels[Const.ALCISTA_ID].concat(this.#current_model[this.#current_name].data_ret[Const.BAJISTA_ID]).sort();
-            var merged_delta_fin = this.#current_model[this.#current_name].delta_fin[Const.ALCISTA_ID].concat(this.#current_model[this.#current_name].delta_fin[Const.BAJISTA_ID]).sort();
-            var merged_delta_ini = this.#current_model[this.#current_name].delta_ini[Const.ALCISTA_ID].concat(this.#current_model[this.#current_name].delta_ini[Const.BAJISTA_ID]).sort();
-            this.#current_model[this.#current_name].data_x[Const.SENTIDO_AMBOS_ID] = merged_x;
-            this.#current_model[this.#current_name].data_y[Const.SENTIDO_AMBOS_ID] = merged_y;
-            this.#current_model[this.#current_name].data_ret[Const.SENTIDO_AMBOS_ID] = merged_ret;
-            this.#current_model[this.#current_name].data_ret_levels[Const.SENTIDO_AMBOS_ID] = merged_ret_levels;
-            this.#current_model[this.#current_name].delta_fin[Const.SENTIDO_AMBOS_ID] = merged_delta_fin;
-            this.#current_model[this.#current_name].delta_ini[Const.SENTIDO_AMBOS_ID] = merged_delta_ini;
-            
-            let merged_bull_x = [...merged_x];
-            let merged_bear_x = [...merged_x];
-            merged_bull_x.map( (v, i) => { if(this.#current_model[this.#current_name].data_x[Const.ALCISTA_ID].indexOf(v) == -1) merged_bull_x[i] = Array(); });
-            merged_bear_x.map( (v, i) => { if(this.#current_model[this.#current_name].data_x[Const.BAJISTA_ID].indexOf(v) == -1) merged_bear_x[i] = Array(); });
-            
-            let merged_bull_y = [...merged_y];
-            let merged_bear_y = [...merged_y];
-            merged_bull_y.map( (v, i) => { if(this.#current_model[this.#current_name].data_y[Const.ALCISTA_ID].indexOf(v) == -1) merged_bull_y[i] = Array(); });
-            merged_bear_y.map( (v, i) => { if(this.#current_model[this.#current_name].data_y[Const.BAJISTA_ID].indexOf(v) == -1) merged_bear_y[i] = Array(); });
+            var merged_y = this.#current_model[this.#current_name].data[Const.BULL_ID][this.level]
+                            .concat(this.#current_model[this.#current_name].data[Const.BEAR_ID][this.level])
+                            .sort( (x, y) => ( x[Const.TIMESTAMP_ID] > y[Const.TIMESTAMP_ID]) ? 1 : -1 );
+            this.#current_model[this.#current_name].data[Const.BOTH_ID] = { [this.level]: merged_y };
 
-            let merged_bull_ret = [...merged_ret];
-            let merged_bear_ret = [...merged_ret];
-            merged_bull_ret.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret[Const.ALCISTA_ID].indexOf(v) == -1) merged_bull_ret[i] = Array(); });
-            merged_bear_ret.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret[Const.BAJISTA_ID].indexOf(v) == -1) merged_bear_ret[i] = Array(); });
+            // var merged_x = this.#current_model[this.#current_name].data_x[Const.BULL_ID].concat(this.#current_model[this.#current_name].data_x[Const.BEAR_ID]).sort();
+            // var merged_ret = this.#current_model[this.#current_name].data_ret[Const.BULL_ID][this.level].concat(this.#current_model[this.#current_name].data_ret[Const.BEAR_ID][this.level]).sort();
+            // var merged_ret_levels = this.#current_model[this.#current_name].data_ret_levels[Const.BULL_ID][this.level].concat(this.#current_model[this.#current_name].data_ret[Const.BEAR_ID][this.level]).sort();
+            // var merged_delta_fin = this.#current_model[this.#current_name].delta_fin[Const.BULL_ID][this.level].concat(this.#current_model[this.#current_name].delta_fin[Const.BEAR_ID][this.level]).sort();
+            // var merged_delta_ini = this.#current_model[this.#current_name].delta_ini[Const.BULL_ID][this.level].concat(this.#current_model[this.#current_name].delta_ini[Const.BEAR_ID][this.level]).sort();
+            // // this.#current_model[this.#current_name].data_x[Const.BOTH_ID] = merged_x;
+            // this.#current_model[this.#current_name].data_ret[Const.BOTH_ID] = merged_ret;
+            // this.#current_model[this.#current_name].data_ret_levels[Const.BOTH_ID] = merged_ret_levels;
+            // this.#current_model[this.#current_name].delta_fin[Const.BOTH_ID] = merged_delta_fin;
+            // this.#current_model[this.#current_name].delta_ini[Const.BOTH_ID] = merged_delta_ini;
+            
+            // let merged_bull_x = [...merged_x];
+            // let merged_bear_x = [...merged_x];
+            // merged_bull_x.map( (v, i) => { if(this.#current_model[this.#current_name].data_x[Const.BULL_ID].indexOf(v) == -1) merged_bull_x[i] = Array(); });
+            // merged_bear_x.map( (v, i) => { if(this.#current_model[this.#current_name].data_x[Const.BEAR_ID].indexOf(v) == -1) merged_bear_x[i] = Array(); });
+            
+            // let merged_bull_y = [...merged_y];
+            // let merged_bear_y = [...merged_y];
+            // merged_bull_y.map( (v, i) => { if(this.#current_model[this.#current_name].data[Const.BULL_ID][this.level].indexOf(v) == -1) merged_bull_y[i] = Array(); });
+            // merged_bear_y.map( (v, i) => { if(this.#current_model[this.#current_name].data[Const.BEAR_ID][this.level].indexOf(v) == -1) merged_bear_y[i] = Array(); });
 
-            let merged_bull_ret_levels = [...merged_ret_levels];
-            let merged_bear_ret_levels = [...merged_ret_levels];
-            merged_bull_ret_levels.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret_levels[Const.ALCISTA_ID].indexOf(v) == -1) merged_bull_ret_levels[i] = Array(); });
-            merged_bear_ret_levels.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret_levels[Const.BAJISTA_ID].indexOf(v) == -1) merged_bear_ret_levels[i] = Array(); });
+            // let merged_bull_ret = [...merged_ret];
+            // let merged_bear_ret = [...merged_ret];
+            // merged_bull_ret.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret[Const.BULL_ID].indexOf(v) == -1) merged_bull_ret[i] = Array(); });
+            // merged_bear_ret.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret[Const.BEAR_ID].indexOf(v) == -1) merged_bear_ret[i] = Array(); });
+
+            // let merged_bull_ret_levels = [...merged_ret_levels];
+            // let merged_bear_ret_levels = [...merged_ret_levels];
+            // merged_bull_ret_levels.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret_levels[Const.BULL_ID].indexOf(v) == -1) merged_bull_ret_levels[i] = Array(); });
+            // merged_bear_ret_levels.map( (v, i) => { if(this.#current_model[this.#current_name].data_ret_levels[Const.BEAR_ID].indexOf(v) == -1) merged_bear_ret_levels[i] = Array(); });
         }
         catch(error) {
             console.error("#generate_both_trends: ", error);
@@ -244,7 +254,7 @@ class PanelPatterns {
             if(this.#current_name) {
                 // Initialize properties
                 this.#generate_nok();
-                this.#generate_both_trends();
+                this.#generate_both_trends(); //TODO REVISAR ¿AUN HACE FALTA AQUI?
 
                 this.#current_name = this.#current_model[this.#current_name][Const.NAME_ID];
                 if(!this.#explorer[this.#current_name]) {
@@ -270,10 +280,11 @@ class PanelPatterns {
                     $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
                     $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
                     $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current);
-                    if(!this.#visual_ops.mode) {
+                    if(!this.#visual_conf.mode) {
+                        // this.#visual_conf.mode = PanelPatterns.TEXT_ONLY_CURRENT;
                         this.#update_visualization_mode(PanelPatterns.TEXT_ONLY_CURRENT);
                     }
-                    this.#update_current();
+                    else this.#update_current();
                 }
             }
             else {
@@ -291,34 +302,37 @@ class PanelPatterns {
     #set_default_explorer_values() {
         this.#explorer[this.#current_name] = {};
         this.trend = '';
-        this.#explorer[this.#current_name][Const.RESULTADO_ID] = Const.OK_ID;
+        this.#explorer[this.#current_name][Const.RESULTS_ID] = Const.OK_ID;
         this.#explorer[this.#current_name][Const.OK_ID] = {};
-        this.#explorer[this.#current_name][Const.OK_ID][Const.ALCISTA_ID] = this.#current_model[this.#current_name].stats[Const.ALCISTA_ID][Const.OK_ID];
-        this.#explorer[this.#current_name][Const.OK_ID][Const.BAJISTA_ID] = this.#current_model[this.#current_name].stats[Const.BAJISTA_ID][Const.OK_ID];
-        this.#explorer[this.#current_name][Const.OK_ID][Const.SENTIDO_AMBOS_ID] = this.#current_model[this.#current_name].stats[Const.ALCISTA_ID][Const.OK_ID] + this.#current_model[this.#current_name].stats[Const.BAJISTA_ID][Const.OK_ID];
+        this.#explorer[this.#current_name][Const.OK_ID][Const.BULL_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.OK_ID].num;
+        this.#explorer[this.#current_name][Const.OK_ID][Const.BEAR_ID] = this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.OK_ID].num;
+        this.#explorer[this.#current_name][Const.OK_ID][Const.BOTH_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.OK_ID].num + this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.OK_ID].num;
 
         this.#explorer[this.#current_name][Const.BAD_ID] = {};
-        this.#explorer[this.#current_name][Const.BAD_ID][Const.ALCISTA_ID] = this.#current_model[this.#current_name].stats[Const.ALCISTA_ID][Const.BAD_ID];
-        this.#explorer[this.#current_name][Const.BAD_ID][Const.BAJISTA_ID] = this.#current_model[this.#current_name].stats[Const.BAJISTA_ID][Const.BAD_ID];
-        this.#explorer[this.#current_name][Const.BAD_ID][Const.SENTIDO_AMBOS_ID] = this.#current_model[this.#current_name].stats[Const.ALCISTA_ID][Const.BAD_ID] + this.#current_model[this.#current_name].stats[Const.BAJISTA_ID][Const.BAD_ID];
+        this.#explorer[this.#current_name][Const.BAD_ID][Const.BULL_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.BAD_ID].num;
+        this.#explorer[this.#current_name][Const.BAD_ID][Const.BEAR_ID] = this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.BAD_ID].num;
+        this.#explorer[this.#current_name][Const.BAD_ID][Const.BOTH_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.BAD_ID].num + this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.BAD_ID].num;
 
         this.#explorer[this.#current_name][Const.TOTAL_ID] = {};
-        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.ALCISTA_ID] = this.#current_model[this.#current_name].stats[Const.ALCISTA_ID][Const.NO_EVAL_ID];
-        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BAJISTA_ID] = this.#current_model[this.#current_name].stats[Const.BAJISTA_ID][Const.NO_EVAL_ID];
+        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BULL_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.TOTAL_ID].num;
+        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BEAR_ID] = this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.TOTAL_ID].num;
 
         this.#explorer[this.#current_name][Const.CURRENT_ID] = {};
         this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID] = {};
         this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID] = {};
-        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID][Const.ALCISTA_ID] = 0;
-        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID][Const.BAJISTA_ID] = 0;
-        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID][Const.SENTIDO_AMBOS_ID] = 0;
-        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.ALCISTA_ID] = 0;
-        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.BAJISTA_ID] = 0;
-        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.SENTIDO_AMBOS_ID] = 0;
+        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID][Const.BULL_ID] = 0;
+        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID][Const.BEAR_ID] = 0;
+        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID][Const.BOTH_ID] = 0;
+        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.BULL_ID] = 0;
+        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.BEAR_ID] = 0;
+        this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.BOTH_ID] = 0;
 
         // Update controls
-        $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current);
-        this.#set_trend_bull(Const.ALCISTA_ID);
+        this.#set_trend_bull(Const.BULL_ID);
+        if(this.ok > 0) {
+            this.#update_current();
+        }
+        // $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current);
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
         this.#update_visualization_mode(PanelPatterns.TEXT_ONLY_CURRENT);
@@ -327,14 +341,14 @@ class PanelPatterns {
     #set_trend_bull(trend) {
         try {
             let current = this.current;
-            if(this.trend == Const.SENTIDO_AMBOS_ID) {
-                this.trend = Const.BAJISTA_ID
+            if(this.trend == Const.BOTH_ID) {
+                this.trend = Const.BEAR_ID
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_TREND_BULL).removeClass(PanelPatterns.CLASS_PATTERNS_RESULTS_TREND_EXPLORER_BULL_SELECTED);
             }
             else {
-                if(this.trend != Const.ALCISTA_ID) {
-                    if(this.trend == Const.BAJISTA_ID) this.trend = Const.SENTIDO_AMBOS_ID;
-                    else this.trend = Const.ALCISTA_ID;
+                if(this.trend != Const.BULL_ID) {
+                    if(this.trend == Const.BEAR_ID) this.trend = Const.BOTH_ID;
+                    else this.trend = Const.BULL_ID;
                 }
                 else return;
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_TREND_BULL).addClass(PanelPatterns.CLASS_PATTERNS_RESULTS_TREND_EXPLORER_BULL_SELECTED);
@@ -344,7 +358,6 @@ class PanelPatterns {
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
             this.#set_explorer_values();
-            // this.#update_current();
         }
         catch(error) {
             console.error("#set_trend_bull: ", error);
@@ -354,14 +367,14 @@ class PanelPatterns {
     #set_trend_bear(trend) {
         try {
             let current = this.current;
-            if(this.trend == Const.SENTIDO_AMBOS_ID) {
-                this.trend = Const.ALCISTA_ID
+            if(this.trend == Const.BOTH_ID) {
+                this.trend = Const.BULL_ID
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_TREND_BEAR).removeClass(PanelPatterns.CLASS_PATTERNS_RESULTS_TREND_EXPLORER_BEAR_SELECTED);
             }
             else {
-                if(this.trend != Const.BAJISTA_ID) {
-                    if(this.trend == Const.ALCISTA_ID) this.trend = Const.SENTIDO_AMBOS_ID;
-                    else this.trend = Const.BAJISTA_ID;
+                if(this.trend != Const.BEAR_ID) {
+                    if(this.trend == Const.BULL_ID) this.trend = Const.BOTH_ID;
+                    else this.trend = Const.BEAR_ID;
                 }
                 else return;
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_TREND_BEAR).addClass(PanelPatterns.CLASS_PATTERNS_RESULTS_TREND_EXPLORER_BEAR_SELECTED);
@@ -371,7 +384,6 @@ class PanelPatterns {
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
             this.#set_explorer_values();
-            // this.#update_current();
         }
         catch(error) {
             console.error("#set_trend_bear: ", error);
@@ -412,7 +424,6 @@ class PanelPatterns {
         if(this.result != Const.OK_ID) {
             this.result = Const.OK_ID;
             this.#set_explorer_values();
-            // this.#update_current();
         }
     }
 
@@ -420,234 +431,72 @@ class PanelPatterns {
         if(this.result != Const.BAD_ID) {
             this.result = Const.BAD_ID;
             this.#set_explorer_values();
-            // this.#update_current();
         }
     }
     
-//     #update_current() {
-//         let current_value = this.current + 1;
-//         if(!current_value) { current_value = 0; }
-//         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(current_value);
-//         // Get data to be plot
-//         let data_plot = {};
-//         let data_parent = {};
-//         Object.keys(this.#current_model).forEach(name => {
-//             Object.keys(this.#current_model[name]).forEach(k => {
-//                 if(typeof this.#current_model[name][k] != 'object') {
-//                     data_plot[k] = this.#current_model[name][k];
-//                 }
-//             });
-//         });
-        
-//         let base_dict = { [this.trend]: [] };
-//         data_plot.prev_name = this.#prev_name;
-//         this.#prev_order = this.#current_order;
-//         data_plot.data_ret = JSON.parse(JSON.stringify(base_dict));
-//         data_plot.data_ret_levels = JSON.parse(JSON.stringify(base_dict));
-//         data_plot.data_x = JSON.parse(JSON.stringify(base_dict));
-//         data_plot.data_y = JSON.parse(JSON.stringify(base_dict));
-//         data_plot.delta_ini = JSON.parse(JSON.stringify(base_dict));
-//         data_plot.delta_fin = JSON.parse(JSON.stringify(base_dict));
-
-//         let selected_data;
-//         switch(this.#visual_ops.mode) {
-//             case PanelPatterns.TEXT_ONLY_CURRENT: selected_data = (this.current != null) ? [this.current] : null; break;
-//             case PanelPatterns.TEXT_SELECTION: selected_data = this.#visual_selection[this.#current_name][this.trend]; break;
-//             case PanelPatterns.TEXT_ALL:
-//                 selected_data = Array.from({ length:this.get_total_results_selected() }, (v,k) => k);
-//             break;
-//         }
-
-//         if(selected_data && (selected_data.length > 0)) {
-//             //dataType, id, level, name, model_key, stats {}, data_x {}, data_y[], data_ret {}, data_ret_levels {}, data_ret_values {}, delta_ini {}, delta_fin {}            
-//             data_plot.data_ret[this.trend] = this.#current_model[this.#current_name].data_ret[this.trend].filter( (d, i) => selected_data.includes(i));
-//             data_plot.data_ret_levels[this.trend] = this.#current_model[this.#current_name].data_ret_levels[this.trend].filter( (d, i) => selected_data.includes(i));
-//             data_plot.data_x[this.trend] = this.#current_model[this.#current_name].data_x[this.trend].filter( (d, i) => selected_data.includes(i));
-//             data_plot.data_y[this.trend] = this.#current_model[this.#current_name].data_y[this.trend].filter( (d, i) => selected_data.includes(i));
-//             data_plot.delta_ini[this.trend] = this.#current_model[this.#current_name].delta_ini[this.trend].filter( (d, i) => selected_data.includes(i));
-//             data_plot.delta_fin[this.trend] = this.#current_model[this.#current_name].delta_fin[this.trend].filter( (d, i) => selected_data.includes(i));
-//         }
-
-//         // Adds current in case of selection
-//         if(this.#visual_ops.mode == PanelPatterns.TEXT_SELECTION) {
-//             let trend = (this.trend == Const.SENTIDO_AMBOS_ID) ? Const.ALCISTA_ID : Const.SENTIDO_AMBOS_ID;
-//             data_plot.data_ret[trend] = [this.#current_model[this.#current_name].data_ret[this.trend][this.current]];
-//             data_plot.data_ret_levels[trend] = [this.#current_model[this.#current_name].data_ret_levels[this.trend][this.current]];
-//             data_plot.data_y[trend] = [this.#current_model[this.#current_name].data_y[this.trend][this.current]];
-//             // data_plot.delta_ini[trend] = [this.#current_model[this.#current_name].delta_ini[this.trend][this.current]];
-//             // data_plot.delta_fin[trend] = [this.#current_model[this.#current_name].delta_fin[this.trend][this.current]];
-//         }
-        
-//         let parent_results = [...this.#results_selected];
-//         let current_idx = parent_results.indexOf(this.#current_name);
-//         if(current_idx > -1) {
-//             parent_results.splice(current_idx, 1);
-//             if(parent_results.length > 0) {
-//                 data_parent.data_y = {};
-//                 data_parent.data_ret = {};
-//                 data_parent.data_ret_levels = {};
-//                 data_parent.data_y[this.trend] = [];
-//                 data_parent.data_ret[this.trend] = [];
-//                 data_parent.data_ret_levels[this.trend] = [];
-//                 data_plot.data_y[this.trend].forEach( y => {
-//                     let date = y[0][0];
-//                     parent_results.forEach(name => {
-//                         data_parent.data_y[this.trend].push(...this.#models[this.#model_key].pattern_result[this.#level][name].data_y[this.trend].filter(v => v[1][0] == date));
-//                         this.#models[this.#model_key].pattern_result[this.#level][name].data_ret[this.trend].map( (v, i) => {
-//                             if(v[0][0] == date) {
-//                                 data_parent.data_ret[this.trend].push(v);
-//                                 let levels = this.#models[this.#model_key].pattern_result[this.#level][name].data_ret_levels[this.trend][i];
-//                                 data_parent.data_ret_levels[this.trend].push(levels);
-//                             }
-//                         });
-//                         // data_parent.data_ret_levels[this.trend].push(...this.#models[this.#model_key].pattern_result[this.#level][name].data_ret_levels[this.trend].filter(v => v[0][0] == date));
-//                         // data_parent.delta_ini[this.trend].push(...this.#models[this.#model_key].pattern_result[this.#level][name].delta_ini[this.trend].filter(v => v[0][0] == date));
-//                     });
-//                 });
-//             }
-//         }
-// //TODO AGREGAR MENNU DESPLEGABLE PARA SELECCIONAR RESULTADOS EN EL HANDLE DE LA VENTANA
-//         if(data_parent.data_y && (data_parent.data_y[this.trend].length > 0)) {
-//             data_plot.data_y[this.trend].push(...data_parent.data_y[this.trend]);
-//         }
-
-//         if(data_parent.data_ret && (data_parent.data_ret[this.trend].length > 0)) {
-//             data_plot.data_ret[this.trend].push(...data_parent.data_ret[this.trend]);
-//         }
-
-//         if(data_parent.data_ret_levels && (data_parent.data_ret_levels[this.trend].length > 0)) {
-//             data_plot.data_ret_levels[this.trend].push(...data_parent.data_ret_levels[this.trend]);
-//         }
-
-//         // Zoom settings
-//         if(data_plot.data_y[this.trend].length > 0) {
-//             let priceMin = Math.min(...[].concat(...data_plot.data_y[this.trend].map(m => m.map(dp => dp[1]))));
-//             let priceMax = Math.max(...[].concat(...data_plot.data_y[this.trend].map(m => m.map(dp => dp[1]))));
-//             let dateMin = [].concat(...data_plot.data_y[this.trend].map(m => m.map(dp => dp[0]))).reduce((a, b) => a < b ? a : b);
-//             let dateMax = [].concat(...data_plot.data_y[this.trend].map(m => m.map(dp => dp[0]))).reduce((a, b) => a > b ? a : b);
-//             data_plot.zoom = {
-//                 startValue: {x: dateMin, y:priceMin},
-//                 endValue: { x: dateMax, y:priceMax},
-//                 margin: {x: 3.5, y: 1.5}, //Margin values %
-//             };
-//         }
-
-//         $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_ops]);
-//     }
     #update_current() {
         try {
+            let data_plot = {};
+
             let current_value = this.current + 1;
             if(!current_value) { current_value = 0; }
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(current_value);
-            // Get data to be plot
-            let data_plot = {};
-            let data_parent = {};
-
+            
             // Selected data
             let selected_data;
-            switch(this.#visual_ops.mode) {
-                case PanelPatterns.TEXT_ONLY_CURRENT: selected_data = (this.current != null) ? [this.current] : null; break;
-                case PanelPatterns.TEXT_SELECTION: selected_data = this.#visual_selection[this.#current_name][this.trend]; break;
+            switch(this.#visual_conf.mode) {
+                case PanelPatterns.TEXT_ONLY_CURRENT:
+                    selected_data = [this.current];
+                    break;
+                case PanelPatterns.TEXT_SELECTION:
+                    selected_data = this.#visual_selection[this.#current_name][this.trend];
+                    break;
                 case PanelPatterns.TEXT_ALL:
                     selected_data = Array.from({ length:this.get_total_results_selected() }, (v,k) => k);
-                break;
+                    break;
             }
 
-            // Object.keys(this.#current_model).forEach(name => {
+            if(selected_data == undefined) {
+                selected_data = [];
+            }
+
+            // Add all patterns selected data to output
             this.#results_selected.forEach(name => {
                 if(name) {
-                    data_plot[name] = {};
-                    Object.keys(this.#current_model[name]).forEach(k => {
-                        if ((this.#current_model[name][k] == null) || (this.#current_model[name][k][this.trend] == null)) {
-                            if(this.#current_model[name][k] instanceof Object) {
-                                data_plot[name][k] = JSON.parse(JSON.stringify(this.#current_model[name][k]));
-                            }
-                            else {
-                                data_plot[name][k] = this.#current_model[name][k];
-                            } 
-                        }
-                        else {
-                            if(!data_plot[name][k]) data_plot[name][k] = {};
-                            if(this.#current_model[name][k][this.trend] instanceof Array) {
-                                if(selected_data && (selected_data.length > 0)) {
-                                    data_plot[name][k][this.trend] = JSON.parse(JSON.stringify(this.#current_model[name][k][this.trend].filter( (d, i) => selected_data.includes(i))));
-                                }
-                            }
-                            else {
-                                data_plot[name][k][this.trend] = JSON.parse(JSON.stringify(this.#current_model[name][k][this.trend]));
-                            }
-                        }
-                    });
+                    // data_plot[name] = new Retracements(this.#current_model[name]);
+                    // data_plot[name] = JSON.parse(JSON.stringify(this.#current_model[name]));
+                    data_plot[name] = Object.assign(new Retracement(), this.#current_model[name]);
+                    // Filters selected trend retracements data
+                    data_plot[name].data = { [this.trend]: { [this.level]: [] } };
+                    // Filters selected results from retracement data
+                    data_plot[name].data[this.trend][this.level] = this.#current_model[name].data[this.trend][this.level].filter( (v, i) => selected_data.includes(i));
                 }
             });
-            
-            data_plot.prev_name = this.#prev_name;
-
-            // // Adds current in case of selection
-            // if(this.#visual_ops.mode == PanelPatterns.TEXT_SELECTION) {
-            //     let trend = (this.trend == Const.SENTIDO_AMBOS_ID) ? Const.ALCISTA_ID : Const.SENTIDO_AMBOS_ID;
-            //     data_plot.data_ret[trend] = [this.#current_model[this.#current_name].data_ret[this.trend][this.current]];
-            //     data_plot.data_ret_levels[trend] = [this.#current_model[this.#current_name].data_ret_levels[this.trend][this.current]];
-            //     data_plot.data_y[trend] = [this.#current_model[this.#current_name].data_y[this.trend][this.current]];
-            //     // data_plot.delta_ini[trend] = [this.#current_model[this.#current_name].delta_ini[this.trend][this.current]];
-            //     // data_plot.delta_fin[trend] = [this.#current_model[this.#current_name].delta_fin[this.trend][this.current]];
-            // }
-            
-            // let parent_results = [...this.#results_selected];
-            // let current_idx = parent_results.indexOf(this.#current_name);
-            // if(current_idx > -1) {
-            //     parent_results.splice(current_idx, 1);
-            //     if(parent_results.length > 0) {
-            //         data_parent.data_y = {};
-            //         data_parent.data_ret = {};
-            //         data_parent.data_ret_levels = {};
-            //         data_parent.data_y[this.trend] = [];
-            //         data_parent.data_ret[this.trend] = [];
-            //         data_parent.data_ret_levels[this.trend] = [];
-            //         data_plot.data_y[this.trend].forEach( y => {
-            //             let date = y[0][0];
-            //             parent_results.forEach(name => {
-            //                 data_parent.data_y[this.trend].push(...this.#models[this.#model_key].pattern_result[this.#level][name].data_y[this.trend].filter(v => v[1][0] == date));
-            //                 this.#models[this.#model_key].pattern_result[this.#level][name].data_ret[this.trend].map( (v, i) => {
-            //                     if(v[0][0] == date) {
-            //                         data_parent.data_ret[this.trend].push(v);
-            //                         let levels = this.#models[this.#model_key].pattern_result[this.#level][name].data_ret_levels[this.trend][i];
-            //                         data_parent.data_ret_levels[this.trend].push(levels);
-            //                     }
-            //                 });
-            //                 // data_parent.data_ret_levels[this.trend].push(...this.#models[this.#model_key].pattern_result[this.#level][name].data_ret_levels[this.trend].filter(v => v[0][0] == date));
-            //                 // data_parent.delta_ini[this.trend].push(...this.#models[this.#model_key].pattern_result[this.#level][name].delta_ini[this.trend].filter(v => v[0][0] == date));
-            //             });
-            //         });
-            //     }
-            // }
-    //TODO AGREGAR MENNU DESPLEGABLE PARA SELECCIONAR RESULTADOS EN EL HANDLE DE LA VENTANA
-            // if(data_parent.data_y && (data_parent.data_y[this.trend].length > 0)) {
-            //     data_plot.data_y[this.trend].push(...data_parent.data_y[this.trend]);
-            // }
-
-            // if(data_parent.data_ret && (data_parent.data_ret[this.trend].length > 0)) {
-            //     data_plot.data_ret[this.trend].push(...data_parent.data_ret[this.trend]);
-            // }
-
-            // if(data_parent.data_ret_levels && (data_parent.data_ret_levels[this.trend].length > 0)) {
-            //     data_plot.data_ret_levels[this.trend].push(...data_parent.data_ret_levels[this.trend]);
-            // }
 
             // Zoom settings
-            if((data_plot[this.#current_name].data_y != undefined) && (data_plot[this.#current_name].data_y[this.trend] != undefined) && (data_plot[this.#current_name].data_y[this.trend].length > 0)) {
-                let priceMin = Math.min(...[].concat(...data_plot[this.#current_name].data_y[this.trend].map(m => m.map(dp => dp[1]))));
-                let priceMax = Math.max(...[].concat(...data_plot[this.#current_name].data_y[this.trend].map(m => m.map(dp => dp[1]))));
-                let dateMin = [].concat(...data_plot[this.#current_name].data_y[this.trend].map(m => m.map(dp => dp[0]))).reduce((a, b) => a < b ? a : b);
-                let dateMax = [].concat(...data_plot[this.#current_name].data_y[this.trend].map(m => m.map(dp => dp[0]))).reduce((a, b) => a > b ? a : b);
-                data_plot.zoom = {
+            if((data_plot[this.#current_name] != undefined)
+                    && (data_plot[this.#current_name].data[this.trend] != undefined)
+                    && (data_plot[this.#current_name].data[this.trend][this.level].length > 0) )
+                {
+                let priceMin = [].concat(...data_plot[this.#current_name].data[this.trend][this.level]
+                                                        .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
+                                            .reduce( (a,b) => a < b ? a : b);
+                let priceMax = [].concat(...data_plot[this.#current_name].data[this.trend][this.level]
+                                                        .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
+                                            .reduce( (a,b) => a > b ? a : b);
+                let dateMin = [].concat(...data_plot[this.#current_name].data[this.trend][this.level].map(t => t[Const.INIT_ID].time)).reduce((a, b) => a < b ? a : b);
+                let dateMax = [].concat(...data_plot[this.#current_name].data[this.trend][this.level].map(t => t[Const.CORRECTION_ID].time)).reduce((a, b) => a > b ? a : b);
+                this.#visual_conf.zoom = {
                     startValue: {x: dateMin, y:priceMin},
                     endValue: { x: dateMax, y:priceMax},
-                    margin: {x: 3.5, y: 1.5}, //Margin values %
+                    margin: {x: 30, y: 15}, //Margin values [x:candles, y:% max]
                 };
             }
 
-            $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_ops]);
+            // Previous pattern passed to be delete from chart
+            this.#visual_conf.prev_name = this.#prev_name;
+
+            $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_conf, this.query]);
         }
         catch(error) {
             console.error("#update_current: ", error);
@@ -685,38 +534,47 @@ class PanelPatterns {
     #format_stats_data(data) {
         let stats;
         try {
-            let sbull = data.stats[Const.ALCISTA_ID];
-            let sbear = data.stats[Const.BAJISTA_ID];
-            let tbull;
-            let tbear;
-
-            tbull = parseInt(sbull[Const.OK_ID]);
-            tbull += parseInt(sbull[Const.BAD_ID]);
-            tbear = parseInt(sbear[Const.OK_ID]);
-            tbear += parseInt(sbear[Const.BAD_ID]);
-            
-            let pcbull = {
-                [Const.OK_ID]: (tbull == 0) ? 0 : ((sbull[Const.OK_ID]/tbull)*100).toFixed(2),
-                [Const.BAD_ID]: (tbull == 0) ? 0 : ((sbull[Const.BAD_ID]/tbull)*100).toFixed(2),
-                [Const.NO_EVAL_ID]: (tbull == 0) ? 0 : ((sbull[Const.NO_EVAL_ID]/tbull)*100).toFixed(2),
-            };
-
-            let pcbear = {
-                [Const.OK_ID]: (tbear == 0) ? 0 : ((sbear[Const.OK_ID]/tbear)*100).toFixed(2),
-                [Const.BAD_ID]: (tbear == 0) ? 0 : ((sbear[Const.BAD_ID]/tbear)*100).toFixed(2),
-                [Const.NO_EVAL_ID]: (tbear == 0) ? 0 : ((sbear[Const.NO_EVAL_ID]/tbear)*100).toFixed(2),
-            };
+            let sbull = (data.stats[Const.BULL_ID] != undefined) ? data.stats[Const.BULL_ID][this.level] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
+            let sbear = (data.stats[Const.BEAR_ID] != undefined) ? data.stats[Const.BEAR_ID][this.level] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
 
             stats = {
                 model_info: this.#model_key,
                 title: data[Const.NAME_ID],
-                header:[Const.ALCISTA_ID, Const.BAJISTA_ID],
+                header: [Const.BULL_ID.toUpperCase(), Const.BEAR_ID.toUpperCase()],
                 rows: {
-                    OK: [ [sbull[Const.OK_ID], '('+pcbull[Const.OK_ID]+'%)'], [sbear[Const.OK_ID], '('+pcbear[Const.OK_ID]+'%)'] ],
-                    NOK: [ [sbull[Const.BAD_ID], '('+pcbull[Const.BAD_ID]+'%)'], [sbear[Const.BAD_ID], '('+pcbear[Const.BAD_ID]+'%)'] ],
-                    TOTAL: [tbull, tbear],
+                    OK: [ [sbull[Const.OK_ID][Const.NUM_ID], '('+(sbull[Const.OK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'], [sbear[Const.OK_ID][Const.NUM_ID], '('+(sbear[Const.OK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'] ],
+                    NOK: [ [sbull[Const.BAD_ID][Const.NUM_ID], '('+(sbull[Const.BAD_ID][Const.PERCENT_ID]).toFixed(2)+'%)'], [sbear[Const.BAD_ID][Const.NUM_ID], '('+(sbear[Const.BAD_ID][Const.PERCENT_ID]).toFixed(2)+'%)'] ],
+                    TOTAL: [sbull[Const.TOTAL_ID][Const.NUM_ID], sbear[Const.TOTAL_ID][Const.NUM_ID]],
                 },
             };
+
+            // tbull = parseInt(sbull[Const.OK_ID]);
+            // tbull += parseInt(sbull[Const.BAD_ID]);
+            // tbear = parseInt(sbear[Const.OK_ID]);
+            // tbear += parseInt(sbear[Const.BAD_ID]);
+            
+            // let pcbull = {
+            //     [Const.OK_ID]: (tbull == 0) ? 0 : ((sbull[Const.OK_ID]/tbull)*100).toFixed(2),
+            //     [Const.BAD_ID]: (tbull == 0) ? 0 : ((sbull[Const.BAD_ID]/tbull)*100).toFixed(2),
+            //     [Const.NO_EVAL_ID]: (tbull == 0) ? 0 : ((sbull[Const.NO_EVAL_ID]/tbull)*100).toFixed(2),
+            // };
+
+            // let pcbear = {
+            //     [Const.OK_ID]: (tbear == 0) ? 0 : ((sbear[Const.OK_ID]/tbear)*100).toFixed(2),
+            //     [Const.BAD_ID]: (tbear == 0) ? 0 : ((sbear[Const.BAD_ID]/tbear)*100).toFixed(2),
+            //     [Const.NO_EVAL_ID]: (tbear == 0) ? 0 : ((sbear[Const.NO_EVAL_ID]/tbear)*100).toFixed(2),
+            // };
+
+            // stats = {
+            //     model_info: this.#model_key,
+            //     title: data[Const.NAME_ID],
+            //     header:[Const.BULL_ID, Const.BEAR_ID],
+            //     rows: {
+            //         OK: [ [sbull[Const.OK_ID], '('+pcbull[Const.OK_ID]+'%)'], [sbear[Const.OK_ID], '('+pcbear[Const.OK_ID]+'%)'] ],
+            //         NOK: [ [sbull[Const.BAD_ID], '('+pcbull[Const.BAD_ID]+'%)'], [sbear[Const.BAD_ID], '('+pcbear[Const.BAD_ID]+'%)'] ],
+            //         TOTAL: [tbull, tbear],
+            //     },
+            // };
         }
         catch(error) {
             console.error("#format_stats_data: ", error);
@@ -729,7 +587,7 @@ class PanelPatterns {
             let name = $(el).text();
             $(el).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
             if($(el).hasClass(Const.CLASS_HOVERABLE_ICON_SELECTED)) {
-                let data = this.#models[this.#model_key].pattern_result[this.level][name];
+                let data = this.#models[this.#model_key].pattern_result[name]; //[this.level];
                 let tree_order = this.#data_tree.indexOf(name);
                 let i = 0;
                 do {
@@ -805,14 +663,14 @@ class PanelPatterns {
 
     // TODO BUSCADOR SOBRE RESULTADOS (RETROCESO <,>,=,!=), BUSCAR EN: RESULTADO (PHY-TARGET), OK-NOK, ALCISTA-BAJISTA, MAX-MIN, PENDIENTE, ...
     #create_results_tree(name) {
-        let data = this.#models[this.#model_key].pattern_result[this.level][name];
+        let data = this.#models[this.#model_key].pattern_result[name]; //[this.level];
         if(data) {
             this.#data_tree.push(name);
-            let parent = data.search_in;
+            let parent = data[Const.SEARCH_IN_ID];
             let parent_data;
             if(parent) {
                 this.#create_results_tree(parent);
-                parent_data = this.#models[this.#model_key].pattern_result[this.level][parent];
+                parent_data = this.#models[this.#model_key].pattern_result[parent]; //[this.level];
             }
             let table_data = this.#format_stats_data(data);
             this.#tables[name] = new Table(table_data, PanelPatterns.ID_PATTERNS_RESULTS_STATS_TABLE);
@@ -832,7 +690,7 @@ class PanelPatterns {
         this.#level = null;
 
         this.#visual_selection = {};
-        this.#visual_ops = {
+        this.#visual_conf = {
             movs: {
                 labels:1,
                 lines:1,
@@ -841,7 +699,9 @@ class PanelPatterns {
         };
 
         Object.keys(this.#tables).forEach(name => {
-            this.#tables[name].table.remove();
+            if(this.#tables[name].table) {
+                this.#tables[name].table.remove();
+            }
         });
         this.#tables = {};
     }
@@ -851,12 +711,13 @@ class PanelPatterns {
     init() {
         try {
             // Event new results available
-            $(document).on(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, (e, options) => {
+            $(document).on(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, (e, query) => {
                 this.#reset_panel();
-                if(options) {
-                    this.#model_key = options.model_key;
-                    this.level = options[Const.NIVEL_ID];
-                    let name = options[Const.NAME_ID];
+                if(query) {
+                    this.query = query;
+                    this.#model_key = query.model_key;
+                    this.level = query[Const.LEVEL_ID];
+                    let name = query[Const.NAME_ID];
                     this.#create_results_tree(name);
                 }
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL + ' > *').each((i, e) => $(e).show())
@@ -932,25 +793,25 @@ class PanelPatterns {
 
     get trend() {
         if(this.#current_name)
-            return this.#explorer[this.#current_name][Const.SENTIDO_ID];
+            return this.#explorer[this.#current_name][Const.TREND_ID];
         return null;
     }
 
     set trend(s) {
         if(this.#current_name)
             if(this.#explorer[this.#current_name])
-                this.#explorer[this.#current_name][Const.SENTIDO_ID] = s;
+                this.#explorer[this.#current_name][Const.TREND_ID] = s;
     }
 
     get result() {
         if(this.#current_name)
-            return this.#explorer[this.#current_name][Const.RESULTADO_ID];
+            return this.#explorer[this.#current_name][Const.RESULTS_ID];
         return null;
     }
 
     set result(r) {
         if(this.#current_name) {
-            this.#explorer[this.#current_name][Const.RESULTADO_ID] = r;
+            this.#explorer[this.#current_name][Const.RESULTS_ID] = r;
         }
     }
 
@@ -992,24 +853,24 @@ class PanelPatterns {
         return null;
     }
 
-    get level() { return this.#level; }
+    get level() { return (this.#level > 0) ? (this.#level - 1) : this.#level; }
 
     set level(level) { this.#level = level; }
 
     /*
-        dataType: Const.RETROCESOS_ID
+        dataType: Const.RETRACEMENTS_ID
         data_y: [ [time, price], [time, price], [time, price]]
         data_ret: [ [time, price] , ret]
-        trend: Const.ALCISTA_ID or Const.BAJISTA_ID
+        trend: Const.BULL_ID or Const.BEAR_ID
         data.id: name + [_BULL_ or _BEAR_] + index
     */
    //TODO GENERAR TENDENCIA 'AMBOS' ORDENANDO CON MAP LOS MOVIMIENTOS Y LOS RETROCESOS
     get current_match() {
         if(this.#current_name) {
-            let trend_name = (this.trend == Const.ALCISTA_ID) ? '_BULL_' : '_BEAR_';
+            let trend_name = (this.trend == Const.BULL_ID) ? '_BULL_' : '_BEAR_';
             let id = this.#model_key + trend_name + this.current;
             let data = {
-                dataType: Const.RETROCESOS_ID,
+                dataType: Const.RETRACEMENTS_ID,
                 data_y: [this.#current_model[this.#current_name].data_y[this.trend][this.current]],
                 data_ret: [this.#current_model[this.#current_name].data_ret[this.trend][this.current]],
                 trend: this.trend,
@@ -1021,4 +882,6 @@ class PanelPatterns {
         return null;
     }
 
+    get query() { return this.#query; }
+    set query(query) { this.#query = query; }
 }

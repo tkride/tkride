@@ -70,7 +70,7 @@ input {
 }
 
 #chart-main {
-    width: 96.5vw;
+    width: 96.5vw; /* TODO: Comentar linea de abajo para permitir menu lateral*/
     width: 100vw;
     height: 94vh; /*100vh;*/
     bottom: 6vh;
@@ -274,7 +274,7 @@ input[type="radio"]:checked + label {
 /* --------------------------------- FOOTER MENU --------------------------------- */
 
 #footer {
-    height: 6vh;
+    height: 40px; /*6vh;*/
     width: 100vw;
     bottom: 0vh;
     left: 0vw;

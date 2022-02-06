@@ -25,14 +25,14 @@ addEventListener('message', e => {
                 console.error('Ajax Error :', request.responseText);
             }
             else {
-                console.log("Unexpected Result");
+                console.error("Unexpected Result for:", e.data);
             }
         }
     }; //on ready state change
 
     request.open("POST", data.url, true); //data.async); //Definimos la petición AJAX propiamente
     // request.setRequestHeader(Object.keys(data.headers), data.headers[Object.keys(data.headers)]);
-    request.setRequestHeader('X-CSRFToken', data.headers[Object.keys(data.headers)]);
+    // request.setRequestHeader('X-CSRFToken', data.headers[Object.keys(data.headers)]);
     request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     request.send(data.query); //Envía la petición
     

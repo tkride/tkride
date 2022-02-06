@@ -11,13 +11,13 @@ class ChartView {
     static VALUES_CLOSE = '">';
     static BACKGROUND_COLOR = 'var(--border-color)';//'#353535';
 
-    static TREND_TEXT_ID = { [Const.ALCISTA_ID]: '_BULL_', [Const.BAJISTA_ID]: '_BEAR_', [Const.SENTIDO_AMBOS_ID]: '_BOTH_'};
-    static LINE_COLOR = { [Const.ALCISTA_ID]: 'rgba(0, 255, 0, 0.8)', [Const.BAJISTA_ID]: 'rgba(255, 0, 0, 0.8)', [Const.SENTIDO_AMBOS_ID]: 'rgba(181, 19, 187, 0.8)'};
-    static MARK_TEXT_ID = { [Const.ALCISTA_ID]: '_MARK_BULL_', [Const.BAJISTA_ID]: '_MARK_BEAR_', [Const.SENTIDO_AMBOS_ID]: '_MARK_BOTH_'};
-    static MARK_OFFSET = { [Const.ALCISTA_ID]: [0, -20], [Const.BAJISTA_ID]: [0, 30], [Const.SENTIDO_AMBOS_ID]: [0, 0]};
-    static MARK_COLOR = { [Const.ALCISTA_ID]: 'rgba(0, 255, 0, 1)', [Const.BAJISTA_ID]: 'rgba(255, 0, 0, 1)', [Const.SENTIDO_AMBOS_ID]: 'rgba(181, 19, 187, 1)'};
+    static TREND_TEXT_ID = { [Const.BULL_ID]: '_BULL_', [Const.BEAR_ID]: '_BEAR_', [Const.BOTH_ID]: '_BOTH_'};
+    static LINE_COLOR = { [Const.BULL_ID]: 'rgba(0, 255, 0, 0.8)', [Const.BEAR_ID]: 'rgba(255, 0, 0, 0.8)', [Const.BOTH_ID]: 'rgba(181, 19, 187, 0.8)'};
+    static MARK_TEXT_ID = { [Const.BULL_ID]: '_MARK_BULL_', [Const.BEAR_ID]: '_MARK_BEAR_', [Const.BOTH_ID]: '_MARK_BOTH_'};
+    static MARK_OFFSET = { [Const.BULL_ID]: [0, -20], [Const.BEAR_ID]: [0, 30], [Const.BOTH_ID]: [0, 0]};
+    static MARK_COLOR = { [Const.BULL_ID]: 'rgba(0, 255, 0, 1)', [Const.BEAR_ID]: 'rgba(255, 0, 0, 1)', [Const.BOTH_ID]: 'rgba(181, 19, 187, 1)'};
 
-    static TRENDS = [ Const.ALCISTA_ID, Const.BAJISTA_ID, Const.SENTIDO_AMBOS_ID ];
+    static TRENDS = [ Const.BULL_ID, Const.BEAR_ID, Const.BOTH_ID ];
 
     static SHOW_LOADING_OPS = {
         textColor: '#aeb1ba',
@@ -68,7 +68,7 @@ class ChartView {
                             bottom: '2%', //slider_vert_offset,
                             // start: 30,
                             // end: 70,
-                            // filterMode: 'none',
+                            filterMode: 'none',
                         };
     static DATA_ZOOM_Y_INSIDE = {
                             id:'y_inside',
@@ -91,6 +91,114 @@ class ChartView {
             this.cnf = chartSettings;
         }
     }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    #split_retracements(data_source, query) {
+        let res;
+        console.time('split_retracements');
+        
+        let data_x = {};
+        let data = {};
+        let data_ret = {};
+        let data_delta_ini = {};
+        let data_delta_fin = {};
+        let data_ret_levels = [];
+        let data_ret_prices = {};
+        let stats = {}
+        let level_;
+        let name_;
+        let model_key_;
+
+        console.log(data_source);
+
+        try {
+            if(!data_source) {
+                throw ('No data available.');
+            }
+
+            // if (rawData[Const.TIPO_PARAM_ID] != Const.RETROCESOS_ID) {
+            if ((data_source instanceof Retracement) == false) {
+                throw('Retracement data type expected, received ' + typeof data_source + ' instead.');
+            }
+
+            stats = data_source.stats;
+            let bull = (data_source.data[Const.BULL_ID] != undefined) ? data_source.data[Const.BULL_ID][data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] > 0) : [];
+            let bear = (data_source.data[Const.BEAR_ID] != undefined) ? data_source.data[Const.BEAR_ID][data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] < 0) : [];
+            data_ret[Const.BULL_ID] = bull.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
+            data_ret[Const.BEAR_ID] = bear.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
+            data_ret_levels = data_source[Const.RET_LEVELS_ID];
+            data_ret_prices[Const.BULL_ID] = bull.map( d => [].concat(data_ret_levels.map(l => d[l])) );
+            data_ret_prices[Const.BEAR_ID] = bear.map( d => [].concat(data_ret_levels.map(l => d[l])) );
+            
+            data_delta_ini[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
+            data_delta_fin[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
+            data_delta_ini[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
+            data_delta_fin[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
+
+            // data[Const.BULL_ID] = [].concat( ...bull.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) ) );
+            // data[Const.BEAR_ID] = [].concat( ...bear.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) ) );
+            data[Const.BULL_ID] = bull.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
+            data[Const.BEAR_ID] = bear.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
+            
+            // console.log(data_ret);
+            // console.log(data_x);
+            // console.log(data_y);
+            // console.log(data_delta_ini);
+            // console.log(data_delta_fin);
+
+
+            level_ = query[Const.LEVEL_ID];
+            name_ = data_source[Const.NAME_ID];
+            model_key_ = query.model_key;
+            // if(!this.#pattern_result) { this.#pattern_result = {}; }
+            // if(!this.#pattern_result[level_]) { this.#pattern_result[level_] = {}; }
+
+            // this.#pattern_result[level_][name_] = {
+            //     id: rawData[Const.ID_ID][0],
+            //     name: name_,
+            //     dataType: rawData[Const.TIPO_PARAM_ID],
+            //     stats: stats,
+            //     data_x: {[level_]: data_x},
+            //     data_y: {[level_]: data_y},
+            //     data_ret: {[level_]: data_ret},
+            //     data_ret_values: {[level_]: data_ret_values},
+            //     data_ret_levels: {[level_]: data_ret_levels},
+            //     delta_ini: {[level_]: data_delta_ini},
+            //     delta_fin: {[level_]: data_delta_fin},
+            //     level: level_,
+            //     query: query,
+            //     model_key: model_key_,
+            // };
+            // this.#pattern_result[level_][name_] = {
+            res = {
+                id: query[Const.ID_ID],
+                name: name_,
+                dataType: data_source.dataType,
+                stats: stats,
+                // data_x: data_x,
+                data: data,
+                data_ret: data_ret,
+                data_ret_values: data_ret_levels,
+                data_ret_levels: data_ret_prices,
+                delta_ini: data_delta_ini,
+                delta_fin: data_delta_fin,
+                level: level_,
+                search_in: query[Const.SEARCH_IN_ID],
+                query: query,
+                model_key: model_key_,
+            };
+        }
+        catch(error) {
+            console.error(error);
+            res = error;
+        }
+
+        // return this.#pattern_result[level_][name_];
+        console.timeEnd('split_retracements');
+        return res;
+    }
+
 
     //----------------------------- PUBLIC METHODS -----------------------------
     create_chart(frame) {
@@ -136,11 +244,12 @@ class ChartView {
             let work_heigh_pc = 1;//2;
             let vert_margins = (work_heigh_pc)/2; // (work_heigh_pc - 1)/2;
             let x_axis_vert_offset = -(doc_heigh * work_heigh_pc * (vert_margins/2));
-            let x_offset = '5%';
+            // let x_offset = '5%';
+            let x_offset = '90px';
             let tools_x_offset = '2%';
             let grid_left = '4%';
             let grid_right = '5%';
-            let grid_top = '2%';
+            let grid_top = '15px'; //'2%';
             let grid_height = work_heigh_pc * 100 * '%';
             let vert_margins_pc = vert_margins * 100 + '%';
             let y_offset = (vert_margins/2) * 100 + '%';
@@ -180,8 +289,8 @@ class ChartView {
                         // top: '0%', //'-200%',
                         left: 65,
                         bottom: '8%',
-                        height: '92%',
-                        width: '96%',
+                        height: '91.8%',
+                        width: '96.6%',
                     },
                     // {
                     //     left: '5%',
@@ -199,7 +308,6 @@ class ChartView {
                         type: 'time',
                         // data: data.data_x,
                         backgroundColor: ChartView.BACKGROUND_COLOR,
-                        // boundaryGap: ['-50%', '0%'],
                         position: 'bottom',
                         // offset:x_axis_vert_offset,
                         // offset: -150,
@@ -219,8 +327,7 @@ class ChartView {
 
                 yAxis:[
                     {
-                        // scale: true,
-                        // boundaryGap: ['0%', '0%'],
+                        scale: true,
                         gridIndex: 0,
                         splitNumber: 10,
                         axisLine: { show: true },
@@ -269,6 +376,8 @@ class ChartView {
                         id: data.name,
                         name: data.name,
                         type: 'candlestick',
+                        clip: true,
+                        // clip: false,
                         data: data.data_y,
                         itemStyle: {
                             color: this.cnf.colorUp,
@@ -276,6 +385,7 @@ class ChartView {
                             borderColor: this.cnf.colorBorderUp,
                             borderColor0: this.cnf.colorBorderDownd,
                         },
+                        barWidth: '75%',
                     },
                     // {
                     //     name: 'Volume',
@@ -401,8 +511,10 @@ class ChartView {
                 throw ('No data available to plot.');
             }
 
-            if (data.dataType != Const.MOVIMIENTOS_ID) {
-                throw ('MOVIMIENTOS data type is needed to plot movements, received ' + data.dataType + ' instead.');
+            // if (data.dataType != Const.MOVIMIENTOS_ID) {
+            // if ((data instanceof Movements) == false) {
+            if ((data.dataType == "movements") == false) {
+                throw ('"Movements" data type is needed to plot movements, received ' + typeof data + ' instead.');
             }
 
             let level = data.level;
@@ -474,17 +586,11 @@ class ChartView {
         return ret;
     }
 
-    plot_retracements(data, chart) {
+    plot_retracements(data_source, chart, query) {
         let ret;
+        console.time('plot_retracements');
         try {
-
-            if(!data) {
-                throw ('No data available to plot.');
-            }
-
-            if (data.dataType != Const.RETROCESOS_ID) {
-                throw ('RETROCESOS data type is needed to plot retracements, received ' + data.dataType + ' instead.');
-            }
+            let data = this.#split_retracements(data_source, query);
 
             // Labels for markpoint bull
             let ret_labels;
@@ -503,7 +609,7 @@ class ChartView {
                 // Marks
                 if(data.data_ret[t]) {
                     ret_labels = data.data_ret[t].map( (r, i) => {
-                        return this.generate_label(r[0], r[1], data.name + ChartView.MARK_TEXT_ID + i,
+                        return this.generate_label(r[0], r[1], data.name + ChartView.MARK_TEXT_ID[t] + i,
                                             ChartView.MARK_OFFSET[t], ChartView.MARK_COLOR[t]);
                     });
     
@@ -514,12 +620,12 @@ class ChartView {
                     };
                 }
                 // Lines
-                if(data.data_y[t]) {
-                    let ret_series_trend = data.data_y[t].map( (r, i) => {
+                if(data.data[t]) {
+                    let ret_series_trend = data.data[t].map( (r, i) => {
                         return {
                             id: data.id + ChartView.TREND_TEXT_ID[t] + i, name: data.name,
                             type: 'line', color: ChartView.LINE_COLOR[t],
-                            lineStyle: { width: 1, opacity: 0.8, },
+                            lineStyle: { width: 2, opacity: 0.6, },
                             showSymbol: false,
                             data: r,
                             markPoint: ret_markpoints
@@ -529,62 +635,6 @@ class ChartView {
                     ret_series = ret_series.concat(ret_series_trend);
                 }
             });
-
-            // if(data.data_ret[Const.ALCISTA_ID]) {
-            //     ret_labels_bull = data.data_ret[Const.ALCISTA_ID].map( (r, i) => {
-            //         return this.generate_label(r[0], r[1], data.name + '_MARK_BULL_' + i,
-            //                             [0,-20], 'rgba(0, 255, 0, 1)');
-            //     });
-
-            //     // Markpoint bull label
-            //     ret_markpoints_bull = {
-            //         label: { formatter: r => (r.value != null) ? parseFloat(r.value).toFixed(3) + '' : '', },
-            //         data: ret_labels_bull,
-            //     };
-            // }
-            // Lines bull
-            // if(data.data_y[Const.ALCISTA_ID]) {
-            //     ret_series_bull = data.data_y[Const.ALCISTA_ID].map( (r, i) => {
-            //         return {
-            //             id: data.id + '_BULL_' + i, name: data.name,
-            //             type: 'line', color: "rgba(0, 255, 0, 0.8)",
-            //             lineStyle: { width: 1, opacity: 0.8, },
-            //             showSymbol: false,
-            //             data: r,
-            //             markPoint: ret_markpoints_bull
-            //         }
-            //     });
-            //     ret_series = ret_series_bull;
-            // }
-            //
-            // // Labels for markpoint bear
-            // if(data.data_ret[Const.BAJISTA_ID]) {
-            //     ret_labels_bear = data.data_ret[Const.BAJISTA_ID].map( (r, i) => {
-            //         return this.generate_label(r[0], r[1], data.name + '_MARK_BEAR_' + i,
-            //                             [0,30], 'rgba(255, 0, 0, 1)');
-            //     });
-
-            //     // Markpoint bear label
-            //     ret_markpoints_bear = {
-            //         label: { formatter: r => (r.value != null) ? parseFloat(r.value).toFixed(3) + '' : '', },
-            //         data: ret_labels_bear,
-            //     };
-            // }
-            
-            // // Lines bear
-            // if(data.data_y[Const.BAJISTA_ID]) {
-            //     ret_series_bear = data.data_y[Const.BAJISTA_ID].map( (r, i) => {
-            //         return {
-            //             id: data.id + '_BEAR_' + i, name: data.name,
-            //             type: 'line', color: "rgba(255, 0, 0.8)",
-            //             lineStyle: { width: 1, opacity: 0.8, },
-            //             showSymbol: false,
-            //             data: r,
-            //             markPoint: ret_markpoints_bear
-            //         }
-            //     });
-            //     ret_series = ret_series.concat(ret_series_bear);
-            // }
 
             // ret_series = ret_series_bull.concat(ret_series_bear);
 
@@ -606,6 +656,8 @@ class ChartView {
             console.error(error);
             ret = error;
         }
+
+        console.timeEnd('plot_retracements');
         return ret;
     }
 
@@ -616,7 +668,7 @@ class ChartView {
                 dataType: Const.RETROCESOS_ID
                 data_y: [ [time, price], [time, price], [time, price]]
                 data_ret: [ [time, price] , ret]
-                trend: Const.ALCISTA_ID or Const.BAJISTA_ID
+                trend: Const.BULL_ID or Const.BEAR_ID
                 data.id: name + [_BULL_ or _BEAR_] + index
         * ops:
                 movs: { labels: 0/1, lines: 0/1 }
@@ -643,7 +695,7 @@ class ChartView {
             let ret_markpoints;
             let ret_series;
 
-            // if(data.trend == Const.ALCISTA_ID) {
+            // if(data.trend == Const.BULL_ID) {
                 color_trend = 'rgba(0, 255, 0, 1)';
                 offset_trend = [0, -20];
             // }
@@ -759,8 +811,17 @@ class ChartView {
 
             // let maxValue = chart.getOption().yAxis[0].max; //Math.max(...chart.getModel().option.series[0].data.map(p=>p[2]).filter(v=>v!=undefined));
             // let data = chart.getModel().option.xAxis[0].data;
-            let maxValue = Math.max(...chart.getModel().option.series[0].data.filter(v=>v[1]).map(v => v[3]));
             let data = chart.getModel().option.series[0].data.filter(v=>v[1]).map(v => v[0]);
+            let x_start_idx = data.indexOf(zoom.startValue.x);
+            let x_end_idx = data.indexOf(zoom.endValue.x);
+            if(!x_start_idx) {
+                x_start_idx = 0;
+            }
+
+            let filtered = chart.getModel().option.series[0].data.filter(v=>v[1]).slice(x_start_idx, x_end_idx);
+            let maxValue = Math.max(...filtered.map(v => v[3]));
+            let minValue = Math.min(...filtered.map(v => v[4]));
+
             let margin = {
                 x: (zoom.margin.x != null) ? zoom.margin.x : 0,
                 y: (zoom.margin.y != null) ? zoom.margin.y : 0,
@@ -768,19 +829,22 @@ class ChartView {
 
             // Zoom from values
             if(zoom.startValue) {
-
-                margin = {
-                    x: parseInt((margin.x/100) * data.length),
-                    y: parseInt((margin.y/100) * maxValue)
+                let marginValue = {
+                    // x: parseInt((margin.x/100) * x_end_idx), //data.length),
+                    x: parseInt(margin.x), //data.length),
+                    y: parseInt((margin.y/100) * maxValue) //(maxValue - minValue))
                 }
 
                 let startValue = {
-                    x: data[data.indexOf(zoom.startValue.x) - margin.x],
-                    y: zoom.startValue.y - margin.y,
+                    x: data[data.indexOf(zoom.startValue.x) - marginValue.x],
+                    y: zoom.startValue.y - marginValue.y,
                 }
+                if(startValue.x == undefined)
+                    startValue.x = data[0];
+
                 let endValue = {
-                    x: data[data.indexOf(zoom.endValue.x) + margin.x],
-                    y: zoom.endValue.y + margin.y,
+                    x: data[data.indexOf(zoom.endValue.x) + marginValue.x],
+                    y: zoom.endValue.y + marginValue.y,
                 }
                 
                 chart.dispatchAction({

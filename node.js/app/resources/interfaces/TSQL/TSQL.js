@@ -113,7 +113,6 @@ function parse (query) {
                 }
                 res[TSQL.DEFS.PARAMS][p.toLowerCase()] = value;
             });
-console.log(params);
         }
     }
     catch(error) {

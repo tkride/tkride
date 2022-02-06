@@ -230,7 +230,7 @@ class ModelChart {
                 broker: query.broker,
                 marco: query.interval,
                 dataType: query.data_type,//[TSQL_node.TIPO_PARAM_ID],
-                data_x: data_x,
+                // data_x: data_x,
                 data_y: data_y,
                 volume: volumes,
                 trades: trades,
@@ -328,83 +328,55 @@ class ModelChart {
         return this.#max_data;
     }
     
-    split_movements_data(rawData) {
-        let dataJson;
-        let data_x = {};
-        let data_y = {};
-        let data_ret = {};
-        let data_delta_ini = {};
-        let data_delta_fin = {};
-
+    split_movements_data(dataJson) {
         // console.log(rawData);
 
         try {
-            if (rawData[Const.TIPO_PARAM_ID] != Const.MOVIMIENTOS_ID) {
-                throw('MOVIMIENTOS data type expected, received ' + rawData[Const.TIPO_PARAM_ID] + ' instead.');
+            if((dataJson instanceof Movements) == false) {
+                throw('"Movements" data type expected, received ' + typeof dataJson + ' instead.');
             }
-            if (rawData) {
-                dataJson = JSON.parse(rawData[Const.JSON_ID]);
-            }
-            // console.log(dataJson);
+
             if(!dataJson) {
-                throw('No valid JSON data received from server.');
+                throw('No valid data received from server.');
             }
 
-            let bull = dataJson.filter(d => parseInt(d[4]) > 0);
-            let bear = dataJson.filter(d => parseInt(d[4]) < 0);
-            // data_ret[Const.ALCISTA_ID] = [].concat(...bull.map( d => [d[0],d[d.length-1]] ));
-            // data_ret[Const.BAJISTA_ID] = [].concat(...bear.map( d => [d[0],d[d.length-1]] ));
-            data_ret[Const.ALCISTA_ID] = bull.map( d => [d[2].split(','), d[7]] );
-            data_ret[Const.BAJISTA_ID] = bear.map( d => [d[2].split(','), d[7]] );
+            dataJson.data.forEach( (data, i) => {
+                let bull = data.filter(d => parseInt(d[Const.TREND_ID]) > 0);
+                let bear = data.filter(d => parseInt(d[Const.TREND_ID]) < 0);
+                let data_ret = { [Const.ALCISTA_ID]: bull.map( d => [d[Const.END_ID].data, d[Const.RET_ID]] ) };
+                data_ret[Const.BAJISTA_ID] = bear.map( d => [d[Const.END_ID].data, d[Const.RET_ID]] );
 
-            data_delta_ini[Const.ALCISTA_ID] = bull.map( d => [d[0],d[5]] );
-            data_delta_fin[Const.ALCISTA_ID] = bull.map( d => [d[0],d[6]] );
-            data_delta_ini[Const.BAJISTA_ID] = bear.map( d => [d[0],d[5]] );
-            data_delta_fin[Const.BAJISTA_ID] = bear.map( d => [d[0],d[6]] );
+                let data_delta_ini = { [Const.ALCISTA_ID]: bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] ) };
+                data_delta_ini[Const.BAJISTA_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
 
-            data_x[Const.ALCISTA_ID] = [].concat( ...bull.map( d => d.slice(1,4).map(dd => dd.split(',')[0])) );
-            data_x[Const.BAJISTA_ID] = [].concat( ...bear.map( d => d.slice(1,4).map(dd => dd.split(',')[0])) );
-            data_y[Const.ALCISTA_ID] = [].concat( ...bull.map(d => d.slice(1,4).map(dd => dd.split(','))) );
-            data_y[Const.BAJISTA_ID] = [].concat( ...bear.map(d => d.slice(1,4).map(dd => dd.split(','))) );
-            
-            // console.log(data_ret);
-            // console.log(data_x);
-            // console.log(data_y);
-            // console.log(data_delta_ini);
-            // console.log(data_delta_fin);
+                let data_delta_fin = { [Const.ALCISTA_ID]: bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] ) };
+                data_delta_fin[Const.BAJISTA_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
 
-            // this.#movs_data[this.#max_data.level_selected] = {
-            //     name: rawData[Const.ID_ID],
-            //     dataType: rawData[Const.TIPO_PARAM_ID],
-            //     data_x: {[this.#max_data.level_selected]:data_x},
-            //     data_y: {[this.#max_data.level_selected]: data_y},
-            //     data_ret: {[this.#max_data.level_selected]:data_ret},
-            //     delta_ini: {[this.#max_data.level_selected]:data_delta_ini},
-            //     delta_fin: {[this.#max_data.level_selected]:data_delta_fin},
-            //     level: this.#max_data.level_selected
-            // };
-            if(!this.#movs_data) { this.#movs_data = {}; }
-            this.#movs_data[this.#max_data.level_selected] = {
-                id: rawData[Const.ID_ID][0],
-                name: rawData[Const.ID_ID][0],
-                dataType: rawData[Const.TIPO_PARAM_ID],
-                data_x: data_x,
-                data_y: data_y,
-                data_ret: data_ret,
-                delta_ini: data_delta_ini,
-                delta_fin: data_delta_fin,
-                level: this.#max_data.level_selected
-            };
+                let data_y = { [Const.ALCISTA_ID]: [].concat( ...bull.map(d => [d[Const.INIT_ID].data, d[Const.END_ID].data, d[Const.CORRECTION_ID].data]) ) };
+                data_y[Const.BAJISTA_ID] = [].concat( ...bear.map(d => [d[Const.INIT_ID].data, d[Const.END_ID].data, d[Const.CORRECTION_ID].data]) );
+                
+                if(!this.#movs_data) { this.#movs_data = {}; }
+                this.#movs_data[i] = {
+                    id: dataJson.id,
+                    name: dataJson.id,
+                    dataType: dataJson.dataType,
+                    // data_x: data_x,
+                    data_y: data_y,
+                    data_ret: data_ret,
+                    delta_ini: data_delta_ini,
+                    delta_fin: data_delta_fin,
+                    level: i, //this.#max_data.level_selected
+                };
+            });
         }
         catch(error) {
             console.error(error);
             return error;
         }
-        return this.#movs_data[this.#max_data.level_selected];
+        return this.#movs_data;//this.#max_data.level_selected];
     }
     
-    split_retracements_data(rawData, query) {
-        let dataJson;
+    split_retracements_data(data_source, query) {
         let data_x = {};
         let data_y = {};
         let data_ret = {};
@@ -417,28 +389,20 @@ class ModelChart {
         let name_;
         let model_key_;
 
-        console.log(rawData);
+        console.log(data_source);
 
         try {
-            if (rawData[Const.TIPO_PARAM_ID] != Const.RETROCESOS_ID) {
-                throw('RETROCESOS data type expected, received ' + rawData[Const.TIPO_PARAM_ID] + ' instead.');
-            }
-            if (rawData) {
-                dataJson = JSON.parse(rawData[Const.JSON_ID]);
-            }
-            // console.log(dataJson);
-            if(!dataJson) {
-                throw('No valid JSON data received from server.');
+            // if (rawData[Const.TIPO_PARAM_ID] != Const.RETROCESOS_ID) {
+            if ((data_source instanceof Retracements) == false) {
+                throw('Retracements data type expected, received ' + typeof(data_source) + ' instead.');
             }
 
-            stats = rawData[Const.ESTADISTICAS_ID];
-            let bull = dataJson.filter(d => parseInt(d[4]) > 0);
-            let bear = dataJson.filter(d => parseInt(d[4]) < 0);
-            // data_ret[Const.ALCISTA_ID] = [].concat(...bull.map( d => [d[3].split(',')[0],d[7]] ));
-            // data_ret[Const.BAJISTA_ID] = [].concat(...bear.map( d => [d[3].split(',')[0],d[7]] ));
+            stats = data_source.stats;
+            let bull = data_source.data.filter(d => parseInt(d[4]) > 0);
+            let bear = data_source.data.filter(d => parseInt(d[4]) < 0);
             data_ret[Const.ALCISTA_ID] = bull.map( d => [d[2].split(','), d[7]] );
             data_ret[Const.BAJISTA_ID] = bear.map( d => [d[2].split(','), d[7]] );
-            data_ret_values = rawData[Const.VALORES_ID];
+            data_ret_values = data_source[Const.VALORES_ID];
             data_ret_levels[Const.ALCISTA_ID] = [].concat(...bull.map( d => [d.slice(8, d.length)]) );
             data_ret_levels[Const.BAJISTA_ID] = [].concat(...bear.map( d => [d.slice(8, d.length)]) );
 
@@ -459,8 +423,8 @@ class ModelChart {
             // console.log(data_delta_fin);
 
 
-            level_ = rawData[Const.NIVEL_ID][0];
-            name_ = rawData[Const.NAME_ID][0];
+            level_ = data_source[Const.NIVEL_ID][0];
+            name_ = data_source[Const.NAME_ID][0];
             model_key_ = query.model_key;
             if(!this.#pattern_result) { this.#pattern_result = {}; }
             if(!this.#pattern_result[level_]) { this.#pattern_result[level_] = {}; }
@@ -482,9 +446,9 @@ class ModelChart {
             //     model_key: model_key_,
             // };
             this.#pattern_result[level_][name_] = {
-                id: rawData[Const.ID_ID][0],
+                id: data_source[Const.ID_ID][0],
                 name: name_,
-                dataType: rawData[Const.TIPO_PARAM_ID],
+                dataType: data_source[Const.TIPO_PARAM_ID],
                 stats: stats,
                 data_x: data_x,
                 data_y: data_y,

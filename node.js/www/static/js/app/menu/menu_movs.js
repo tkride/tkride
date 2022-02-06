@@ -42,7 +42,7 @@ class MenuMovs {
         [Const.ACTIVO_ID]: {},
         [Const.ID_ID]: '',
         [Const.NIVEL_ID]: 1,
-        [Const.MAXIMOS_ID]: { [Const.NIVEL_ID]: 1 },
+        [Const.MAXIMOS_ID]: { [Const.NIVEL_ID]: 6 },
         active: false,
         show_ret:false,
     };

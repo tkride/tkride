@@ -1,6 +1,6 @@
-/** 'model_patterns.js' */
+/** 'patterns_model.js' */
 
-class ModelPatterns {
+class PatternsModel {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
     
@@ -10,49 +10,49 @@ class ModelPatterns {
         PHY: {
             [Const.BUSCAR_EN_COMBO_ID]: 'MOVIMIENTOS',
             [Const.TIPO_PARAM_ID]: 'RETROCESO',
-            [Const.NIVEL_ID]:'1',
+            [Const.LEVEL_ID]:'1',
             [Const.ID_ID]: 'PHY',
-            [Const.VALORES_ID]: '1.27,1.68',
-            [Const.SENTIDO_ID]: 'AMBOS',
-            [Const.DESDE_ID]: 'INICIO',
-            [Const.ITERA_EN_N_ID]: '', //'5',
-            [Const.SOLO_MAX_ID]: '0', //'1',
+            [Const.RET_LEVELS_ID]: '1.27,1.68',
+            [Const.TREND_ID]: 'AMBOS',
+            [Const.FROM_ID]: 'INICIO',
+            [Const.ITERATE_ID]: '0', //'5',
+            [Const.ONLY_MAX_ID]: '0', //'1',
         },
         TARGETS: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
             [Const.TIPO_PARAM_ID]: 'RETROCESO',
-            [Const.NIVEL_ID]:'1',
-            [Const.BUSCAR_EN_ID]:'PHY',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'PHY',
             [Const.ID_ID]: 'TARGETS',
-            [Const.VALORES_ID]: '0.13, 0.238, 0.381, 0.55, 0.618, 0.786, 0.87, 1.272, 1.161',
-            [Const.SENTIDO_ID]: 'AMBOS',
-            [Const.DESDE_ID]: 'FIN',
-            [Const.ITERA_EN_N_ID]: '',
-            [Const.SOLO_MAX_ID]: '0',
+            [Const.RET_LEVELS_ID]: '0.13, 0.238, 0.381, 0.55, 0.618, 0.786, 0.87, 1.272, 1.161',
+            [Const.TREND_ID]: 'AMBOS',
+            [Const.FROM_ID]: 'FIN',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
         },
         ZR: {
             [Const.BUSCAR_EN_COMBO_ID]: 'MOVIMIENTOS',
             [Const.TIPO_PARAM_ID]: 'RETROCESO',
-            [Const.NIVEL_ID]:'1',
-            [Const.BUSCAR_EN_ID]:'PHY',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'PHY',
             [Const.ID_ID]: 'ZR',
-            [Const.VALORES_ID]: '0.618, 0.686, 0.713, 0.786',
-            [Const.SENTIDO_ID]: 'AMBOS',
-            [Const.DESDE_ID]: 'INICIO',
-            [Const.ITERA_EN_N_ID]: '',
-            [Const.SOLO_MAX_ID]: '0',
+            [Const.RET_LEVELS_ID]: '0.618, 0.686, 0.713, 0.786',
+            [Const.TREND_ID]: 'AMBOS',
+            [Const.FROM_ID]: 'INICIO',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
         },
         '▲': {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
             [Const.TIPO_PARAM_ID]: 'RETROCESO',
-            [Const.NIVEL_ID]:'1',
-            [Const.BUSCAR_EN_ID]:'PHY',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'PHY',
             [Const.ID_ID]: '▲',
-            [Const.VALORES_ID]: '0.13',
-            [Const.SENTIDO_ID]: 'AMBOS',
-            [Const.DESDE_ID]: 'INICIO',
-            [Const.ITERA_EN_N_ID]: '5',
-            [Const.SOLO_MAX_ID]: '1',
+            [Const.RET_LEVELS_ID]: '0.13',
+            [Const.TREND_ID]: 'AMBOS',
+            [Const.FROM_ID]: 'INICIO',
+            [Const.ITERATE_ID]: '5',
+            [Const.ONLY_MAX_ID]: '1',
         },
     };
 
@@ -76,7 +76,7 @@ class ModelPatterns {
     }
 
     #load_patterns() {
-        return ModelPatterns.DUMMY_PATTERNS;
+        return PatternsModel.DUMMY_PATTERNS;
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------

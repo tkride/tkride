@@ -17,7 +17,7 @@ class ChartController {
     static LAYOUT_ON_ROW = 0;
     static LAYOUT_DOWN = 1;
 
-    static DEFAULT_CHART_ZOOM = 250;
+    static DEFAULT_CHART_ZOOM = 500;//250;
 
     static CHARTS_FRAMES_PARENT = '#chart-frames';
     static CLASS_CHART_LAYOUT = 'chart-frame-layout';
@@ -38,9 +38,12 @@ class ChartController {
 
     // Models
     #models = {};
+    #chart_models = {};
     // #patterns = {};
     // View
     #view;
+    //Brokers manager
+    #brokers;
     // Chart layout structure as array
     #chart_frames = {};
     // Active chart
@@ -53,7 +56,7 @@ class ChartController {
     // Working active
     currActive = null;
     currId = null;
-    //Interface TQS Controller
+    //Interface TSQL Controller
     interface;
     //Ticker filter
     #ticker_filter;
@@ -71,7 +74,7 @@ class ChartController {
         //Default value
         this.currActive = {
             [this.#TSQL.ID_ID]:'BTCUSDT',
-            [this.#TSQL.BROKER_ID]:'BINANCE',
+            [this.#TSQL.BROKER_ID]:'binance',
             [this.#TSQL.MARCO_ID]:'2h',
         };
 
@@ -87,7 +90,7 @@ class ChartController {
 
     #update_chart_header() {
         if(this.currActive) {
-            $(ChartController.ELEMENT_CHART_TITLE + this.#activeChart.id).text(this.currActive[Const.ID_ID] + ' ' + this.currActive[Const.BROKER_ID]);
+            $(ChartController.ELEMENT_CHART_TITLE + this.#activeChart.id).text(this.currActive[Const.ID_ID] + ' (' + this.currActive[Const.BROKER_ID] + ')');
         }
         $(document).trigger(ChartController.EVENT_TIME_FRAME_CHANGED, this.#time_frame.time_frame);
     }
@@ -95,7 +98,7 @@ class ChartController {
     #process_patterns_ret(ops, that) {
         return new Promise((resolve, reject) => {
             let model_key = that.current_model_key;
-            let result = that.#models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.NAME_ID]);
+            let result = that.#chart_models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.NAME_ID]);
             let in_memory = true;
             if(result) {
                 let old_q = Object.keys(result.query);
@@ -119,11 +122,25 @@ class ChartController {
                 resolve(result);
             }
             else {
-                that.load_movements(model_key, ops[Const.NIVEL_ID], that.#menus[MenuMovs.NAME].level_max)
-                .then( () => that.interface.select_movements(model_key, ops[Const.NIVEL_ID]))
-                .then(() => that.load_retracements(ops))
-                .then( data => resolve(data))
-                .catch( error => reject(error));
+                try {
+                    ops[Const.DATA_ID] = that.#models[model_key][Const.MOVS_ID]; //[level];
+                    // let ret = new Retracements(ops);
+                    let ret = Retracements.process(ops);
+                    //TODO MOVER PATTERN RESULT DE #chart_models A #models
+                    that.#chart_models[model_key].pattern_result[ops[Const.NAME_ID]] = ret;
+                    // Store retracements results
+                    ops[Const.DATA_ID] = ret;
+                    if(ret) resolve(ret);
+                    else reject(`ERROR processing retracements. Data returned: ${ret}`);
+                }
+                catch(err) {
+                    reject(`ERROR processing retracements: ${err}`);
+                }
+                // that.load_movements(model_key, ops[Const.NIVEL_ID], that.#menus[MenuMovs.NAME].level_max)
+                // .then( () => that.interface.select_movements(model_key, ops[Const.NIVEL_ID]))
+                // .then(() => that.load_retracements(ops))
+                // .then( data => resolve(data))
+                // .catch( error => reject(error));
             }
         });
     }
@@ -166,12 +183,8 @@ class ChartController {
         // Get initial date time
         let end_time = Time.now(Time.FORMAT_STR);
         this.currActive[this.#TSQL.MARCO_ID] = this.#time_frame.time_frame;
-        let init_time = Time.subtract_value(end_time, 3000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-        // let query = { [Const.ID_ID]:this.currActive[Const.ID_ID],
-        //             [Const.BROKER_ID]:this.currActive[Const.BROKER_ID],
-        //             [Const.MARCO_ID]:this.currActive[Const.MARCO_ID],
-        //             [Const.INTERVALO_ID]:init_time + Const.PARAM_SEPARATOR + end_time,
-        // };
+        let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+
         let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
                     [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
                     [this.#TSQL.MARCO_ID]:this.currActive[this.#TSQL.MARCO_ID],
@@ -190,23 +203,22 @@ class ChartController {
             // Updates menu movs options
             this.#menus[MenuMovs.NAME].update_active(this.current_active, this.active_chart_id);
             
-            // Loads max and movements data from server
-            //TODO MENU MOVS VOLVER A CAMBIAR POR DEFECTO NIVEL 4
-            let iter = [...Array(this.#menus[MenuMovs.NAME].level_max).keys()].map(i=>(i+1));
-            let end = $.Deferred();
-            this.loopPromise(iter, this.iterateMovs, end)
-            .catch( error => console.error(error));
+//TODO GUARDAR MODELO DE DATOS FUENTE, NO SOLO 'CHART MODEL'
+            if(!this.#models[that.current_model_key]) this.#models[that.current_model_key] = {};
+            this.#models[that.current_model_key][Const.MOVS_ID] = new Movements(that.#chart_models[that.current_model_key].ohlc, that.#menus[MenuMovs.NAME].level_max, that.current_model_key);
 
-            $.when(end).done(() => {
-                this.write_status({info:'Movimientos cargados.', timeout: 2500});
-                $(MenuMovs.MENU_ICON).removeClass(Const.CLASS_DISABLED);
-            });
+            console.time('Split movs');
+            let ret = this.#chart_models[that.current_model_key].split_movements_data(this.#models[that.current_model_key][Const.MOVS_ID]);
+            console.timeEnd('Split movs');
+            
+            this.write_status({info:'Movimientos cargados.', timeout: 2500});
+            $(MenuMovs.MENU_ICON).removeClass(Const.CLASS_DISABLED);
             
             // Returns event or promise according to caller
             if(event_id) $(document).trigger(event_id);
             else return new Promise( resolve => resolve(this.currActive));
         })
-        .catch( () => new Promise( (resolve, reject) => {
+        .catch( (err) => new Promise( (resolve, reject) => {
                                         let msg = 'Error cargando los datos del activo:' + (event_id) ? event_id : '';
                                         console.error(msg);
                                         reject(msg);
@@ -215,28 +227,28 @@ class ChartController {
         // $(document).on(plot_event_id, e => { if(event_id) $(document).trigger(event_id); });
     }
 
-    loopPromise(i, cb, end) {
-        var that = this;
-        return new Promise((resolve, reject) => {
-            cb(i[0], that)
-            .then( () => {
-                i.splice(0,1);
-                if(i.length == 0) { end.resolve(); resolve(); }
-                else { that.loopPromise(i, cb, end); }
-            })
-            .then( () => resolve())
-            .catch(error => reject(error));
-        });
-    }
+    // loopPromise(i, cb, end) {
+    //     var that = this;
+    //     return new Promise((resolve, reject) => {
+    //         cb(i[0], that)
+    //         .then( () => {
+    //             i.splice(0,1);
+    //             if(i.length == 0) { end.resolve(); resolve(); }
+    //             else { that.loopPromise(i, cb, end); }
+    //         })
+    //         .then( () => resolve())
+    //         .catch(error => reject(error));
+    //     });
+    // }
 
-    iterateMovs(i, that) {
-        // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
-        let model_key = that.current_model_key;
-        // that.write_status({progress:'Cargando información de movimientos...', value:i-1, max:that.#menus[MenuMovs.NAME].level_max, loading:1});
-        that.write_status({info:'Cargando información de movimientos...', loading:1});
-        // return that.load_movements(that.#menus[MenuMovs.NAME].id, i, that.#menus[MenuMovs.NAME].level_max)
-        return that.load_movements(model_key, i, that.#menus[MenuMovs.NAME].level_max)
-    }
+    // iterateMovs(i, that) {
+    //     // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
+    //     let model_key = that.current_model_key;
+    //     // that.write_status({progress:'Cargando información de movimientos...', value:i-1, max:that.#menus[MenuMovs.NAME].level_max, loading:1});
+    //     that.write_status({info:'Cargando información de movimientos...', loading:1});
+    //     // return that.load_movements(that.#menus[MenuMovs.NAME].id, i, that.#menus[MenuMovs.NAME].level_max)
+    //     return that.load_movements(model_key, i, that.#menus[MenuMovs.NAME].level_max)
+    // }
 
     //----------------------------- EVENTS SET TIME FRAME -----------------------------
 
@@ -284,10 +296,10 @@ class ChartController {
             // var id = KeyTicker(that.current_active) + '_' + that.#activeChart.id;
             // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
             let model_key = that.current_model_key;
-            let y_max = Math.max(... that.#models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
-            let y_min = Math.min(... that.#models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
+            let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
+            let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
             that.active_chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
-            that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE, ChartView.DATA_ZOOM_X_SLIDER ] }, { replaceMerge: ['dataZoom']} );
+            that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER, ChartView.DATA_ZOOM_X_SLIDER ] }, { replaceMerge: ['dataZoom']} );
             console.log(that.get_chart_option('yAxis'));
             console.log(that.get_chart_option('dataZoom'));
         });
@@ -312,56 +324,84 @@ class ChartController {
         if(!this.#menus[MenuStatus.NAME]) { this.#menus[MenuStatus.NAME] = new MenuStatus(this); }
         if(!this.#menus[MenuMovs.NAME]) { this.#menus[MenuMovs.NAME] = new MenuMovs(); }
         // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#patterns); }
-        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#models); }
+        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#chart_models); }
         if(!this.#menus[MenuSettings.NAME]) { this.#menus[MenuSettings.NAME] = new MenuSettings(this); }
-        if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
+        if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#chart_models); }
         if(!this.#key_config) { this.#key_config = new KeyConfig(); }
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
     }
 
-    #init_interfaces(headers) {
-        this.interface = new InterfaceTQS(Const.ROOT_URL, headers);
+    #init_interfaces() {
+        // Creates interface with TSQL scripting
+        // this.interface = new InterfaceTSQL(Const.ROOT_URL, headers);
+        this.interface = new InterfaceTSQL(Const.ROOT_URL);
+    }
+
+    #init_brokers() {
+        return new Promise((resolve, reject) => {
+            // Load from server, available brokers and tickers
+            this.interface.get_brokers()
+            .then( brokers_info => {
+                // console.log(brokers_info);
+                var brokers = new Brokers(brokers_info);
+                this.write_status({info:'Completada Carga de Tickers desde los brokers.'});
+                console.log('Completada Carga de Tickers desde los brokers.');
+                resolve(brokers);
+            })
+            .catch(error => {
+                this.write_status({error:'(!) Errors cargando tickers desde los brokers: ' + broker});
+                console.error(error);
+                reject(error);
+            });
+        });
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
-    init(brokers_list, headers, view) {
+    // init(brokers_list, headers, view) {
+    init(view) {
         var that = this;
 
         try {
             // Create objects
-            // this.#patterns = new ModelPatterns('', this.#models);
-            new ModelPatterns('', this.#models);
+                        
+            // Creates all option menus
+            this.#create_menus();
 
+            // Init tickers filter
+            this.#ticker_filter = new TickerFilter();
+
+            // this.#patterns = new PatternsModel('', this.#chart_models);
+            new PatternsModel('', this.#chart_models);
+
+            // Creates view
             if (view) { this.#view = view; }
             else { this.#view = new ChartView(); }
 
-            // this.#ticker_filter = new TickerFilter();
             this.#time_frame = new TimeFrame();
 
-            this.#init_interfaces(headers);
+            // Init interfaces to decouple data access with server
+            this.#init_interfaces();
 
-            // Creates all option menus
-            this.#create_menus();
+            // Brokers manager
+            this.#init_brokers()
+            .then(brokers => {
+                this.#brokers = brokers;
+                this.#brokers = brokers;
+                this.#ticker_filter.brokers = brokers;
+            })
+            .catch(err => console.error(err));
         
-            let brokers = new Brokers(brokers_list);
-            $.each(brokers.get_brokers(), function(broker) {
-                that.interface.load_all_tickers_from(broker)
-                .then(tickers => brokers.set_tickers(broker, tickers))
-                .catch( broker => that.write_status({error:'(!) Errors cargando tickers desde los brokers: ' + broker}) )
-                .finally(resp => {
-                    that.#ticker_filter = new TickerFilter();
-                    that.#ticker_filter.brokers = brokers;
-                    that.write_status({info:'Completada Carga de Tickers desde los brokers.'});
-                });
-            });
-
+            //TODO REVISAR EVENTOS QUE DEBE GESTIONAR ESTE CONTROLADOR - SEPARAR EVENTOS DE TECLADO -> MOVER AL CONTROLADOR DE TECLADO
+            // Enables events managed by chart controller
             this.enable_events();
 
+            // Handle enable keys events
             $(document).on(ChartController.EVENT_ENABLE_KEYS, function(e) {
                 that.enable_events();
             });
 
+            // Handle key events disabling
             $(document).on(ChartController.EVENT_DISABLE_KEYS, function(e) {
                 if($(TickerFilter.FILTER).is(':visible')) {
                     $(TickerFilter.FILTER).trigger(Const.EVENT_CLOSE);
@@ -381,44 +421,56 @@ class ChartController {
                 }
             });
 
+            // Handles event Show movements
+            //TODO REFACTORIZAR CONTENIDO A METODO
             $(document).on(MenuMovs.EVENT_SHOW_MOVEMENTS, (e, opt) => {
                 console.log('CONTROLLER EVENT SHOW MOVEMENTS', e, opt);
                 // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
                 let model_key = that.current_model_key;
                 let series_to_del = [];
-                if(that.#models[model_key].movs) {
-                    series_to_del = Object.keys(that.#models[model_key].movs).map(k => that.#models[model_key].movs[k].id);
+                if(that.#chart_models[model_key].movs) {
+                    series_to_del = Object.keys(that.#chart_models[model_key].movs).map(k => that.#chart_models[model_key].movs[k].id);
                 }
 
                 if(opt.active) {
-                    let id = opt[Const.ID_ID];
-                    let level_max = opt[Const.MAXIMOS_ID][Const.NIVEL_ID];
-                    let level_selected = opt[Const.NIVEL_ID];
-                    console.log(level_max, that.#models);
-//TODO CONTROLAR LOS ERRORES, PARA DEVOLVER UN ERROR EN SECCION DE ESTADO, SI NO HAY DATOS DEL SERVIDOR, TAMBIEN CONTROLAR OTRAS VARIABLES COMO LEVEL_SELECTED, ETC
-                    that.load_movements(id, level_selected, level_max)
-                    .then(res => {
+                    try {
+                        let id = opt[Const.ID_ID];
+                        let level_max = opt[Const.MAXIMOS_ID][Const.NIVEL_ID];
+                        let level_selected = opt[Const.NIVEL_ID];
+                        console.log(level_max, that.#chart_models);
                         that.#view.clear_chart(that.active_chart, series_to_del);
-                        that.#view.plot_movements(res, that.active_chart);
-                    })
-                    .catch( (error) => {
+                        that.#view.plot_movements(this.#chart_models[id].movs[level_selected-1], that.active_chart);
+                        
+                        // //TODO CONTROLAR LOS ERRORES, PARA DEVOLVER UN ERROR EN SECCION DE ESTADO, SI NO HAY DATOS DEL SERVIDOR, TAMBIEN CONTROLAR OTRAS VARIABLES COMO LEVEL_SELECTED, ETC
+                        // that.load_movements(id, level_selected, level_max)
+                        // .then(res => {
+                        //     that.#view.clear_chart(that.active_chart, series_to_del);
+                        //     that.#view.plot_movements(res, that.active_chart);
+                        // })
+                        // .catch( (error) => {
+                        //     console.error('Error loading movements: ', error);
+                        //     that.#view.clear_chart(that.active_chart, series_to_del);
+                        // });
+                    }
+                    catch(err) {
                         console.error('Error loading movements: ', error);
                         that.#view.clear_chart(that.active_chart, series_to_del);
-                    });
+                    }
                 }
                 else {
                     that.#view.clear_chart(that.active_chart, series_to_del);
                 }
             });
 
-            $(document).on(MenuPatterns.EVENT_SHOW_PATTERNS, function(e, opt) {
+            // Handles event Show Patterns results
+            $(document).on(MenuPatterns.EVENT_SHOW_PATTERNS, function(e, query) {
                 that.write_status({info:'Buscando coincidencias...', loading:1});
-                opt.model_key = that.current_model_key;
-                if(that.#patterns_cb[opt[Const.TIPO_PARAM_ID]]) {
-                    that.#patterns_cb[opt[Const.TIPO_PARAM_ID]](opt, that)
+                query.model_key = that.current_model_key;
+                if(that.#patterns_cb[query[Const.TIPO_PARAM_ID]]) {
+                    that.#patterns_cb[query[Const.TIPO_PARAM_ID]](query, that)
                     .then( res => {
                         that.write_status({clear: 1});
-                        $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, opt);
+                        $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, query);
                     })
                     .catch( err => {
                         console.error('Error procesando patrones: ', err);
@@ -430,30 +482,34 @@ class ChartController {
                 }
             });
 
-            $(document).on(PanelPatterns.EVENT_PLOT_PATTERN, (e, pattern, ops) => {
-                // this.#view.plot_pattern(pattern, ops, this.active_chart);
-                let prev = pattern.prev_name;
-                delete pattern.prev_name;
-                let zoom = pattern.zoom;
-                delete pattern.zoom;
+            // Handles event to plot Patterns results and explorer
+            $(document).on(PanelPatterns.EVENT_PLOT_PATTERN, (e, pattern, visual_conf, query) => {
+                // this.#view.plot_pattern(pattern, visual_conf, this.active_chart);
+                let prev = visual_conf.prev_name;
+                // delete visual_conf.prev_name;
+                let zoom = visual_conf.zoom;
+                // delete visual_conf.zoom;
 
                 let series_to_del = [];
                 if(prev) series_to_del.push(prev);
+                // Forces deletion for previous plots (need to be here, data may be empty, and therefore won t enter in next forEach loop)
                 that.#view.clear_chart(that.active_chart, series_to_del);
 
+                // TODO OPTIMIZAR: PASAR TODOS LOS RETROCESOS FUSIONADOS EN LUGAR DE GRAFICARLOS SECUENCIALMENTE?
                 Object.keys(pattern).forEach(k => {
                     series_to_del = [];
-                    if(that.#models[that.current_model_key].pattern_result[pattern[k].level][pattern[k].name]) {
-                        series_to_del = [that.#models[that.current_model_key].pattern_result[pattern[k].level][pattern[k].name].id];
-                    }
+                    // if(that.#chart_models[that.current_model_key].pattern_result[pattern[k].level][pattern[k].name]) {
+                        // series_to_del.push(that.#chart_models[that.current_model_key].pattern_result[pattern[k].level][pattern[k].name].id);
+                    // }
                     that.#view.clear_chart(that.active_chart, series_to_del);
 
                     if(zoom) that.#view.zoom_chart(zoom, that.active_chart);
 
-                    that.#view.plot_retracements(pattern[k], that.active_chart);
+                    that.#view.plot_retracements(pattern[k], that.active_chart, query);
                 });
             });
 
+            // Handles event to load candles historic
             $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => that.event_load_historic(active));
 
             // Time Frame header //TODO CAMBIAR
@@ -470,11 +526,13 @@ class ChartController {
 
     get models() { return this.#models; }
 
+    get chart_models() { return this.#chart_models; }
+
     get current_model_key() { return this.generate_model_key(this.currActive, ''); } //this.#activeChart.id); }
 
-    get_level_max(id) { return this.#models[id].max.level_max; }
+    get_level_max(id) { return this.#chart_models[id].max.level_max; }
     
-    get_level_selected(id) { return this.#models[id].max.level_selected; }
+    get_level_selected(id) { return this.#chart_models[id].max.level_selected; }
 
     get view() { return this.#view; }
 
@@ -484,7 +542,7 @@ class ChartController {
     
     get active_chart_id() { return this.#activeChart.id; }
 
-    get patterns() { return this.#models.patterns; }
+    get patterns() { return this.#chart_models.patterns; }
 
     // set_active_chart(chart) { this.#activeChart = chart; }
 
@@ -618,13 +676,10 @@ class ChartController {
         this.#chart_frames[id].frame.append(time_frame_el);
          //TODO PUEDE QUE LOS MARCOS TEMPORALES CAMBIEN DE UN BROKER A OTRO EN EL FUTURO
         let time_frame_dropdown = new Dropdown(time_frame_el,
-                                                    Time.TIME_FRAMES,
-                                                    ChartController.EVENT_TIME_FRAME_CHANGED);
+                                                Time.TIME_FRAMES,
+                                                ChartController.EVENT_TIME_FRAME_CHANGED);
 
-        $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, txt, el) => {
-            let time_frame = txt;
-            // if(typeof el == 'string') time_frame = el;
-            // else time_frame = $(el.target).text();
+        $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, time_frame, el) => {
             $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).find('p').text(time_frame);
             this.set_time_frame(time_frame);
         });
@@ -655,12 +710,13 @@ class ChartController {
 
         let priceMin = Math.min(...price_arr_min);
         let priceMax = Math.max(...price_arr_max);
-        let dateMin = sub_data[sub_data.length - ChartController.DEFAULT_CHART_ZOOM][Const.IDX_CANDLE_TIME]; //data.data_y[data.data_y.length-ChartController.DEFAULT_CHART_ZOOM][Const.IDX_CANDLE_TIME];
+        let offset_zoom = (sub_data.length > ChartController.DEFAULT_CHART_ZOOM) ? ChartController.DEFAULT_CHART_ZOOM : sub_data.length;
+        let dateMin = sub_data[sub_data.length - offset_zoom][Const.IDX_CANDLE_TIME]; //data.data_y[data.data_y.length-ChartController.DEFAULT_CHART_ZOOM][Const.IDX_CANDLE_TIME];
         let dateMax = sub_data[sub_data.length - 1][Const.IDX_CANDLE_TIME]; //data.data_y[data.data_y.length-1][Const.IDX_CANDLE_TIME];
         let zoom = {
             startValue: {x: dateMin, y:priceMin},
             endValue: { x: dateMax, y:priceMax},
-            margin: {x: 3.5, y: 1.5}, //Margin values %
+            margin: {x: /*3.5*/1, y: 5}, //Margin values %
         };
         if(zoom) {
             this.#view.zoom_chart(zoom, this.active_chart);
@@ -672,23 +728,19 @@ class ChartController {
         return new Promise( (resolve, reject) => {
             // model_key = this.generate_model_key(request, this.#activeChart.id);
             model_key = this.current_model_key;
-console.time('historic');
+            console.time('historic');
             this.interface.load_historical(request, false)
             .then(rawData => {
                     let model = new ModelChart();
-                    that.#models[model_key] = model;
-                    that.#models[model_key].split_ohlc_data(rawData);
-console.timeEnd('historic');
-console.time('MaxRelative');
-let start = performance.now();
-let rmax = new MaxRelative(that.#models[model_key].ohlc, 3);
-let end = performance.now();
-let diff = end - start;
-console.timeEnd('MaxRelative');
-console.log('Max processing time (', rmax.length, ' for ', rmax.levels, ' levels) :', diff, 'ms');
-                    resolve(that.#models[model_key].ohlc);
+                    that.#chart_models[model_key] = model;
+                    that.#chart_models[model_key].split_ohlc_data(rawData);
+                    console.timeEnd('historic');
+                    resolve(that.#chart_models[model_key].ohlc);
             })
-            .catch( error => reject(error));
+            .catch( error => {
+                console.timeEnd('historic');
+                reject(error);
+            });
         });
     }
     
@@ -766,7 +818,7 @@ console.log('Max processing time (', rmax.length, ' for ', rmax.levels, ' levels
                 .done( max => {
                     this.interface.select_maximum(model_key, level)
                     .then( data => {
-                        this.#models[model_key].max.level_selected = level;
+                        this.#chart_models[model_key].max.level_selected = level;
                         resolve(data);
                     })
                     .catch( error => {
@@ -790,19 +842,19 @@ console.log('Max processing time (', rmax.length, ' for ', rmax.levels, ' levels
             let max = $.Deferred();
             if(!model_key) model_key = this.generate_model_key(request, this.#activeChart.id);
             
-            if((!this.#models[model_key].max) || (this.#models[model_key].max.level_max < level_max)) {
+            if((!this.#chart_models[model_key].max) || (this.#chart_models[model_key].max.level_max < level_max)) {
                 this.interface.load_maximum(model_key, level_max)
                 .then( rawData => {
                     if(rawData) {
-                        this.#models[model_key].split_max_data(rawData);
-                        console.log('LOAD_MAXIMUM DATA LOADED:', this.#models[model_key].max);
-                        resolve(this.#models[model_key].max);
+                        this.#chart_models[model_key].split_max_data(rawData);
+                        console.log('LOAD_MAXIMUM DATA LOADED:', this.#chart_models[model_key].max);
+                        resolve(this.#chart_models[model_key].max);
                     }
                 })
                 .catch( error => reject('Error loading max: ' + error));
             }
             else {
-                max.resolve(this.#models[model_key].max);
+                max.resolve(this.#chart_models[model_key].max);
             }
 
             $.when(max)
@@ -811,37 +863,37 @@ console.log('Max processing time (', rmax.length, ' for ', rmax.levels, ' levels
         });
     }
 
-    load_movements(model_key, level, level_max) {
-        return new Promise( (resolve, reject) => {
-            let movs = $.Deferred();
-            // if(!model_key) model_key = this.generate_model_key(request, this.#activeChart.id);
-            if(!model_key) model_key = this.current_model_key;
+    // load_movements(model_key, level, level_max) {
+    //     return new Promise( (resolve, reject) => {
+    //         let movs = $.Deferred();
+    //         // if(!model_key) model_key = this.generate_model_key(request, this.#activeChart.id);
+    //         if(!model_key) model_key = this.current_model_key;
 
-            if( (!this.#models[model_key].movs) || (!Object.keys(this.#models[model_key].movs).includes(String(level))) ) {
-            // if( (!this.#models[model_key].movs) || (!Object.keys(this.#models[model_key].movs).includes(parseInt(level))) ) {
-                this.select_data(this.currActive)
-                .then( () => this.select_maximum(model_key, level, level_max))
-                .then( () => this.interface.load_movements(model_key, level))
-                .then( rawData => {
-                    let ret = this.#models[model_key].split_movements_data(rawData);
-                    if(ret === 'string' ) reject(ret);
-                    console.log(ret);
-                    movs.resolve(ret);
-                })
-                .catch( error => {
-                    console.log('Error loading movements:', error);
-                    movs.reject(error);
-                });
-            }
-            else {
-                movs.resolve(this.#models[model_key].movs[level]);
-            }
+    //         if( (!this.#chart_models[model_key].movs) || (!Object.keys(this.#chart_models[model_key].movs).includes(String(level))) ) {
+    //         // if( (!this.#chart_models[model_key].movs) || (!Object.keys(this.#chart_models[model_key].movs).includes(parseInt(level))) ) {
+    //             this.select_data(this.currActive)
+    //             .then( () => this.select_maximum(model_key, level, level_max))
+    //             .then( () => this.interface.load_movements(model_key, level))
+    //             .then( rawData => {
+    //                 let ret = this.#chart_models[model_key].split_movements_data(rawData);
+    //                 if(ret === 'string' ) reject(ret);
+    //                 console.log(ret[level]);
+    //                 movs.resolve(ret);
+    //             })
+    //             .catch( error => {
+    //                 console.log('Error loading movements:', error);
+    //                 movs.reject(error);
+    //             });
+    //         }
+    //         else {
+    //             movs.resolve(this.#chart_models[model_key].movs[level]);
+    //         }
 
-            $.when(movs)
-            .done( data => resolve(data))
-            .catch( error => reject(error));
-        });
-    }
+    //         $.when(movs)
+    //         .done( data => resolve(data))
+    //         .catch( error => reject(error));
+    //     });
+    // }
 
     load_retracements(request, model_key) {
         return new Promise( (resolve, reject) => {
@@ -859,7 +911,7 @@ console.log('Max processing time (', rmax.length, ' for ', rmax.levels, ' levels
 
                 this.interface.load_retracements(req)
                 .then( rawData => {
-                    let ret = this.#models[request.model_key].split_retracements_data(rawData, request);
+                    let ret = this.#chart_models[request.model_key].split_retracements_data(rawData, request);
                     if(ret === 'string' ) reject(ret);
                     console.log(ret);
                     resolve(ret);

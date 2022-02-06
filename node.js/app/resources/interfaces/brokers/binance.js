@@ -30,10 +30,37 @@ function get_tickers(params) {
     });
 }
 
+
+/**
+ * 
+ * @param {*} query query request fields:
+ * id: symbol
+ * interval: time frame (1m, 3m, 5m, 15m, 30, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
+ * starttime: first timestamp in EPOCH UNIX (ms)
+ * endtime: last candle timestamp in EPOCH UNIX (ms)
+ * @returns Promise object { query, data }
+ * query: input query
+ * data: array of candle information
+ *       candle information example:
+ * [
+    {
+        openTime: 1508328900000,
+        open: '0.05655000',
+        high: '0.05656500',
+        low: '0.05613200',
+        close: '0.05632400',
+        volume: '68.88800000',
+        closeTime: 1508329199999,
+        quoteAssetVolume: '2.29500857',
+        trades: 85,
+        baseAssetVolume: '40.61900000',
+    },
+  ]
+ */
 function load_historic(query) {
     return new Promise( (resolve, reject) => {
-console.log("QUERY:", query);
-
+// console.log("QUERY:", query);
+        console.time('load_historic');
         let historic_queries = [];
         let time_queries = [];
         query.data_type = "historic";
@@ -48,21 +75,19 @@ console.log("QUERY:", query);
                     startTime:time.starttime,
                     endTime:time.endtime
                 })
-                // .then(historic => {
-                //     console.log(historic);
-                //     historics.push(historic);
-                //     resolve(historics);
-                // })
-                // .catch(err => reject(err))
             );
         });
 
         Promise.all(historic_queries)
         .then(historics => {
+            console.timeEnd('load_historic');
             console.log('TOTAL HISTORICS RX: ', historics.length);
             resolve({ query: query, data: [].concat(...historics) });
         })
-        .catch(err => reject(err));
+        .catch(err => {
+            console.timeEnd('load_historic:', query);
+            reject(err);
+        });
     })
 }
 
@@ -91,7 +116,7 @@ const init = () => {
     });
 }
 
-const process = (req, res) => {
+const process = (req) => {
     return new Promise( (resolve, reject) => {
         if(req) {
             const action = req[TSQL.DEFS.ACTION];

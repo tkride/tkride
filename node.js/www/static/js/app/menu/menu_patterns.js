@@ -80,17 +80,30 @@ class MenuPatterns {
     static EVENT_SEARCH_IN_RET_SELECTED = 'event-search-in-ret-selected';
     static EVENT_CLEAR_FORM = 'event-patterns-clear-form';
 
+    // static EMPTY_FORM = {
+    //     [Const.TIPO_PARAM_ID]: Const.RETROCESOS_ID,
+    //     [Const.BUSCAR_EN_COMBO_ID]: Const.MOVIMIENTOS_ID,
+    //     [Const.NIVEL_ID]: '',
+    //     [Const.BUSCAR_EN_ID]: '',
+    //     [Const.ID_ID]: '',
+    //     [Const.VALORES_ID]: '',
+    //     [Const.SENTIDO_ID]: Const.ALCISTA,
+    //     [Const.DESDE_ID]: Const.INICIO_ID,
+    //     [Const.ITERA_EN_N_ID]: '',
+    //     [Const.SOLO_MAX_ID]: Const.NO,
+    //     [Const.NAME_ID]: '',
+    // };
     static EMPTY_FORM = {
         [Const.TIPO_PARAM_ID]: Const.RETROCESOS_ID,
         [Const.BUSCAR_EN_COMBO_ID]: Const.MOVIMIENTOS_ID,
-        [Const.NIVEL_ID]: '',
-        [Const.BUSCAR_EN_ID]: '',
+        [Const.LEVEL_ID]: '',
+        [Const.SEARCH_IN_ID]: '',
         [Const.ID_ID]: '',
-        [Const.VALORES_ID]: '',
-        [Const.SENTIDO_ID]: Const.ALCISTA,
-        [Const.DESDE_ID]: Const.INICIO_ID,
-        [Const.ITERA_EN_N_ID]: '',
-        [Const.SOLO_MAX_ID]: Const.NO,
+        [Const.RET_LEVELS_ID]: '',
+        [Const.TREND_ID]: Const.ALCISTA,
+        [Const.FROM_ID]: Const.INICIO_ID,
+        [Const.ITERATE_ID]: '',
+        [Const.ONLY_MAX_ID]: Const.NO,
         [Const.NAME_ID]: '',
     };
 

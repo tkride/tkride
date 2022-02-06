@@ -37,10 +37,10 @@ function rpc(that, args) {
   console.log(rpc.name);
   console.log(args)
   args_str = args.join('');
-  queryTQS = { query: args_str };
-  // Ajax.post(Const.ROOT_URL, that.context.headers, queryTQS,
-  that.context.chart_ctrl.send_query(queryTQS,
-  // Ajax.post(Const.ROOT_URL, this.headers, queryTQS,
+  queryTSQL = { query: args_str };
+  // Ajax.post(Const.ROOT_URL, that.context.headers, queryTSQL,
+  that.context.chart_ctrl.send_query(queryTSQL,
+  // Ajax.post(Const.ROOT_URL, this.headers, queryTSQL,
     function(rawData) {
     //  main.commandsTQS.plot_candles(rawData, main.chartFrame.get_active_frame());
       $('#respuesta').append("<p>" + rawData + "</p>");

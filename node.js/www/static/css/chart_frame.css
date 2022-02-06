@@ -202,7 +202,8 @@ input {
 .chart-title {
     font-size: 1.1em;
     margin-left: 6.5em;
-    top: 1.6vh;
+    /* top: 1.6vh; */
+    top: 11px;
     color: var(--font-color);
     position: absolute;
     z-index: var(--index-panel);
@@ -211,7 +212,8 @@ input {
 .chart-time-frame {
     font-size: 1em;
     margin-left: 5em;
-    top: 1em;
+    /* top: 0.85em; */
+    top: 12px;
     color: var(--font-color);;
     position: absolute;
     z-index: var(--index-panel);

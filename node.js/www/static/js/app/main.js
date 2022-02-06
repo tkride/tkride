@@ -1,16 +1,11 @@
 /**file: main.js */
 
 
-
 $(document).ready(function() {
-    
+
     // ---------------------------------------- INIT MAIN VAR ----------------------------------------
 
     var that = this;
-    let brokers_list = ['BINANCE'];
-    that.tickers = [];
-    that.csrftoken = ''; //Cookies.get('csrftoken');
-    that.headers = { 'X-CSRFToken' : that.csrftoken };
 
     // ---------------------------------------- CREATES CHART ----------------------------------------
     const create_controller = () => new Promise((resolve, reject) => {
@@ -19,9 +14,10 @@ $(document).ready(function() {
             else reject(null);
     });
 
-    const init_controller = (ctrl, brokers, headers) => new Promise((resolve, reject) => {
+    // const init_controller = (ctrl, brokers, headers) => new Promise((resolve, reject) => {
+    const init_controller = (ctrl) => new Promise((resolve, reject) => {
         if(ctrl) {
-            ctrl.init(brokers, headers);
+            ctrl.init();
             resolve(ctrl);
         }
         else reject(null);
@@ -46,7 +42,8 @@ $(document).ready(function() {
     });
 
     create_controller()
-        .then(resp => init_controller(resp, brokers_list, that.headers))
+        // .then(resp => init_controller(resp, brokers_list, that.headers))
+        .then(resp => init_controller(resp))
         .then(resp => load_default(resp))
         .then(resp => chart_created(resp))
         .catch(resp => console.error('Error al crear el controlador'));

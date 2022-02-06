@@ -10,30 +10,13 @@ class Brokers {
 
     //----------------------------- CONSTRUCTORS -----------------------------
     constructor(brokers) {
-        this.set_brokers(brokers);
+        this.brokers = brokers;
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
-    set_brokers(broker) {
-        if (broker instanceof Array) {
-            broker.forEach(br => this.brokers[br] = []);
-        }
-        else if(broker instanceof string) {
-            this.brokers[broker] =[];
-        }
-    }
 
     get_brokers() {
         return this.brokers;
-    }
-
-    set_tickers(broker, tickers) {
-        this.brokers[broker] = this.brokers[broker].concat(tickers);
-        // console.log(this.brokers[broker]);
-    }
-
-    get_ticker(ticker) {
-
     }
 
     get_broker_tickers(broker) {

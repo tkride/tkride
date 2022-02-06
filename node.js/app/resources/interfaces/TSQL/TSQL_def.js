@@ -9,6 +9,10 @@ const ACTIONS = [
     "GET_RETRACEMENTS",
 ];
 
+const COMMANDS = [
+    "GET_BROKERS"
+];
+
 const PARAMS = [
     "ID",
     "SYMBOL",
@@ -29,11 +33,12 @@ const PARAMS = [
     "STOP_AT",
 ];
 
-const ALL = ACTIONS.concat(PARAMS);
+const ALL = ACTIONS.concat(PARAMS).concat(COMMANDS);
 
 const DEFS = {
     "ACTION": "ACTION",
-    "PARAMS": "PARAMS"
+    "PARAMS": "PARAMS",
+    "COMMAND": "COMMAND"
 }
 
 const get = (cmd) => {
@@ -48,4 +53,8 @@ const get = (cmd) => {
     return res;
 }
 
-module.exports = { get, ACTIONS, PARAMS, DEFS, ALL }
+const isCmd = (cmd) => {
+    return (COMMANDS.indexOf(cmd) != -1);
+}
+
+module.exports = { get, isCmd, ACTIONS, PARAMS, DEFS, ALL }

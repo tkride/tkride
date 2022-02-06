@@ -19,7 +19,10 @@
         <script src="/static/js/extern/jquery-ui-1.13.0.custom/jquery-ui.min.js"></script>
         <script src="/static/js/extern/keyboard.js"></script>
         <script src="/static/js/extern/jquery.mousewheel-min.js"></script>
-        <script src="/static/js/extern/echarts.min.js"></script>
+        <!-- <script src="/static/js/extern/echarts.min.js"></script> -->
+        <script src="/static/js/extern/echarts/echarts.min.js"></script>
+        <!-- <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script> -->
+        <!-- <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script> -->
         
         <!-- Django workaround for dynamic use of ajax -->
         <!-- <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script> -->
@@ -112,50 +115,50 @@
             </div>
             <div id='patterns-menu-ret-level' class='menu-field'>
                 <p>Nivel movimientos</p>
-                <input id='patterns-menu-ret-level' name='NIVEL' class='short-num-input' autocomplete='off'></input>
+                <input id='patterns-menu-ret-level' name='level' class='short-num-input' autocomplete='off'></input>
             </div>
-            <div id='patterns-menu-ret-values' class='menu-field'><p>Valores</p><input id='patterns-menu-ret-values-input' name='VALORES' class='text-input'></input></div>
+            <div id='patterns-menu-ret-values' class='menu-field'><p>Valores</p><input id='patterns-menu-ret-values-input' name='levels' class='text-input'></input></div>
             <div id='patterns-menu-ret-sense' class='menu-field menu-options-radio'>
                 <p class='menu-field-label'>Sentido</p>
                 <!-- <div class='menu-options-radio'> -->
-                    <input type='radio' name='SENTIDO' id='patterns-menu-ret-sense-radio-bull' class='button-general' value='ALCISTA' checked>
+                    <input type='radio' name='trend' id='patterns-menu-ret-sense-radio-bull' class='button-general' value='bull' checked>
                     <label for='patterns-menu-ret-sense-radio-bull'>Alcista</label>
-                    <input type='radio' name='SENTIDO' id='patterns-menu-ret-sense-radio-bear' class='button-general' value='BAJISTA'>
+                    <input type='radio' name='trend' id='patterns-menu-ret-sense-radio-bear' class='button-general' value='bear'>
                     <label for='patterns-menu-ret-sense-radio-bear'>Bajista</label>
-                    <input type='radio' name='SENTIDO' id='patterns-menu-ret-sense-radio-both' class='button-general' value='AMBOS'>
+                    <input type='radio' name='trend' id='patterns-menu-ret-sense-radio-both' class='button-general' value='both'>
                     <label for='patterns-menu-ret-sense-radio-both'>Ambos</label>
                 <!-- </div> -->
             </div>
             <div id='patterns-menu-ret-from' class='menu-field menu-options-radio'>
                 <p class='menu-field-label'>Desde</p>
                 <!-- <div class='menu-options-radio'> -->
-                    <input type='radio' name='DESDE' id='patterns-menu-ret-from-radio-init' class='button-general' value='INICIO' checked>
+                    <input type='radio' name='from' id='patterns-menu-ret-from-radio-init' class='button-general' value='init' checked>
                     <label for='patterns-menu-ret-from-radio-init' >Inicio</label>
-                    <input type='radio' name='DESDE' id='patterns-menu-ret-from-radio-end' class='button-general' value='FIN'>
+                    <input type='radio' name='from' id='patterns-menu-ret-from-radio-end' class='button-general' value='end'>
                     <label for='patterns-menu-ret-from-radio-end' >Fin</label>
-                    <input type='radio' name='DESDE' id='patterns-menu-ret-from-radio-correction' class='button-general' value='CORRECCION'>
+                    <input type='radio' name='from' id='patterns-menu-ret-from-radio-correction' class='button-general' value='correction'>
                     <label for='patterns-menu-ret-from-radio-correction' >Corrección</label>
                 <!-- </div> -->
             </div>
             <div id='patterns-menu-ret-iterate' class='menu-field'>
                 <p class='menu-field-label'>Itera búsqueda</p>
-                <input id='patterns-menu-ret-iterate-input' name='ITERA_EN_N' class='short-num-input' autocomplete="off"></input>
+                <input id='patterns-menu-ret-iterate-input' name='iterate' class='short-num-input' autocomplete="off"></input>
             </div>
             <div id='patterns-menu-ret-only-max' class='menu-field menu-options-radio'>
                 <p class='menu-field-label'>Filtrar máximo</p>
                 <!-- <div class='menu-options-radio'> -->
-                    <input type='radio' name='SOLO_MAX' id='patterns-menu-ret-radio-only-max-none' class='button-general' value='0' checked>
+                    <input type='radio' name='onylmax' id='patterns-menu-ret-radio-only-max-none' class='button-general' value='0' checked>
                     <label for='patterns-menu-ret-radio-only-max-none' >No</label>
-                    <input type='radio' name='SOLO_MAX' id='patterns-menu-ret-radio-only-max-movs' class='button-general' value='1'>
+                    <input type='radio' name='onylmax' id='patterns-menu-ret-radio-only-max-movs' class='button-general' value='1'>
                     <label for='patterns-menu-ret-radio-only-max-movs' >Movimiento</label>
-                    <input type='radio' name='SOLO_MAX' id='patterns-menu-ret-radio-only-max-ret' class='button-general' value='-1'>
+                    <input type='radio' name='onylmax' id='patterns-menu-ret-radio-only-max-ret' class='button-general' value='-1'>
                     <label for='patterns-menu-ret-radio-only-max-ret' >Retroceso</label>
                 <!-- </div> -->
             </div>
         </div>
 
         <div id='search-in-retracements'>
-            <input id='search-in-ret-name' name='BUSCAR_EN' title="Nombre del retroceso" class='.text-input' autocomplete='off'></input>
+            <input id='search-in-ret-name' name='searchin' title="Nombre del retroceso" class='.text-input' autocomplete='off'></input>
         </div>
         <div id='search-in-ret-stored-rets' data-source='Object.keys(that.#models.patterns)' data-event='event-search-in-ret-selected' class='dropdown stored-rets hoverable-icon button-general lni lni-chevron-down'></div>
         <div id='search-in-trends'><span>Tendencia</span><input id='search-in-trend-name' autocomplete='off'></input></div>
@@ -248,7 +251,7 @@
 
         <script src="/static/js/app/menu/panel_patterns.js"></script>
         <script src="/static/js/app/menu/menu_patterns.js"></script>
-        <script src="/static/js/app/menu/models/model_patterns.js"></script>
+        <script src="/static/js/app/menu/models/patterns_model.js"></script>
         
         <script src="/static/js/app/menu/menu_movs.js"></script>
         <script src="/static/js/app/menu/menu_settings.js"></script>
@@ -257,6 +260,7 @@
         <script src="/static/js/app/controls.js"></script>
 
         <script src="/static/js/app/analysis/movements.js"></script>
+        <script src="/static/js/app/analysis/retracements.js"></script>
 
         <script src="/static/js/app/chart/chart_model.js"></script>
         <script src="/static/js/app/chart/chart_view.js"></script>
