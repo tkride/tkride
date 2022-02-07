@@ -186,7 +186,7 @@ class MaxRelative {
 
 /** 'timePrice' */
 
-class timePrice {
+class TimePrice {
     //----------------------------- PROPERTIES -----------------------------
 
     time;
@@ -204,7 +204,18 @@ class timePrice {
         return `${this.time}, ${this.price}`;
     }
 
-    get data() { return [this.time, this.price]; }
+    get data() {
+        return [this.time, this.price];
+    }
+}
+
+
+class Movement {
+    id = '';
+    level = 0;
+    rel_max = [];
+    max_filtered = [];
+    movs = [];
 }
 
 /** 'Movements' */
@@ -282,9 +293,9 @@ class Movements {
 
                 let mov = {
                     [Const.TIMESTAMP_ID]: data[i][Const.IDX_MAX_TIMESTAMP],
-                    [Const.INIT_ID]: new timePrice(data[i][Const.IDX_MAX_TIMESTAMP], data[i][first]),
-                    [Const.END_ID]: new timePrice(data[i+1][Const.IDX_MAX_TIMESTAMP], data[i+1][sec]),
-                    [Const.CORRECTION_ID]: new timePrice(v[Const.IDX_MAX_TIMESTAMP], v[first]),
+                    [Const.INIT_ID]: new TimePrice(data[i][Const.IDX_MAX_TIMESTAMP], data[i][first]),
+                    [Const.END_ID]: new TimePrice(data[i+1][Const.IDX_MAX_TIMESTAMP], data[i+1][sec]),
+                    [Const.CORRECTION_ID]: new TimePrice(v[Const.IDX_MAX_TIMESTAMP], v[first]),
                     [Const.TREND_ID]: sense,
                     [Const.DELTA_INIT_ID]: dinit,
                     [Const.DELTA_END_ID]: dend,

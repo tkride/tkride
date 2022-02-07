@@ -199,10 +199,15 @@ class Const {
     static BULL_ID = 'bull';
     static BEAR_ID = 'bear';
     static BOTH_ID = 'both';
-    static SENSE_STR = {
+    static TREND_STR = {
         [-1]: Const.BEAR_ID,
         1: Const.BULL_ID,
         [[-1,1]]: Const.BOTH_ID
+    }
+    static TREND_VAL = {
+        [Const.BULL_ID] : [Const.BULL],
+        [Const.BEAR_ID] : [Const.BEAR],
+        [Const.BOTH_ID] : Const.BOTH,
     }
 
     // STATISTICS
@@ -224,6 +229,7 @@ class Const {
     static TRADES_ID = 'trades';
 
     // GENERIC DEFINITIONS
+    static MODEL_ID = 'model';
     static DATA_ID = 'data';
     static DATA_TYPE_ID = 'datatype';
     static FROM_ID = 'from';
@@ -250,8 +256,15 @@ class Const {
     static LEVEL_ID = 'level';
     static RET_LEVELS_ID = 'levels';
     static SEARCH_IN_ID = 'searchin';
+    static SEARCH_IN_DATA_ID = 'searchindata';
     static ITERATE_ID = 'iterate';
     static ONLY_MAX_ID = 'onlymax';
+    static PATTERN_RESULTS_ID = 'patternresults';
+    static PATTERNS_ID = 'patterns';
+
+    static LOGICAL_ID = 'logical';
+    static RET_MIN_ID = 'retmin';
+    static RET_MAX_ID = 'retmax';
 
     // CANDLES INDEX
     static IDX_CANDLE_TIME = 0;

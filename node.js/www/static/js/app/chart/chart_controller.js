@@ -123,11 +123,12 @@ class ChartController {
             }
             else {
                 try {
-                    ops[Const.DATA_ID] = that.#models[model_key][Const.MOVS_ID]; //[level];
-                    // let ret = new Retracements(ops);
+                    // ops[Const.DATA_ID] = that.#models[model_key][Const.MOVS_ID]; //[level];
+                    ops[Const.MODEL_ID] = that.#models[model_key];
                     let ret = Retracements.process(ops);
                     //TODO MOVER PATTERN RESULT DE #chart_models A #models
-                    that.#chart_models[model_key].pattern_result[ops[Const.NAME_ID]] = ret;
+                    // that.#chart_models[model_key].pattern_result[ops[Const.NAME_ID]] = ret;
+                    that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.NAME_ID]] = ret;
                     // Store retracements results
                     ops[Const.DATA_ID] = ret;
                     if(ret) resolve(ret);
@@ -204,7 +205,7 @@ class ChartController {
             this.#menus[MenuMovs.NAME].update_active(this.current_active, this.active_chart_id);
             
 //TODO GUARDAR MODELO DE DATOS FUENTE, NO SOLO 'CHART MODEL'
-            if(!this.#models[that.current_model_key]) this.#models[that.current_model_key] = {};
+            if(!this.#models[that.current_model_key]) this.#models[that.current_model_key] = new DataModel();
             this.#models[that.current_model_key][Const.MOVS_ID] = new Movements(that.#chart_models[that.current_model_key].ohlc, that.#menus[MenuMovs.NAME].level_max, that.current_model_key);
 
             console.time('Split movs');
@@ -324,9 +325,11 @@ class ChartController {
         if(!this.#menus[MenuStatus.NAME]) { this.#menus[MenuStatus.NAME] = new MenuStatus(this); }
         if(!this.#menus[MenuMovs.NAME]) { this.#menus[MenuMovs.NAME] = new MenuMovs(); }
         // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#patterns); }
-        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#chart_models); }
+        // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#chart_models); }
+        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#models); }
         if(!this.#menus[MenuSettings.NAME]) { this.#menus[MenuSettings.NAME] = new MenuSettings(this); }
-        if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#chart_models); }
+        // if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#chart_models); }
+        if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
         if(!this.#key_config) { this.#key_config = new KeyConfig(); }
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
     }
@@ -372,7 +375,8 @@ class ChartController {
             this.#ticker_filter = new TickerFilter();
 
             // this.#patterns = new PatternsModel('', this.#chart_models);
-            new PatternsModel('', this.#chart_models);
+            // new PatternsModel('', this.#chart_models);
+            new PatternsModel('', this.#models);
 
             // Creates view
             if (view) { this.#view = view; }
@@ -498,9 +502,9 @@ class ChartController {
                 // TODO OPTIMIZAR: PASAR TODOS LOS RETROCESOS FUSIONADOS EN LUGAR DE GRAFICARLOS SECUENCIALMENTE?
                 Object.keys(pattern).forEach(k => {
                     series_to_del = [];
-                    // if(that.#chart_models[that.current_model_key].pattern_result[pattern[k].level][pattern[k].name]) {
-                        // series_to_del.push(that.#chart_models[that.current_model_key].pattern_result[pattern[k].level][pattern[k].name].id);
-                    // }
+                    if(that.#models[that.current_model_key].patternresults[pattern[k].name].data[pattern[k].level]) {
+                        series_to_del.push(that.#models[that.current_model_key].patternresults[pattern[k].name].name);
+                    }
                     that.#view.clear_chart(that.active_chart, series_to_del);
 
                     if(zoom) that.#view.zoom_chart(zoom, that.active_chart);

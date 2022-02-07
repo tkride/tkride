@@ -208,10 +208,17 @@ class PanelPatterns {
 
     #generate_both_trends() {
         try {
-            var merged_y = this.#current_model[this.#current_name].data[Const.BULL_ID][this.level]
-                            .concat(this.#current_model[this.#current_name].data[Const.BEAR_ID][this.level])
-                            .sort( (x, y) => ( x[Const.TIMESTAMP_ID] > y[Const.TIMESTAMP_ID]) ? 1 : -1 );
-            this.#current_model[this.#current_name].data[Const.BOTH_ID] = { [this.level]: merged_y };
+            // var merged_y = this.#current_model[this.#current_name].data[Const.BULL_ID][this.level]
+            //                 .concat(this.#current_model[this.#current_name].data[Const.BEAR_ID][this.level])
+            //                 .sort( (x, y) => ( x[Const.TIMESTAMP_ID] > y[Const.TIMESTAMP_ID]) ? 1 : -1 );
+            // this.#current_model[this.#current_name].data[Const.BOTH_ID] = { [this.level]: merged_y };
+            let dbull = this.#current_model[this.#current_name].data[this.level].filter(d => d[Const.TREND_ID] == Const.BULL);
+            let dbear = this.#current_model[this.#current_name].data[this.level].filter(d => d[Const.TREND_ID] == Const.BEAR);
+            let dboth = this.#current_model[this.#current_name].data[this.level]
+                        .sort( (x, y) => ( x[Const.TIMESTAMP_ID] > y[Const.TIMESTAMP_ID]) ? 1 : -1 );
+            this.#current_model[this.#current_name].data[Const.BULL_ID] = { [this.level]: dbull };
+            this.#current_model[this.#current_name].data[Const.BEAR_ID] = { [this.level]: dbear };
+            this.#current_model[this.#current_name].data[Const.BOTH_ID] = { [this.level]: dboth };
 
             // var merged_x = this.#current_model[this.#current_name].data_x[Const.BULL_ID].concat(this.#current_model[this.#current_name].data_x[Const.BEAR_ID]).sort();
             // var merged_ret = this.#current_model[this.#current_name].data_ret[Const.BULL_ID][this.level].concat(this.#current_model[this.#current_name].data_ret[Const.BEAR_ID][this.level]).sort();
@@ -253,8 +260,8 @@ class PanelPatterns {
         try {
             if(this.#current_name) {
                 // Initialize properties
-                this.#generate_nok();
-                this.#generate_both_trends(); //TODO REVISAR ¿AUN HACE FALTA AQUI?
+                // this.#generate_nok();
+                // this.#generate_both_trends();
 
                 this.#current_name = this.#current_model[this.#current_name][Const.NAME_ID];
                 if(!this.#explorer[this.#current_name]) {
@@ -304,18 +311,22 @@ class PanelPatterns {
         this.trend = '';
         this.#explorer[this.#current_name][Const.RESULTS_ID] = Const.OK_ID;
         this.#explorer[this.#current_name][Const.OK_ID] = {};
-        this.#explorer[this.#current_name][Const.OK_ID][Const.BULL_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.OK_ID].num;
-        this.#explorer[this.#current_name][Const.OK_ID][Const.BEAR_ID] = this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.OK_ID].num;
-        this.#explorer[this.#current_name][Const.OK_ID][Const.BOTH_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.OK_ID].num + this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.OK_ID].num;
+
+        let sbull = this.#current_model[this.#current_name].stats[this.level].filter(s=>s[Const.TREND_ID]==Const.BULL)[0];
+        let sbear = this.#current_model[this.#current_name].stats[this.level].filter(s=>s[Const.TREND_ID]==Const.BEAR)[0];
+
+        this.#explorer[this.#current_name][Const.OK_ID][Const.BULL_ID] = sbull[Const.OK_ID].num;
+        this.#explorer[this.#current_name][Const.OK_ID][Const.BEAR_ID] = sbear[Const.OK_ID].num;
+        this.#explorer[this.#current_name][Const.OK_ID][Const.BOTH_ID] = sbull[Const.OK_ID].num + sbear[Const.OK_ID].num;
 
         this.#explorer[this.#current_name][Const.BAD_ID] = {};
-        this.#explorer[this.#current_name][Const.BAD_ID][Const.BULL_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.BAD_ID].num;
-        this.#explorer[this.#current_name][Const.BAD_ID][Const.BEAR_ID] = this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.BAD_ID].num;
-        this.#explorer[this.#current_name][Const.BAD_ID][Const.BOTH_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.BAD_ID].num + this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.BAD_ID].num;
+        this.#explorer[this.#current_name][Const.BAD_ID][Const.BULL_ID] = sbull[Const.BAD_ID].num;
+        this.#explorer[this.#current_name][Const.BAD_ID][Const.BEAR_ID] = sbear[Const.BAD_ID].num;
+        this.#explorer[this.#current_name][Const.BAD_ID][Const.BOTH_ID] = sbull[Const.BAD_ID].num + sbear[Const.BAD_ID].num;
 
         this.#explorer[this.#current_name][Const.TOTAL_ID] = {};
-        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BULL_ID] = this.#current_model[this.#current_name].stats[Const.BULL_ID][this.level][Const.TOTAL_ID].num;
-        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BEAR_ID] = this.#current_model[this.#current_name].stats[Const.BEAR_ID][this.level][Const.TOTAL_ID].num;
+        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BULL_ID] = sbull[Const.TOTAL_ID].num;
+        this.#explorer[this.#current_name][Const.TOTAL_ID][Const.BEAR_ID] = sbear[Const.TOTAL_ID].num;
 
         this.#explorer[this.#current_name][Const.CURRENT_ID] = {};
         this.#explorer[this.#current_name][Const.CURRENT_ID][Const.OK_ID] = {};
@@ -357,6 +368,7 @@ class PanelPatterns {
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
+            this.#update_data_trend();
             this.#set_explorer_values();
         }
         catch(error) {
@@ -383,10 +395,27 @@ class PanelPatterns {
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
+            this.#update_data_trend();
             this.#set_explorer_values();
         }
         catch(error) {
             console.error("#set_trend_bear: ", error);
+        }
+    }
+
+    #update_data_trend() {
+        try {
+            let trend = Const.TREND_VAL[this.trend];
+            this.#results_selected.forEach(name => {
+                if(!this.#current_model[name]) {
+                    this.#current_model[name] = { [this.level]: [] };
+                }
+                this.#current_model[name].data[this.level] = JSON.parse(JSON.stringify(this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name].data[this.level]
+                                                            .filter(v => trend.includes(v[Const.TREND_ID])) ));
+            });
+        }
+        catch(error) {
+            console.error(`#update_data_trend ERROR: ${error}.`);
         }
     }
 
@@ -435,8 +464,10 @@ class PanelPatterns {
     }
     
     #update_current() {
+        console.time('update current');
         try {
             let data_plot = {};
+            // let trend = Const.TREND_VAL[this.trend];
 
             let current_value = this.current + 1;
             if(!current_value) { current_value = 0; }
@@ -466,40 +497,44 @@ class PanelPatterns {
                     // data_plot[name] = new Retracements(this.#current_model[name]);
                     // data_plot[name] = JSON.parse(JSON.stringify(this.#current_model[name]));
                     data_plot[name] = Object.assign(new Retracement(), this.#current_model[name]);
-                    // Filters selected trend retracements data
-                    data_plot[name].data = { [this.trend]: { [this.level]: [] } };
-                    // Filters selected results from retracement data
-                    data_plot[name].data[this.trend][this.level] = this.#current_model[name].data[this.trend][this.level].filter( (v, i) => selected_data.includes(i));
+                    // Reset data
+                    data_plot[name].data = { };
+                    // Filters selected trend and results from retracement data
+                    data_plot[name].data[this.level] = this.#current_model[name].data[this.level]
+                                                        // .filter( v => trend.includes(v[Const.TREND_ID]) )
+                                                        .filter( (v, i) => selected_data.includes(i));
                 }
             });
 
             // Zoom settings
             if((data_plot[this.#current_name] != undefined)
-                    && (data_plot[this.#current_name].data[this.trend] != undefined)
-                    && (data_plot[this.#current_name].data[this.trend][this.level].length > 0) )
+                    && (data_plot[this.#current_name].data[this.level] != undefined)
+                    && (data_plot[this.#current_name].data[this.level].length > 0) )
                 {
-                let priceMin = [].concat(...data_plot[this.#current_name].data[this.trend][this.level]
+                let priceMin = [].concat(...data_plot[this.#current_name].data[this.level]
                                                         .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
                                             .reduce( (a,b) => a < b ? a : b);
-                let priceMax = [].concat(...data_plot[this.#current_name].data[this.trend][this.level]
+                let priceMax = [].concat(...data_plot[this.#current_name].data[this.level]
                                                         .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
                                             .reduce( (a,b) => a > b ? a : b);
-                let dateMin = [].concat(...data_plot[this.#current_name].data[this.trend][this.level].map(t => t[Const.INIT_ID].time)).reduce((a, b) => a < b ? a : b);
-                let dateMax = [].concat(...data_plot[this.#current_name].data[this.trend][this.level].map(t => t[Const.CORRECTION_ID].time)).reduce((a, b) => a > b ? a : b);
+                let dateMin = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.INIT_ID].time)).reduce((a, b) => a < b ? a : b);
+                let dateMax = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.CORRECTION_ID].time)).reduce((a, b) => a > b ? a : b);
                 this.#visual_conf.zoom = {
                     startValue: {x: dateMin, y:priceMin},
                     endValue: { x: dateMax, y:priceMax},
-                    margin: {x: 30, y: 15}, //Margin values [x:candles, y:% max]
+                    margin: {x: 30, y: 5}, //Margin values [x:candles, y:% max]
                 };
             }
 
             // Previous pattern passed to be delete from chart
             this.#visual_conf.prev_name = this.#prev_name;
+            console.timeEnd('update current');
 
             $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_conf, this.query]);
         }
         catch(error) {
             console.error("#update_current: ", error);
+            console.timeEnd('update current');
         }
     }
 
@@ -534,8 +569,10 @@ class PanelPatterns {
     #format_stats_data(data) {
         let stats;
         try {
-            let sbull = (data.stats[Const.BULL_ID] != undefined) ? data.stats[Const.BULL_ID][this.level] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
-            let sbear = (data.stats[Const.BEAR_ID] != undefined) ? data.stats[Const.BEAR_ID][this.level] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
+            // let sbull = (data.stats[Const.BULL_ID] != undefined) ? data.stats[Const.BULL_ID][this.level] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
+            // let sbear = (data.stats[Const.BEAR_ID] != undefined) ? data.stats[Const.BEAR_ID][this.level] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
+            let sbull = (data.stats[this.level] != undefined) ? data.stats[this.level].filter(s => s[Const.TREND_ID] == Const.BULL)[0] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
+            let sbear = (data.stats[this.level] != undefined) ? data.stats[this.level].filter(s => s[Const.TREND_ID] == Const.BEAR)[0] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
 
             stats = {
                 model_info: this.#model_key,
@@ -587,7 +624,7 @@ class PanelPatterns {
             let name = $(el).text();
             $(el).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
             if($(el).hasClass(Const.CLASS_HOVERABLE_ICON_SELECTED)) {
-                let data = this.#models[this.#model_key].pattern_result[name]; //[this.level];
+                let data = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name];
                 let tree_order = this.#data_tree.indexOf(name);
                 let i = 0;
                 do {
@@ -614,7 +651,7 @@ class PanelPatterns {
                     this.#current_name = name;
                     if(trend) this.trend = trend;
                     this.#current_order = tree_order; //this.#data_tree.indexOf(this.#current_name);
-                    this.#current_model[name] = data;
+                    this.#current_model[name] = JSON.parse(JSON.stringify(data));
                     if(this.#visual_selection[this.#current_name])
                         this.#visual_selection_dd.items = this.#visual_selection[this.#current_name][this.trend].map(v => v+1);
                     else {
@@ -663,14 +700,13 @@ class PanelPatterns {
 
     // TODO BUSCADOR SOBRE RESULTADOS (RETROCESO <,>,=,!=), BUSCAR EN: RESULTADO (PHY-TARGET), OK-NOK, ALCISTA-BAJISTA, MAX-MIN, PENDIENTE, ...
     #create_results_tree(name) {
-        let data = this.#models[this.#model_key].pattern_result[name]; //[this.level];
+        let data = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name]; //[this.level];
         if(data) {
             this.#data_tree.push(name);
             let parent = data[Const.SEARCH_IN_ID];
-            let parent_data;
             if(parent) {
                 this.#create_results_tree(parent);
-                parent_data = this.#models[this.#model_key].pattern_result[parent]; //[this.level];
+                // parent_data = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][parent]; //[this.level];
             }
             let table_data = this.#format_stats_data(data);
             this.#tables[name] = new Table(table_data, PanelPatterns.ID_PATTERNS_RESULTS_STATS_TABLE);
@@ -718,6 +754,8 @@ class PanelPatterns {
                     this.#model_key = query.model_key;
                     this.level = query[Const.LEVEL_ID];
                     let name = query[Const.NAME_ID];
+                    this.#generate_nok();
+                    // this.#generate_both_trends();
                     this.#create_results_tree(name);
                 }
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL + ' > *').each((i, e) => $(e).show())
@@ -826,12 +864,14 @@ class PanelPatterns {
             if(val == null) {
                 this.#explorer[this.#current_name][Const.CURRENT_ID][this.result][this.trend] = 0;
             }
-            else if(this.#explorer[this.#current_name][Const.CURRENT_ID][this.result][this.trend] < this.#explorer[this.#current_name][this.result][this.trend]) {
+            // else if(this.#explorer[this.#current_name][Const.CURRENT_ID][this.result][this.trend] < this.#explorer[this.#current_name][this.result][this.trend]) {
+            else if( (val <= this.#explorer[this.#current_name][this.result][this.trend])
+                    && (val >= 0) ) {
                 this.#explorer[this.#current_name][Const.CURRENT_ID][this.result][this.trend] = val;
             }
-            else {
-                this.#explorer[this.#current_name][Const.CURRENT_ID][this.result][this.trend] = this.#explorer[this.#current_name][this.result][this.trend];
-            }
+            // else {
+                // this.#explorer[this.#current_name][Const.CURRENT_ID][this.result][this.trend] = this.#explorer[this.#current_name][this.result][this.trend];
+            // }
         }
     }
 

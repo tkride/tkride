@@ -1,5 +1,17 @@
 /**file: chart_model.js */
 
+// TODO ALAMCENAR TODOS LOS DATOS EN DataModel, ELIMINAR ModelChart
+class DataModel {
+    id;
+    name;
+    ohlc = {};
+    movs = {};
+    patternresults = {};
+    // TODO PASAR RESULTADOS DE PATRONES A SU TIPO, EN LUGAR DE INCLUIRLOS TODOS EN patternresults (REVISAR CUANDO SE DESARROLLEN LOS DEMAS CASOS)
+    rets = {};
+    trend = {};
+    next = {};
+}
 
 class ModelChart {
 

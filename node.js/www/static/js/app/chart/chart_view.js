@@ -17,7 +17,7 @@ class ChartView {
     static MARK_OFFSET = { [Const.BULL_ID]: [0, -20], [Const.BEAR_ID]: [0, 30], [Const.BOTH_ID]: [0, 0]};
     static MARK_COLOR = { [Const.BULL_ID]: 'rgba(0, 255, 0, 1)', [Const.BEAR_ID]: 'rgba(255, 0, 0, 1)', [Const.BOTH_ID]: 'rgba(181, 19, 187, 1)'};
 
-    static TRENDS = [ Const.BULL_ID, Const.BEAR_ID, Const.BOTH_ID ];
+    static TRENDS = [ Const.BULL_ID, Const.BEAR_ID ]; //, Const.BOTH_ID ];
 
     static SHOW_LOADING_OPS = {
         textColor: '#aeb1ba',
@@ -98,7 +98,6 @@ class ChartView {
         let res;
         console.time('split_retracements');
         
-        let data_x = {};
         let data = {};
         let data_ret = {};
         let data_delta_ini = {};
@@ -117,14 +116,17 @@ class ChartView {
                 throw ('No data available.');
             }
 
-            // if (rawData[Const.TIPO_PARAM_ID] != Const.RETROCESOS_ID) {
             if ((data_source instanceof Retracement) == false) {
                 throw('Retracement data type expected, received ' + typeof data_source + ' instead.');
             }
 
+            level_ = query[Const.LEVEL_ID];
+            name_ = data_source[Const.NAME_ID];
+            model_key_ = query.model_key;
             stats = data_source.stats;
-            let bull = (data_source.data[Const.BULL_ID] != undefined) ? data_source.data[Const.BULL_ID][data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] > 0) : [];
-            let bear = (data_source.data[Const.BEAR_ID] != undefined) ? data_source.data[Const.BEAR_ID][data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] < 0) : [];
+
+            let bull = data_source.data[data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] == Const.BULL);
+            let bear = data_source.data[data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] == Const.BEAR);
             data_ret[Const.BULL_ID] = bull.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
             data_ret[Const.BEAR_ID] = bear.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
             data_ret_levels = data_source[Const.RET_LEVELS_ID];
@@ -147,10 +149,6 @@ class ChartView {
             // console.log(data_delta_ini);
             // console.log(data_delta_fin);
 
-
-            level_ = query[Const.LEVEL_ID];
-            name_ = data_source[Const.NAME_ID];
-            model_key_ = query.model_key;
             // if(!this.#pattern_result) { this.#pattern_result = {}; }
             // if(!this.#pattern_result[level_]) { this.#pattern_result[level_] = {}; }
 
