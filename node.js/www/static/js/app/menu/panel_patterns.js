@@ -339,14 +339,22 @@ class PanelPatterns {
         this.#explorer[this.#current_name][Const.CURRENT_ID][Const.BAD_ID][Const.BOTH_ID] = 0;
 
         // Update controls
-        this.#set_trend_bull(Const.BULL_ID);
+        this.trend = Const.BULL_ID;
+        $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_TREND_BEAR).removeClass(PanelPatterns.CLASS_PATTERNS_RESULTS_TREND_EXPLORER_BEAR_SELECTED);
+        $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_TREND_BULL).addClass(PanelPatterns.CLASS_PATTERNS_RESULTS_TREND_EXPLORER_BULL_SELECTED);
+        // this.#update_data_trend();
+        // // this.#set_trend_bull(Const.BULL_ID);
         if(this.ok > 0) {
-            this.#update_current();
+            // // this.#update_current();
+            this.current = 0;
+            $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current + 1);
         }
-        // $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current);
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
-        this.#update_visualization_mode(PanelPatterns.TEXT_ONLY_CURRENT);
+        // // this.#update_visualization_mode(PanelPatterns.TEXT_ONLY_CURRENT);
+        this.#visual_conf.mode = PanelPatterns.TEXT_ONLY_CURRENT;
+        $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + this.#visual_conf.mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED + ' ' + Const.CLASS_HOVERABLE_ICON);
+        this.#hide_visualization_selection();
     }
 
     #set_trend_bull(trend) {
@@ -522,7 +530,8 @@ class PanelPatterns {
                 this.#visual_conf.zoom = {
                     startValue: {x: dateMin, y:priceMin},
                     endValue: { x: dateMax, y:priceMax},
-                    margin: {x: 30, y: 5}, //Margin values [x:candles, y:% max]
+                    margin: {x: 30, y: 150}, //Margin values [x:candles, y:% (max-min)]
+                    onlyValid: [true, true]
                 };
             }
 
@@ -652,6 +661,7 @@ class PanelPatterns {
                     if(trend) this.trend = trend;
                     this.#current_order = tree_order; //this.#data_tree.indexOf(this.#current_name);
                     this.#current_model[name] = JSON.parse(JSON.stringify(data));
+                    this.#update_data_trend();
                     if(this.#visual_selection[this.#current_name])
                         this.#visual_selection_dd.items = this.#visual_selection[this.#current_name][this.trend].map(v => v+1);
                     else {
@@ -755,8 +765,8 @@ class PanelPatterns {
                     this.level = query[Const.LEVEL_ID];
                     let name = query[Const.NAME_ID];
                     this.#generate_nok();
-                    // this.#generate_both_trends();
                     this.#create_results_tree(name);
+                    this.#update_current();
                 }
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL + ' > *').each((i, e) => $(e).show())
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL).show();
@@ -830,9 +840,11 @@ class PanelPatterns {
     //----------------------------- GETTERS & SETTERS -----------------------------
 
     get trend() {
-        if(this.#current_name)
-            return this.#explorer[this.#current_name][Const.TREND_ID];
-        return null;
+        let trend = Const.BULL_ID;
+        if((this.#current_name) && (this.#explorer[this.#current_name] != undefined))
+            if(this.#explorer[this.#current_name][Const.TREND_ID] != undefined)
+                trend = this.#explorer[this.#current_name][Const.TREND_ID];
+        return trend;
     }
 
     set trend(s) {

@@ -41,72 +41,82 @@ class Retracements {
         var ret = new Retracement();
         try {
             Retracements.#parse_request(ret, request);
-            
-            // Deep copy to keep source data integrity
-            let data_source = JSON.parse(JSON.stringify(ret[Const.MODEL_ID][ret[Const.DATA_TYPE_ID]][Const.DATA_ID]));
-            let search_in = (ret[Const.SEARCH_IN_ID] != undefined) ? ret[Const.SEARCH_IN_ID] : undefined;
-            let search_in_data = (search_in != undefined) ? JSON.parse(JSON.stringify(ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][search_in])) : undefined;
 
-            // Process for each trend requested
-            Const.BOTH.forEach( s => {
-                let rets = {};
-                let stats = {};
-                let trend_search = s;
-                
-                // When searching targets, the results trend, should be stored as source retracement data trend.
+            // Deep copy to keep source data integrity
+            let data_source = JSON.parse(JSON.stringify(ret[Const.MODEL_ID][Const.MOVS_ID][Const.DATA_ID]));
+            let search_in = (ret[Const.SEARCH_IN_ID] != undefined) ? ret[Const.SEARCH_IN_ID] : undefined;
+            let search_in_model = ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][search_in];
+            let search_in_data = (search_in != undefined) ? JSON.parse(JSON.stringify(search_in_model[Const.DATA_ID])) : undefined;
+
+            // Iterate over all levels
+            data_source.forEach((mov_source, i) => {
+                // rets[i] = [];
+                let level = i;
+                let trend_sign = 1;
+                if(ret[Const.DATA_ID][i] == undefined) ret[Const.DATA_ID][level] = [];
+                if(ret[Const.STATS_ID][i] == undefined) ret[Const.STATS_ID][level] = [];
+
+                // Check real request trend (when starts search from END, current mov trend is the opposite)
                 if(ret.from == Const.END_ID) {
-                    trend_search = s * (-1);
+                    trend_sign = (-1);
                 }
 
-                // Iterate over all levels
-                data_source.forEach((data, i) => {
-                    rets[i] = []; //{ [Const.DATA_ID]: [], [Const.STATS_ID]: {} };
-                    stats[i] = {};
-                    let level = 0;
-                    level = i;
-                    // Deep copy to keep source data integrity
-                    // let data_cpy = JSON.parse(JSON.stringify(data));
-                    let data_cpy = data;
-
-                    // Search all data with search trend
-                    let base_data = (ret[Const.SEARCH_IN_DATA_ID] != undefined) ? ret[Const.SEARCH_IN_DATA_ID] : data_cpy;
-
-                    let mov_source = data_cpy.filter(d => d[Const.TREND_ID] == trend_search);
-                    let retracements = mov_source.filter( m => (m[Const.RET_ID] >= ret.ret_min) && (m[Const.RET_ID] <= ret.ret_max));
-
-                    // Append levels data
-                    ret[Const.RET_LEVELS_ID].forEach( l => {
-                        retracements.map( (v, i) => v[l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l) );
-                    });
-
-                    // Update real source trend in retracement data
-                    if(trend_search != s) {
-                        retracements.map( (v, i) => v[Const.TREND_ID] = s );
+                // Search data in results
+                let mov_filt = [];
+                if(search_in_data != undefined) {
+                    let imov = 0;
+                    // let search_trend = search_in_data[level].filter( d => d[Const.TREND_ID] == s)
+                    for (let isearch = 0; isearch < search_in_data[level].length; isearch++) {
+                        for (; imov < mov_source.length; imov++) {
+                            if( ((mov_source[imov][Const.TREND_ID] * trend_sign) == search_in_data[level][isearch][Const.TREND_ID])
+                                && (mov_source[imov][Const.INIT_ID].time == search_in_data[level][isearch][Const.END_ID].time)
+                                && (mov_source[imov][Const.INIT_ID].price == search_in_data[level][isearch][Const.END_ID].price) ) {
+                                mov_filt.push(mov_source[imov++]);
+                                break;
+                            }
+                        }
                     }
-                    // rets[i][Const.DATA_ID] = retracements;
-                    rets[i] = retracements;
+                    mov_source = mov_filt;
+                }
 
-                    // STATS
-                    let total = mov_source.length;
-                    let total_pc = (total / total) * 100; // TODO CUANDO SE BUSQUE EN RESULTADOS ANTERIORES, CAMBIARA DEL 100%
-                    let ok = retracements.length;
+                // Get results
+                let retracements = mov_source.filter( m => (m[Const.RET_ID] >= ret.ret_min) && (m[Const.RET_ID] <= ret.ret_max));
+
+                // Append calculated retracement level price data
+                ret[Const.RET_LEVELS_ID].forEach( l => {
+                    retracements.map( (v, i) => v[l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l) );
+                });
+
+                // Update real source trend in retracement data (when searching targets, the results trend, should be stored as source retracement data trend).
+                if(trend_sign == (-1)) {
+                    retracements.map( v => v[Const.TREND_ID] = (v[Const.TREND_ID]*trend_sign) );
+                }
+                
+                // Push current level results into Retracement final object
+                ret[Const.DATA_ID][level].push(...retracements);
+
+                // STATS
+                // Group statistics results by trend
+                Const.BOTH.forEach( s => {
+                    let total;
+                    let total_current = mov_source.filter(d => d[Const.TREND_ID] == (s*trend_sign)).length;
+                    if(search_in_data != undefined) {
+                        total = search_in_model[Const.STATS_ID][level].filter(t => t[Const.TREND_ID] == (s*trend_sign))[0][Const.OK_ID].num;
+                    }
+                    else {
+                        total = total_current;
+                    }
+                    let total_pc = (total / total_current) * 100;
+                    let ok = retracements.filter(d => d[Const.TREND_ID] == s*trend_sign).length;
                     let ok_pc = (ok / total) * 100;
                     let bad = (total - ok);
                     let bad_pc = (bad / total) * 100;
-                    stats[i][Const.TREND_ID] = trend_search;
-                    stats[i][Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
-                    stats[i][Const.BAD_ID] = { [Const.NUM_ID]: bad, [Const.PERCENT_ID]: bad_pc};
-                    stats[i][Const.TOTAL_ID] = { [Const.NUM_ID]: total, [Const.PERCENT_ID]: total_pc }; //TODO SI SE BUSCA EN RESULTADOS ANTERIORES NO SERA 100% !!
-                });
-                
-                // let trend_str = Const.TREND_STR[trend_search];
-                // ret[Const.DATA_ID][trend_str] = rets;
-                // ret[Const.STATS_ID][trend_str] = stats;
-                Object.keys(rets).forEach( l => {
-                    if(ret[Const.DATA_ID][l] == undefined) ret[Const.DATA_ID][l] = [];
-                    if(ret[Const.STATS_ID][l] == undefined) ret[Const.STATS_ID][l] = [];
-                    ret[Const.DATA_ID][l].push(...rets[l]);
-                    ret[Const.STATS_ID][l].push(stats[l]);
+                    let stats = {};
+                    stats[Const.TREND_ID] = s*trend_sign;
+                    stats[Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
+                    stats[Const.BAD_ID] = { [Const.NUM_ID]: bad, [Const.PERCENT_ID]: bad_pc};
+                    stats[Const.TOTAL_ID] = { [Const.NUM_ID]: total, [Const.PERCENT_ID]: total_pc };
+                    ret[Const.STATS_ID][level].push(stats);
                 });
             });
             delete ret[Const.MODEL_ID];

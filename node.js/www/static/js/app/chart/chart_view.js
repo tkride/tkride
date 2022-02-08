@@ -787,6 +787,21 @@ class ChartView {
         return ret;
     }
 
+    /** @parameters:
+     * zoom: 2 types of settings. By values:
+     *          {   
+                    startValue: {x: dateMin, y:priceMin},
+                    endValue: { x: dateMax, y:priceMax},
+                    margin: {x: +/- candles, y: +/- % (max-min)},
+                }
+     * By %:
+                {
+                    start: {x: %, y: %},
+                    end: { x: %, y: %},
+                    margin: {x: +/- %, y: +/- %},
+                }
+        onlyValid: [start value, end value] true: filter all undefined dates || false: start/end could be undefined date
+     */
     zoom_chart(zoom, chart) {
         let ret;
         try {
@@ -807,8 +822,6 @@ class ChartView {
             //     end:end,
             // });
 
-            // let maxValue = chart.getOption().yAxis[0].max; //Math.max(...chart.getModel().option.series[0].data.map(p=>p[2]).filter(v=>v!=undefined));
-            // let data = chart.getModel().option.xAxis[0].data;
             let data = chart.getModel().option.series[0].data.filter(v=>v[1]).map(v => v[0]);
             let x_start_idx = data.indexOf(zoom.startValue.x);
             let x_end_idx = data.indexOf(zoom.endValue.x);
@@ -828,22 +841,23 @@ class ChartView {
             // Zoom from values
             if(zoom.startValue) {
                 let marginValue = {
-                    // x: parseInt((margin.x/100) * x_end_idx), //data.length),
                     x: parseInt(margin.x), //data.length),
-                    y: parseInt((margin.y/100) * maxValue) //(maxValue - minValue))
+                    y: parseInt((margin.y/100) * (maxValue - minValue))
                 }
 
                 let startValue = {
                     x: data[data.indexOf(zoom.startValue.x) - marginValue.x],
                     y: zoom.startValue.y - marginValue.y,
                 }
-                if(startValue.x == undefined)
+                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[0] == true) ) && (startValue.x == undefined))
                     startValue.x = data[0];
 
                 let endValue = {
                     x: data[data.indexOf(zoom.endValue.x) + marginValue.x],
                     y: zoom.endValue.y + marginValue.y,
                 }
+                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[1] == true) ) && (endValue.x == undefined))
+                    endValue.x = data[data.length - 1];
                 
                 chart.dispatchAction({
                     type: 'dataZoom',
@@ -855,12 +869,6 @@ class ChartView {
             }
             // Zoom from percent
             else if(zoom.start) {
-                // let startPrice = (zoom.startValue / maxValue) * 100 * (0.973);
-                // let endPrice = (zoom.endValue / maxValue) * 100 * (1.027);
-                // let data = chart.getModel().option.xAxis[0].data;
-                // let startTime = ((data.indexOf(zoom.start) * 100) / data.length) * 0.93;
-                // let endtime = ((data.indexOf(zoom.end) * 100) / data.length) * 1.07;
-
                 chart.dispatchAction({
                     type: 'dataZoom',
                     batch: [
