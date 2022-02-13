@@ -94,20 +94,19 @@ class ChartView {
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
-    #split_retracements(data_source, query) {
+    format_retracements(data_source) {
         let res;
         console.time('split_retracements');
         
-        let data = {};
-        let data_ret = {};
-        let data_delta_ini = {};
-        let data_delta_fin = {};
-        let data_ret_levels = [];
-        let data_ret_prices = {};
-        let stats = {}
-        let level_;
-        let name_;
-        let model_key_;
+        let data = [];
+        let data_ret = [];
+        let trend = [];
+        // let data_delta_ini = {};
+        // let data_delta_fin = {};
+        // let data_ret_levels = [];
+        // let data_ret_values = {};
+        // let stats = {}
+        // let level_;
 
         console.log(data_source);
 
@@ -116,75 +115,62 @@ class ChartView {
                 throw ('No data available.');
             }
 
-            if ((data_source instanceof Retracement) == false) {
-                throw('Retracement data type expected, received ' + typeof data_source + ' instead.');
-            }
+            // Iterates over all retracement patterns names
+            Object.keys(data_source).forEach(n => {
+                // if ((data_source[n] instanceof Retracement) == false) {
+                    // console.error('Retracement data type expected, received ' + typeof data_source + ' instead.');
+                // }
+                // else {
+                    // Iterates over all levels available in each retracement pattern
+                Object.keys(data_source[n][Const.DATA_ID]).forEach(l => {
+                    let dl = data_source[n][Const.DATA_ID][l];
+                    data_ret.push(...dl.map(r => [[r[Const.END_ID].time, r[Const.END_ID].price], r[Const.RET_ID], Const.TREND_STR[r[Const.TREND_ID]], n] ));
+                    data.push(...dl.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID], Const.TREND_STR[d[Const.TREND_ID]], n ]
+                                        .map(dd => dd.time ? [dd.time, dd.price] : dd) ));
+                });
+                // }
+            });
 
-            level_ = query[Const.LEVEL_ID];
-            name_ = data_source[Const.NAME_ID];
-            model_key_ = query.model_key;
-            stats = data_source.stats;
+            // data_ret = data_source.data[level].map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
+            // data = data_source.data[level].map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
+            // trend = data_source.data[level].map(d => d[Const.TREND_ID]);
 
-            let bull = data_source.data[data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] == Const.BULL);
-            let bear = data_source.data[data_source[Const.LEVEL_ID]].filter(d => d[Const.TREND_ID] == Const.BEAR);
-            data_ret[Const.BULL_ID] = bull.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
-            data_ret[Const.BEAR_ID] = bear.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
-            data_ret_levels = data_source[Const.RET_LEVELS_ID];
-            data_ret_prices[Const.BULL_ID] = bull.map( d => [].concat(data_ret_levels.map(l => d[l])) );
-            data_ret_prices[Const.BEAR_ID] = bear.map( d => [].concat(data_ret_levels.map(l => d[l])) );
+            // level_ = query[Const.LEVEL_ID];
+            // model_key = query.model_key;
+            // stats = data_source.stats;
+
+            // let bull = data_source.data[level].filter(d => d[Const.TREND_ID] == Const.BULL);
+            // let bear = data_source.data[level].filter(d => d[Const.TREND_ID] == Const.BEAR);
+            // data_ret[Const.BULL_ID] = bull.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
+            // data_ret[Const.BEAR_ID] = bear.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
+            // data_ret_levels = data_source[Const.RET_LEVELS_ID];
+            // data_ret_values[Const.BULL_ID] = bull.map( d => [].concat(data_ret_levels.map(l => d[l])) );
+            // data_ret_values[Const.BEAR_ID] = bear.map( d => [].concat(data_ret_levels.map(l => d[l])) );
             
-            data_delta_ini[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
-            data_delta_fin[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
-            data_delta_ini[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
-            data_delta_fin[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
+            // data_delta_ini[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
+            // data_delta_fin[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
+            // data_delta_ini[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
+            // data_delta_fin[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
 
-            // data[Const.BULL_ID] = [].concat( ...bull.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) ) );
-            // data[Const.BEAR_ID] = [].concat( ...bear.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) ) );
-            data[Const.BULL_ID] = bull.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
-            data[Const.BEAR_ID] = bear.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
-            
-            // console.log(data_ret);
-            // console.log(data_x);
-            // console.log(data_y);
-            // console.log(data_delta_ini);
-            // console.log(data_delta_fin);
+            // data[Const.BULL_ID] = bull.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
+            // data[Const.BEAR_ID] = bear.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
 
-            // if(!this.#pattern_result) { this.#pattern_result = {}; }
-            // if(!this.#pattern_result[level_]) { this.#pattern_result[level_] = {}; }
-
-            // this.#pattern_result[level_][name_] = {
-            //     id: rawData[Const.ID_ID][0],
-            //     name: name_,
-            //     dataType: rawData[Const.TIPO_PARAM_ID],
-            //     stats: stats,
-            //     data_x: {[level_]: data_x},
-            //     data_y: {[level_]: data_y},
-            //     data_ret: {[level_]: data_ret},
-            //     data_ret_values: {[level_]: data_ret_values},
-            //     data_ret_levels: {[level_]: data_ret_levels},
-            //     delta_ini: {[level_]: data_delta_ini},
-            //     delta_fin: {[level_]: data_delta_fin},
-            //     level: level_,
-            //     query: query,
-            //     model_key: model_key_,
-            // };
-            // this.#pattern_result[level_][name_] = {
             res = {
-                id: query[Const.ID_ID],
-                name: name_,
-                dataType: data_source.dataType,
-                stats: stats,
-                // data_x: data_x,
+                // id: query[Const.ID_ID],
+                // name: data_source[Const.NAME_ID],
                 data: data,
                 data_ret: data_ret,
-                data_ret_values: data_ret_levels,
-                data_ret_levels: data_ret_prices,
-                delta_ini: data_delta_ini,
-                delta_fin: data_delta_fin,
-                level: level_,
-                search_in: query[Const.SEARCH_IN_ID],
-                query: query,
-                model_key: model_key_,
+                trend: trend,
+                // dataType: data_source.dataType,
+                // stats: stats,
+                // data_ret_levels: data_ret_levels,
+                // data_ret_values: data_ret_values,
+                // delta_ini: data_delta_ini,
+                // delta_fin: data_delta_fin,
+                // level: level_,
+                // search_in: query[Const.SEARCH_IN_ID],
+                // query: query,
+                // model_key: model_key,
             };
         }
         catch(error) {
@@ -399,7 +385,7 @@ class ChartView {
                         dataZoom: {
                             // yAxisIndex: true,
                         },
-                        restore: {},
+                        // restore: {},
                         saveAsImage: {
                             name: data.name + '_' + data.marco + '_' + data.broker + '_' + Time.now(Time.FORMAT_FILE),
                             type: 'jpg',
@@ -511,9 +497,9 @@ class ChartView {
 
             // if (data.dataType != Const.MOVIMIENTOS_ID) {
             // if ((data instanceof Movements) == false) {
-            if ((data.dataType == "movements") == false) {
-                throw ('"Movements" data type is needed to plot movements, received ' + typeof data + ' instead.');
-            }
+            // if ((data.dataType == "movements") == false) {
+                // throw ('"Movements" data type is needed to plot movements, received ' + typeof data + ' instead.');
+            // }
 
             let level = data.level;
             // let curr_option = chart.getOption();
@@ -584,11 +570,11 @@ class ChartView {
         return ret;
     }
 
-    plot_retracements(data_source, chart, query) {
+    plot_retracements(data, chart) {
         let ret;
         console.time('plot_retracements');
         try {
-            let data = this.#split_retracements(data_source, query);
+            // let data = this.format_retracements(data_source, query);
 
             // Labels for markpoint bull
             let ret_labels;
@@ -603,36 +589,56 @@ class ChartView {
 
             let ret_series = [];
 
-            ChartView.TRENDS.forEach( t => {
-                // Marks
-                if(data.data_ret[t]) {
-                    ret_labels = data.data_ret[t].map( (r, i) => {
-                        return this.generate_label(r[0], r[1], data.name + ChartView.MARK_TEXT_ID[t] + i,
-                                            ChartView.MARK_OFFSET[t], ChartView.MARK_COLOR[t]);
-                    });
-    
-                    // Markpoint bull label
-                    ret_markpoints = {
-                        label: { formatter: r => (r.value != null) ? parseFloat(r.value).toFixed(3) + '' : '', },
-                        data: ret_labels,
-                    };
-                }
-                // Lines
-                if(data.data[t]) {
-                    let ret_series_trend = data.data[t].map( (r, i) => {
-                        return {
-                            id: data.id + ChartView.TREND_TEXT_ID[t] + i, name: data.name,
-                            type: 'line', color: ChartView.LINE_COLOR[t],
-                            lineStyle: { width: 2, opacity: 0.6, },
-                            showSymbol: false,
-                            data: r,
-                            markPoint: ret_markpoints
-                        }
-                    });
+            ret_markpoints = this.generate_markpoints(data.data_ret);
+            if(data.data) {
+                let ret_series_trend = data.data.map( (r, i) => {
+                    let values = r.slice(0, 3);
+                    let trend = r[3];
+                    let name = r[4];
+                    return {
+                        id: name + ChartView.TREND_TEXT_ID[trend] + i,
+                        name: name,
+                        type: 'line', color: ChartView.LINE_COLOR[trend],
+                        lineStyle: { width: 3, opacity: 0.75, },
+                        showSymbol: false,
+                        data: values,
+                        markPoint: ret_markpoints
+                    }
+                });
 
-                    ret_series = ret_series.concat(ret_series_trend);
-                }
-            });
+                ret_series = ret_series.concat(ret_series_trend);
+            }
+            // ChartView.TRENDS.forEach( t => {
+                // // Marks
+                // if(data.data_ret[t]) {
+                //     ret_labels = data.data_ret[t].map( (r, i) => {
+                //         return this.generate_label(r[0], r[1], data[Const.NAME_ID] + ChartView.MARK_TEXT_ID[t] + i,
+                //                             ChartView.MARK_OFFSET[t], ChartView.MARK_COLOR[t]);
+                //     });
+    
+                //     // Markpoint label
+                //     ret_markpoints = {
+                //         label: { formatter: r => (r.value != null) ? parseFloat(r.value).toFixed(3) + '' : '', },
+                //         data: ret_labels,
+                //     };
+                // }
+
+                // Lines
+                // if(data.data[t]) {
+                //     let ret_series_trend = data.data[t].map( (r, i) => {
+                //         return {
+                //             id: data[Const.NAME_ID] + ChartView.TREND_TEXT_ID[t] + i, name: data[Const.NAME_ID],
+                //             type: 'line', color: ChartView.LINE_COLOR[t],
+                //             lineStyle: { width: 3, opacity: 0.6, },
+                //             showSymbol: false,
+                //             data: r,
+                //             markPoint: ret_markpoints
+                //         }
+                //     });
+
+                //     ret_series = ret_series.concat(ret_series_trend);
+                // }
+            // });
 
             // ret_series = ret_series_bull.concat(ret_series_bear);
 
@@ -776,7 +782,7 @@ class ChartView {
                 else {
                     if(curr_option.series) { curr_option.series = []; }
                 }
-                chart.setOption( { series:curr_option.series }, {replaceMerge: ['series']});
+                chart.setOption( { series:curr_option.series }, {replaceMerge: ['series']} );
                 ret = series;
             }
         }
@@ -972,12 +978,40 @@ class ChartView {
         return this.#chart_view;
     }
 
+    generate_markpoints(data) {
+        var ret_markpoints;
+        try {
+            if(data) {
+                // Marks
+                let ret_labels = data.map( (r, i) => {
+                    let coord = r[0];
+                    let value = r[1];
+                    let trend = r[2];
+                    let name = r[3];
+                    return this.generate_label(coord, value, name + ChartView.MARK_TEXT_ID[trend] + i,
+                                        ChartView.MARK_OFFSET[trend], ChartView.MARK_COLOR[trend]);
+                });
+
+                // Markpoint label
+                ret_markpoints = {
+                    label: { formatter: r => (r.value != null) ? parseFloat(r.value).toFixed(3) + '' : '', },
+                    data: ret_labels,
+                };
+            }
+        }
+        catch(error) {
+            console.log(`ERROR: generate_markpoints: ${error}.`);
+        }
+        return ret_markpoints;
+    }
+
     generate_label(coord, data, id='',
                     offset=[0,0], textColor='rgba(125,125,125,1)',
                     symbol='circle', showSymbol=false, symbolColor='rgba(0,0,0,0)', symbolSize=10) {
 
         let label = {
-                    id: id, name: id,
+                    id: id,
+                    name: id,
                     coord: coord, value: data,
                     symbol: symbol,
                     showSymbol: showSymbol,

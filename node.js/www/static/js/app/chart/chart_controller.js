@@ -130,7 +130,7 @@ class ChartController {
                     // that.#chart_models[model_key].pattern_result[ops[Const.NAME_ID]] = ret;
                     that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.NAME_ID]] = ret;
                     // Store retracements results
-                    ops[Const.DATA_ID] = ret;
+                    // ops[Const.DATA_ID] = ret;
                     if(ret) resolve(ret);
                     else reject(`ERROR processing retracements. Data returned: ${ret}`);
                 }
@@ -488,29 +488,27 @@ class ChartController {
 
             // Handles event to plot Patterns results and explorer
             $(document).on(PanelPatterns.EVENT_PLOT_PATTERN, (e, pattern, visual_conf, query) => {
-                // this.#view.plot_pattern(pattern, visual_conf, this.active_chart);
                 let prev = visual_conf.prev_name;
-                // delete visual_conf.prev_name;
                 let zoom = visual_conf.zoom;
-                // delete visual_conf.zoom;
 
                 let series_to_del = [];
-                if(prev) series_to_del.push(prev);
+                if(prev) series_to_del.push(...prev);
                 // Forces deletion for previous plots (need to be here, data may be empty, and therefore won t enter in next forEach loop)
                 that.#view.clear_chart(that.active_chart, series_to_del);
 
-                // TODO OPTIMIZAR: PASAR TODOS LOS RETROCESOS FUSIONADOS EN LUGAR DE GRAFICARLOS SECUENCIALMENTE?
+                series_to_del = [];
                 Object.keys(pattern).forEach(k => {
-                    series_to_del = [];
                     if(that.#models[that.current_model_key].patternresults[pattern[k].name].data[pattern[k].level]) {
                         series_to_del.push(that.#models[that.current_model_key].patternresults[pattern[k].name].name);
                     }
-                    that.#view.clear_chart(that.active_chart, series_to_del);
-
-                    if(zoom) that.#view.zoom_chart(zoom, that.active_chart);
-
-                    that.#view.plot_retracements(pattern[k], that.active_chart, query);
                 });
+                
+                that.#view.clear_chart(that.active_chart, series_to_del);
+
+                if(zoom) that.#view.zoom_chart(zoom, that.active_chart);
+
+                let ret_plot = that.#view.format_retracements(pattern);
+                that.#view.plot_retracements(ret_plot, that.active_chart);
             });
 
             // Handles event to load candles historic

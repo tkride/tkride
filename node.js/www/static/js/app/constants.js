@@ -213,9 +213,9 @@ class Const {
     // STATISTICS
     static STATS_ID = 'stats';
     static OK_ID = 'ok';
-    static BAD_ID = 'bad';
+    static NOK_ID = 'nok';
+    static NOK_PARENT_ID = 'nok_parent';
     static TOTAL_ID = 'total';
-    static NO_EVAL_ID = 'no_eval'; //TODO BORRAR?
     static NUM_ID = 'num';
     static PERCENT_ID = '%';
 
@@ -229,10 +229,14 @@ class Const {
     static TRADES_ID = 'trades';
 
     // GENERIC DEFINITIONS
+    static MODEL_KEY_ID = 'model_key';
     static MODEL_ID = 'model';
+    static QUERY_ID = 'query';
     static DATA_ID = 'data';
+    static DATA_PARENT_ID = 'data_parent';
     static DATA_TYPE_ID = 'datatype';
     static FROM_ID = 'from';
+    static UNTIL_ID = 'until';
     static LOGICAL_LOWER_THAN = '<';
     static LOGICAL_HIGHER_THAN = '>';
     static LOGICAL_OPERATORS = ['<', '>'];

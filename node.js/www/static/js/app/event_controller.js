@@ -6,7 +6,7 @@ class EventController {
     static FOOTER_MENU = '#footer-menu';
     static FOOTER_MENU_OPTIONS = '#footer-menu-options';
     static CLASS_FOOT_MENU = 'foot-menu';
-    static TERMINAL_OPEN = '#terminal-open';
+    // static TERMINAL_OPEN = '#terminal-open';
     static TICKER_FILTER = '#chart-filter';
     static TIME_FRAME_PANEL = '#chart-time-frame-panel';
     static ADD_CHART = "#add-chart-icon";
@@ -29,10 +29,10 @@ class EventController {
 
     #set_icons(sel_icon) {
         this.#menus_icons.each( (i, mi) => {
-            if('#' + $(mi).attr('id') != EventController.TERMINAL_OPEN) {
+            // if('#' + $(mi).attr('id') != EventController.TERMINAL_OPEN) {
                 $(mi).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
                 $(mi).addClass(Const.CLASS_HOVERABLE_ICON);
-            }
+            // }
         });
         $(sel_icon).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
     }
@@ -68,11 +68,11 @@ class EventController {
             this.#menus_icons = $(EventController.FOOTER_MENU).children(); //'.'+EventController.CLASS_FOOT_MENU);
             $.each(this.#menus_icons, (k,i) => $(i).removeClass(Const.CLASS_DISABLED));
             
-            // Term closing or focus lost events
-            let event_term_close_focusout = Terminal.EVENT_CLOSED + ' ' + Terminal.EVENT_FOCUS_LOST;
-            $(window).on(event_term_close_focusout, e => {
-                $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
-            });
+            // // Term closing or focus lost events
+            // let event_term_close_focusout = Terminal.EVENT_CLOSED + ' ' + Terminal.EVENT_FOCUS_LOST;
+            // $(window).on(event_term_close_focusout, e => {
+            //     $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
+            // });
 
             EventController.OUTSIDE_TICKER_FILTER.on('click', e => {
                 if($(TickerFilter.FILTER).is(":visible")) {
@@ -87,30 +87,30 @@ class EventController {
             });
 
             // ---- Foot menu icons click ----
-            $(document).on('click', EventController.TERMINAL_OPEN, e => {
-                $(document).trigger(Terminal.EVENT_DISPLAY_TERMINAL);
-            });
+            // $(document).on('click', EventController.TERMINAL_OPEN, e => {
+            //     $(document).trigger(Terminal.EVENT_DISPLAY_TERMINAL);
+            // });
             
-            // Terminal opened
-            $(document).on(Terminal.EVENT_OPEN, e => {
-                $(EventController.TERMINAL_OPEN).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-                $(EventController.TERMINAL_OPEN).removeClass(Const.CLASS_HOVERABLE_ICON);
-            });
+            // // Terminal opened
+            // $(document).on(Terminal.EVENT_OPEN, e => {
+            //     $(EventController.TERMINAL_OPEN).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            //     $(EventController.TERMINAL_OPEN).removeClass(Const.CLASS_HOVERABLE_ICON);
+            // });
 
-            // Terminal focus, closes ticker filter and time frame panel
-            $(document).on(Terminal.EVENT_FOCUS, e => {
-                if(main.ctrl.ticker_filter.is_visible()) { $(EventController.TICKER_FILTER).trigger(TickerFilter.EVENT_DISABLE); }
-                if(main.ctrl.time_frame.is_visible()) { $(EventController.TIME_FRAME_PANEL).trigger(TimeFrame.EVENT_DISABLE); }
+            // // Terminal focus, closes ticker filter and time frame panel
+            // $(document).on(Terminal.EVENT_FOCUS, e => {
+            //     if(main.ctrl.ticker_filter.is_visible()) { $(EventController.TICKER_FILTER).trigger(TickerFilter.EVENT_DISABLE); }
+            //     if(main.ctrl.time_frame.is_visible()) { $(EventController.TIME_FRAME_PANEL).trigger(TimeFrame.EVENT_DISABLE); }
 
-                $(document).trigger(Const.EVENT_CLOSE);
-                $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
-            });
+            //     $(document).trigger(Const.EVENT_CLOSE);
+            //     $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
+            // });
 
-            // Closes everything
-            $(document).on(Terminal.EVENT_CLOSED, e => {
-                $(EventController.TERMINAL_OPEN).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-                $(EventController.TERMINAL_OPEN).addClass(Const.CLASS_HOVERABLE_ICON);
-            });
+            // // Closes everything
+            // $(document).on(Terminal.EVENT_CLOSED, e => {
+            //     $(EventController.TERMINAL_OPEN).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            //     $(EventController.TERMINAL_OPEN).addClass(Const.CLASS_HOVERABLE_ICON);
+            // });
 
             // Show movements
             $(document).on('click', MenuMovs.MENU_ICON, e => {

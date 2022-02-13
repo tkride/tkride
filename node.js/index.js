@@ -14,7 +14,6 @@ const cookieParser = require('cookie-parser');
 // const bInterface = require('./app/resources/interfaces/broker_interface');
 // bInterface.init();
 
-// // TODO BUG PARA MÁS DE 9 MESES
 // // query = 'LOAD_HISTORIC(BROKER[BINANCE] SYMBOL[BTCUSDT] INTERVAL[1h] STARTTIME[2021-01-16 15:10:00])';
 // query = 'GET_TICKERS(BROKER[BINANCE])';
 // var request = TSQL.parse(query);
