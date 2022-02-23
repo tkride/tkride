@@ -47,7 +47,8 @@ class Retracements {
 
             // Deep copy to keep source data integrity
             let data_source = JSON.parse(JSON.stringify(ret[Const.MODEL_ID][Const.MOVS_ID][Const.DATA_ID]));
-            let search_in = (ret[Const.SEARCH_IN_ID] != undefined) ? ret[Const.SEARCH_IN_ID] : undefined;
+            // let search_in = (ret[Const.SEARCH_IN_ID] != undefined) ? ret[Const.SEARCH_IN_ID] : undefined;
+            let search_in = (ret[Const.SEARCH_IN_ID]) ? ret[Const.SEARCH_IN_ID] : undefined;
             let search_in_model = ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][search_in];
             let search_in_data = (search_in != undefined) ? JSON.parse(JSON.stringify(search_in_model[Const.DATA_ID])) : undefined;
 
@@ -136,7 +137,8 @@ class Retracements {
         ret[Const.DATA_TYPE_ID] = data_type;
         
         // Read request parameters
-        ret[Const.NAME_ID] = request[Const.NAME_ID];
+        // ret[Const.NAME_ID] = request[Const.NAME_ID];
+        ret[Const.ID_ID] = request[Const.ID_ID];
         let trend_req = request[Const.TREND_ID];
         trend_req = (typeof trend_req === 'undefined') ? undefined : eval(`Const.${trend_req.toUpperCase()}`);
         ret[Const.TREND_ID] = (trend_req instanceof Array) ? trend_req : [trend_req];

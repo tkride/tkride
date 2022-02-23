@@ -98,7 +98,8 @@ class ChartController {
     #process_patterns_ret(ops, that) {
         return new Promise((resolve, reject) => {
             let model_key = that.current_model_key;
-            let result = that.#chart_models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.NAME_ID]);
+            // let result = that.#chart_models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.NAME_ID]);
+            let result = that.#chart_models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.ID_ID]);
             let in_memory = true;
             if(result) {
                 let old_q = Object.keys(result.query);
@@ -128,7 +129,8 @@ class ChartController {
                     let ret = Retracements.process(ops);
                     //TODO MOVER PATTERN RESULT DE #chart_models A #models
                     // that.#chart_models[model_key].pattern_result[ops[Const.NAME_ID]] = ret;
-                    that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.NAME_ID]] = ret;
+                    // that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.NAME_ID]] = ret;
+                    that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
                     // Store retracements results
                     // ops[Const.DATA_ID] = ret;
                     if(ret) resolve(ret);
@@ -367,16 +369,16 @@ class ChartController {
 
         try {
             // Create objects
-                        
+            
+            // this.#patterns = new PatternsModel('', this.#chart_models);
+            // new PatternsModel('', this.#chart_models);
+            new PatternsModel('', this.#models);
+
             // Creates all option menus
             this.#create_menus();
 
             // Init tickers filter
             this.#ticker_filter = new TickerFilter();
-
-            // this.#patterns = new PatternsModel('', this.#chart_models);
-            // new PatternsModel('', this.#chart_models);
-            new PatternsModel('', this.#models);
 
             // Creates view
             if (view) { this.#view = view; }
@@ -498,8 +500,8 @@ class ChartController {
 
                 series_to_del = [];
                 Object.keys(pattern).forEach(k => {
-                    if(that.#models[that.current_model_key].patternresults[pattern[k].name].data[pattern[k].level]) {
-                        series_to_del.push(that.#models[that.current_model_key].patternresults[pattern[k].name].name);
+                    if(that.#models[that.current_model_key].patternresults[pattern[k][Const.ID_ID]].data[pattern[k].level]) {
+                        series_to_del.push(that.#models[that.current_model_key].patternresults[pattern[k][Const.ID_ID]][Const.ID_ID]);
                     }
                 });
                 
@@ -670,19 +672,27 @@ class ChartController {
         this.#update_chart_header();
 
         let time_frame_el = $('<div>', {
-            id: ChartController.TIME_FRAME_ID + id,
-            class: ChartController.CLASS_CHART_TIME_FRAME + ' ' + Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_BUTTON_GENERAL,
-        })
-        .append('<p>' + this.#time_frame.time_frame + '</p>');
-
+            id: ChartController.TIME_FRAME_ID + id + '-container',
+            class: ChartController.CLASS_CHART_TIME_FRAME, // + ' ' + Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_BUTTON_GENERAL,
+        });
+        // .append('<p>' + this.#time_frame.time_frame + '</p>');
         this.#chart_frames[id].frame.append(time_frame_el);
+
          //TODO PUEDE QUE LOS MARCOS TEMPORALES CAMBIEN DE UN BROKER A OTRO EN EL FUTURO
-        let time_frame_dropdown = new Dropdown(time_frame_el,
-                                                Time.TIME_FRAMES,
-                                                ChartController.EVENT_TIME_FRAME_CHANGED);
+        let time_frame_dropdown = new Dropdown( {
+                                                  id: ChartController.TIME_FRAME_ID + id,
+                                                //   element: time_frame_el,
+                                                  items: Time.TIME_FRAMES,
+                                                  event: ChartController.EVENT_TIME_FRAME_CHANGED,
+                                                  header: { selected: true }
+                                                });
+                                                
+        // time_frame_dropdown.controls.each( (i, c) => this.#chart_frames[id].frame.append(c) );
+        time_frame_dropdown.controls.each( (i, c) => time_frame_el.append(c) );
 
         $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, time_frame, el) => {
-            $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).find('p').text(time_frame);
+            $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).data('Dropdown').selected = time_frame;
+            // $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).find('p').text(time_frame);
             this.set_time_frame(time_frame);
         });
 

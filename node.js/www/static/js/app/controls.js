@@ -1,6 +1,16 @@
 
 /** 'controls.js' */
 
+/**
+ * Dropdown
+ * @param el DOM control ID. If DOM element passed, uses it, if string passed, creates it.
+ * @param items List of items for dropdown list. If no provided, check for html micro-data
+ *              'data-items'.
+ * @param event_name Event/Callback callback name when clicking a list item. If no one provided,
+ *                   check for HTML micro-data 'data-event'. If function provided, then
+ *                   callback is called when clicking items, instead of triggering event.
+ * @note Event is triggered to 'document'.
+ */
 class Dropdown {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
@@ -13,79 +23,163 @@ class Dropdown {
 
     //----------------------------- PROPERTIES -----------------------------
 
-    #items;
+    #items = [];
     #event_name;
     #callback;
     #control;
     #container_id;
+    #header = { label: { enabled: false }, selected: { enabled: false }, arrow: { enabed: false} };
     #items_cont;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor(el, items, event_name) {
-        this.init(el, items, event_name);
+    constructor(params) {
+        if(!params) params = {};
+        this.init(params);
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
-    init(el, items, event_name) {
+    init(params) {
         let dd;
-        // let container_id = '';
-        
-        //If identifier pased as element, get element from DOM ...
-        if(typeof el == 'string') {
-            dd = $(el);
-            this.#container_id = el.substring(1, el.length); //Removes '#' or '.' character from element identification
+        let items;
+
+        // If DOM element passed
+        if(params.element != undefined) {
+            dd = $(params.element);
+            this.#container_id = $(params.element).prop('id');
         }
-        // ... else uses element
+        //If identifier passed as string, get element from DOM ...
+        else if (params.id != undefined) {
+            // dd = $(`#${params.id}`);
+            this.#container_id = params.id.replace(/[#.\s]+/g, ''); //Removes '#' or '.' character from element identification
+            dd = $('<div id="' + this.#container_id + '" class="' + Dropdown.CLASS_DROPDOWN + ' ' + Const.CLASS_BUTTON_SLIM + '"></div>');
+        }
+
+        // If no items/event-callback provided, try to get from html micro-data
+        if(params.items == undefined) {
+            items = dd.data('items');
+            if(items) items = items.split(',');
+        }
+        else items = params.items;
+
+        if((params.event == undefined) && (params.callback == undefined)) {
+            this.#event_name = dd.data('event');
+            if(!this.#event_name) this.#callback = dd.data('callback');
+        }
         else {
-            dd = $(el);
-            this.#container_id = $(el).prop('id');
-            // If no parameters defiend, try to get from html micro-data
-            if(!items) {
-                items = dd.data('items');
-                if(items) items = items.split(',');
+            if(params.event != undefined) {
+                this.#event_name = params.event;
             }
-            if(!event_name) event_name = dd.data('event');
+            else if(params.callback != undefined) {
+                this.#callback = params.callback;
+                if(typeof this.#callback != "function") {
+                    console.warn('WARNING: @Dropdown::init(): provided callback is not a function, "eval" will be applied.');
+                    this.#callback = eval(this.#callback);
+                }
+            }
         }
 
         // If parent does not exist, creates it
         if(dd.length == 0) {
-            dd = $('<div id="' + this.#container_id + '" class="' + Dropdown.CLASS_DROPDOWN + '"></div>');
+            // dd = $('<div id="' + this.#container_id + '" class="' + Dropdown.CLASS_DROPDOWN + ' ' + Const.CLASS_BUTTON_SLIM + '"></div>');
+        }
+
+        // Set header behaviour
+        if(params.header) {
+            // Build label
+            if(params.header.label) {
+                if(params.header.label.text) {
+                    this.#header.label.enabled = true;
+                    this.#header.label.text = params.header.label.text;
+                    if(params.header.label.position) {
+                        this.#header.label.position = params.header.label.position;
+                    }
+                    // Add header span control to set text (label)
+                    this.#header.label.control = $(`<span id='${this.#container_id}-label'></span>`);
+                }
+            }
+
+            // Shows selected item
+            if(params.header.selected) {
+                this.#header.selected.enabled = true;
+                // Add header span control to set text (selected item)
+                this.#header.selected.control = $(`<span id='${this.#container_id}-selected' class=''></span>`);
+            }
+            
+            if(params.header.arrow) {
+                this.#header.arrow.enabled = true;
+                // Add header span control to set arrow icon
+                let classes = Const.CLASS_ICON_ARROW_DOWN;
+                if(this.#header.selected.enabled || this.#header.label.position == Const.LABEL_POSITION_INSIDE) {
+                    classes += ' ' + Const.CLASS_DROPDOWN_ARROW;
+                }
+                this.#header.arrow.control = $(`<span id='${this.#container_id}-arrow' class='${classes}'></span>`);
+            }
         }
 
         if(dd.length) {
             this.#control = dd;
-
-            dd.addClass(Dropdown.CLASS_DROPDOWN)
-            this.#items_cont = $('<div id="#' + dd.prop('id') + '-content" class="' + Dropdown.CLASS_DROPDOWN_CONTENT + '"></div>');
-            dd.append(this.#items_cont);
-
-            // Save items list
-            this.#items = items;
+            if(params.css) {
+                if(params.css.container) {
+                    this.#control.css(params.css.container);
+                }
+            }
             
-            // Set event/callback
-            if(typeof event_name == 'string') {
-                this.#event_name = event_name;
+            // Stores custom object in DOM element
+            this.#control.data('Dropdown', this);
+
+            if(this.#header.selected.enabled) {
+                this.#control.append(this.#header.selected.control);
             }
-            else if($.isFunction(event_name)) {
-                this.#callback = event_name;
+
+            //If label text configured
+            if(this.#header.label.enabled) {
+                if(this.#header.label.position == Const.LABEL_POSITION_BEFORE) {    
+                    this.#control.splice(0, 0, this.#header.label.control);
+                }
+                else if(this.#header.label.position == Const.LABEL_POSITION_AFTER) {
+                    this.#control.push(this.#header.label.control);
+                }
+                else if((this.#header.label.position == undefined) || (this.#header.label.position == Const.LABEL_POSITION_INSIDE)) {
+                    this.#control.append(this.#header.label.control);
+                }
             }
-            else console.error('ERROR: parameter event/callback "event_name" in dropdown is not an event/function, received: ', typeof event_name, ' instead.');
+
+            // Set arrow header icon
+            if(this.#header.arrow.enabled) {
+                this.#control.append(this.#header.arrow.control);
+            }
+        
+            // Add dropdown container
+            this.#items_cont = $('<div id="' + this.#control.prop('id') + '-content" class="' + Dropdown.CLASS_DROPDOWN_CONTENT + '"></div>');
+            if(params.css) {
+                if(params.css.items) {
+                    this.#items_cont.css(params.css.items);
+                }
+            }
+            this.#control.append(this.#items_cont);
+    
             //Creates elements and event/callback interaction
             this.items = items;
+
+            // Set label text
+            if(this.#header.label.enabled) this.#header.label.control.text(this.#header.label.text);
         }
         else {
             throw ('Element:', el, ' do not exist in DOM.');
         }
-        return dd;
+
+        return this.#control;
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------
 
-    get control() { return this.#control;}
+    get control() { return this.#control.find(`${this.#container_id}`);}
+
+    get controls() { return this.#control;}
 
     get items() { return this.#items; }
 
@@ -107,21 +201,63 @@ class Dropdown {
             this.#items_cont.append(it_el);
             if(this.#event_name) {
                 $(it_el).on('click', e => {
+                    if(this.#header.selected.enabled) this.selected = it;
                     $(document).trigger(this.#event_name, [it, e]);
                     e.stopPropagation();
                 });
             }
             else if(this.#callback) {
-                $(it_el).on('click', e => this.#callback(it, e));
+                $(it_el).on('click', e => {
+                    if(this.#header.selected.enabled) this.selected = it;
+                    this.#callback(it, e);
+                });
             }
         });
+
+        this.#items = items;
+
+        //Set first item by default
+        if(this.#header.selected.enabled)
+            this.selected = items[0];
     }
 
+    get selected() { return this.#header.selected.text; }
+    set selected(selected) {
+        this.#header.selected.text = selected;
+        this.#header.selected.control.text(this.#header.selected.text);
+    }
+
+    select(item, e) {
+        if(this.#items.includes(item)) {
+            if(this.#event_name) {
+                if(this.#header.selected.enabled) this.selected = item;
+                $(document).trigger(this.#event_name, [item, e]);
+            }
+            else if(this.#callback) {
+                if(this.#header.selected.enabled) this.selected = item;
+                this.#callback(item, e);
+            }
+        }
+    }
+
+    get label() { return this.#header.label.text; }
+    set label(label) {
+        this.#header.label.text = label;
+        this.#header.label.control.text(this.#header.label.text);
+    }
 }
 
 
 
-
+/**
+ * Combobox
+ * @param el DOM control ID. If DOM element passed, uses it, if string passed, creates it.
+ * @param items List of items for combobox list. If no provided, check for html micro-data
+ *              'data-items'.
+ * @param event_name Event/Callback name when clicking a list item. If no one provided,
+ *                     check for HTML micro-data 'data-event'.
+ * @note Event is triggered to 'document'.
+ */
 class Combobox {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
@@ -161,7 +297,7 @@ class Combobox {
         //If identifier pased as element, get element from DOM ...
         if(typeof el == 'string') {
             dd = $(el);
-            container_id = el.substring(1, el.length); //Removes '#' or '.' character from element identification
+            container_id = el.replace('#', ''); //Removes '#' or '.' character from element identification
         }
         // ... else uses element
         else {
@@ -242,6 +378,9 @@ class Combobox {
         else {
             throw ('Element:', el, ' do not exist in DOM.');
         }
+
+        // Stores custom object in DOM element
+        dd.data('Combobox', this);
         return dd;
     }
 
@@ -340,6 +479,9 @@ class Table {
         catch(error) {
             console.error("Table Controls init error: ", error);
         }
+
+        // Stores custom object in DOM element
+        this.#table.data('Table', this);
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------
@@ -354,8 +496,27 @@ class Table {
 
 
 
-
-/** 'Display' */
+/** 'Display'
+ * @Constructor input params object: configuration parameters:
+ * @param id DOM identifier.
+ * @param width Display width.
+ * @param height Display height.
+ * @param center True forces initial centered position.
+ * @param left Value for left initial position.
+ * @param top Value for top position.
+ * @param title Title for display.
+ * @param show_title true for showing title in display.
+ * @param draggable true for make display draggable.
+ * @param close Shows handler close icon.
+ * @param close_cb Custom callback when clicking close icon.
+ * @param min Shows handler minimize icon.
+ * @param min_cb Custom callback when clicking min icon.
+ * @param insert Auto insert display element in DOM (body).
+ * @param class Toggles default control class.
+ * @param new_classes Appends new control classes.
+ * @param show Shows display control on create (true by default).
+ * @returns Custom properties can be accesed from DOM using data('Display) method.
+ */
 
 class Display {
     
@@ -366,10 +527,10 @@ class Display {
     static TEXT_MINIMIZE = '__';
     static TEXT_MAXIMIZE = '▭';
     
-    static DEFAULT_WIDTH = 40;
-    static DEFAULT_HEIGHT = 60;
-    
     static CLASS_DISPLAY = 'display-control';
+    static CLASS_TITLE = 'display-control-TITLE';
+    static CLASS_CONTENT = 'display-control-content';
+    static CLASS_SEPARATOR = 'display-control-separator';
     static CLASS_HANDLE_MIN = 'display-control-handle-min';
     static CLASS_HANDLE_CLOSE = 'display-control-handle-close';
     static ELEMENT_HANDLE = '<div class="display-control-handle"><div>';
@@ -377,38 +538,59 @@ class Display {
     static ELEMENT_HANDLE_CLOSE = '<div class="display-control-handle-close hoverable-close lni lni-close"><div>';
     static ELEMENT_TITLE = '<div class="display-control-title"><div>';
 
+    static DEFAULT_WIDTH = 40;
+    static DEFAULT_WIDTH_UNITS = 'vw'
+    static DEFAULT_HEIGHT = 60;
+    static DEFAULT_HEIGHT_UNITS = 'vh';
+    static DEFAULT_CONTENT = `<div class='${Display.CLASS_CONTENT} ${Const.CLASS_SCROLL_CUSTOM}'></div>`;
+    
+    static SEPARATOR = `<div class='${Display.CLASS_SEPARATOR}'></div>`
+
     //----------------------------- PROPERTIES -----------------------------
     #element;
     #element_handle;
     #close_show = true;
     #element_handle_close;
     #close_cb = this.#hide;
-    #min_show = true;
+    #min_show = false;
     #element_handle_min;
     #min_cb = this.#minimize;
     #element_title;
     #id;
     #center = true;
-    #width = Display.DEFAULT_WIDTH;
-    #height = Display.DEFAULT_HEIGHT;
+    #width;// = Display.DEFAULT_WIDTH;
+    #width_units;// = Display.DEFAULT_WIDTH_UNITS;
+    #height;// = Display.DEFAULT_HEIGHT;
+    #height_units;// = Display.DEFAULT_HEIGHT_UNITS;
     #left = 0;
+    #left_units = '';
     #top = 0;
+    #top_units = '';
     #title = '';
-    #show_title = false;
+    #tooltip = '';
+    #show_title = true;
     #draggable = true;
-    #content;
+    #content = $(Display.DEFAULT_CONTENT);
+    #insert = true;
+    #class = Display.CLASS_DISPLAY;
+    #new_classes = '';
+    #css = '';
+    #show = true;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
     constructor(params) {
+        if(!params) params = {};
         this.init(params);
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
     #create_display() {
-        this.#element = $('<div id=' + this.#id + '></div>');
+        // Create main div with css classes
+        this.#element = $(`<div id='${this.#id}' class='${this.#class} ${this.#new_classes}'></div>`);
 
+        // Handle controls
         this.#element_handle = $(Display.ELEMENT_HANDLE);
         this.#element_handle_close = $(Display.ELEMENT_HANDLE_CLOSE);
         this.#element_handle_min = $(Display.ELEMENT_HANDLE_MIN);
@@ -420,19 +602,49 @@ class Display {
             this.#element_handle.append(this.#element_handle_min);
         }
 
+        // Title configuration
         this.#element_title = $(Display.ELEMENT_TITLE);
         this.#element_title.text(this.#title);
         this.#element.append(this.#element_title);
-        this.#element.addClass(Display.CLASS_DISPLAY);
+
+        // Dimensions
         this.#element.css({
-            'width': this.#width + 'vw',
-            'height': this.#height + 'vh',
-            'left': this.#left + 'vw',
-            'top': this.#top + 'vh',
+            'width': (this.#width != undefined) ? (this.#width + this.#width_units) : '',
+            'height': (this.#height != undefined) ? (this.#height + this.#height_units) : '',
+            'left': this.#left + this.#left_units,
+            'top': this.#top + this.#top_units,
         });
-        $(document.body).prepend(this.#element);
+
+        // Apply custom css modifications
+        if(this.#css) this.#element.css(this.#css);
+
+        if(this.#tooltip) {
+            this.#element.attr('title', this.#tooltip);
+        }
+
+        // Append content div
+        this.#element.append(this.#content);
+
+        // Check insert into DOM when creating
+        if(this.#insert) {
+            $(document.body).prepend(this.#element);
+        }
+
+        // Drag feature management
         if(this.#draggable) this.#element.draggable({containment: "window"});
-        this.#element.show();
+
+        // Check show when creating
+        if(this.#insert) {
+            if(this.#show) {
+                this.#element.show();
+            }
+            else {
+                this.#element.hide();
+            }
+        }
+
+        // Stores custom class in DOM element
+        this.#element.data('Display', this);
     }
 
     #hide() {
@@ -446,6 +658,13 @@ class Display {
     
     init(params) {
         if(!params) params = {};
+
+        if(params.insert != undefined) this.#insert = params.insert;
+        
+        // Set tooltip 
+        if(params.tooltip) {
+            this.#tooltip = params.tooltip;
+        }
         
         // Set display name
         this.#id = params.id;
@@ -456,7 +675,7 @@ class Display {
                 i++;
                 id = '#' + Display.NAME + i;
             }
-            this.#id = id;
+            this.#id = id.replace('#', '');
         }
 
         // Set display dimensions
@@ -464,31 +683,57 @@ class Display {
         if(params.height) this.#height = params.height;
 
         // Set position
-        if(params.center) this.#center = params.center;
+        if(params.center != undefined) this.#center = params.center;
         if(this.#center == true) {
-            this.#left = (100 - parseInt(this.#width)) / 2;
-            this.#top = (100 - parseInt(this.#height)) / 2;
+            if(params.width) this.#width = params.width.replace(/[a-zA-Z]+/g, '');
+            if(params.width) this.#width_units = params.width.replace(/[0-9.]+/g, '');
+            if(params.height) this.#height = params.height.replace(/[a-zA-Z]+/g, '');
+            if(params.height) this.#height_units = params.height.replace(/[0-9.]+/g, '');
+
+            let wref = '100';
+            let href = '100';
+            if(this.#width_units == 'px') wref = window.screen.width;
+            if(this.#height_units == 'px') wref = window.screen.height;
+            this.#left = (wref - parseFloat(this.#width)) / 2;
+            this.#left_units = this.#width_units;
+            this.#top = (href - parseFloat(this.#height)) / 2;
+            this.#top_units = this.#height_units;
         }
         else {
-            if(params.left) this.#left = params.left;
-            if(params.top) this.#top = params.top;
+            if(params.left) this.#left = params.left.replace(/[a-zA-Z]+/g, '');
+            if(params.left) this.#left_units = params.left.replace(/[0-9.]+/g, '');
+            if(params.top) this.#top = params.top.replace(/[a-zA-Z]+/g, '');
+            if(params.top) this.#top_units = params.top.replace(/[0-9.]+/g, '');
+            if(params.left) this.#left = parseFloat(params.left);
+            if(params.top) this.#top = parseFloat(params.top);
         }
 
         // Set title
         if(params.title) this.#title = params.title;
-        if(params.show_title) this.#show_title = params.show_title;
+        if(params.show_title != undefined) this.#show_title = params.show_title;
 
         // Set contents
-        if(params.content) this.#content = params.content;
+        if(params.content != undefined) this.#content = params.content;
 
         // Set draggable flag
-        if(params.draggable) this.#draggable = params.draggable;
+        if(params.draggable != undefined) this.#draggable = params.draggable;
 
         // Handler settings
         if(params.close == false) this.#close_show = false;
         if(params.close_cb) this.#close_cb = params.close_cb;
         if(params.min == false) this.#min_show = false;
         if(params.min_cb) this.#min_cb = params.min_cb;
+
+        // Set custom style class
+        if(params.class != undefined) this.#class = params.class;
+        
+        // append custom style classes
+        if(params.new_classes != undefined) this.#new_classes = params.new_classes;
+
+        if(params.css != undefined) this.#css = params.css;
+
+        // Show on create
+        if(params.show != undefined) this.#show = params.show;
 
         // Creates control and append to DOM
         this.#create_display();
@@ -499,8 +744,12 @@ class Display {
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------
-    get element() { return this.#element; }
 
+    get control() { return this.#element; }
+
+    get class() { return this.#element.attr('class'); }
+    set class(_class) { this.#element.attr('class', _class); }
+    
     get element_handle() { return this.#element_handle; }
 
     get element_title() { return this.#element_title; }
@@ -508,14 +757,56 @@ class Display {
     get id() { return this.#id}
     set id(id) { this.#id = id; }
 
-    get width() { return this.#width; }
-    set width(w) { this.#width = w; }
-
-    get height() { return this.#height; }
-    set height(h) { this.#height = h; }
-
     get title() { return this.#title; }
-    set title(title) { this.#title = title; }
+    set title(title) {
+        this.#title = title;
+        this.#element_title.text(this.#title);
+    }
+
+    get tooltip() { return this.#element.title; }
+    set tooltip(tooltip) { this.#element.attr('title', tooltip); }
+
+    get width() { return this.#element.css('width'); }
+    set width(width) {
+        this.#width = parseFloat(width.replace(/[a-zA-Z]+/g, ''));
+        this.#width_units = width.replace(/[0-9.]+/g, '');
+        this.#element.css('width', this.width);
+    }
+
+    get height() { return this.#element.css('height'); }
+    set height(height) {
+        this.#height = parseFloat(height.replace(/[a-zA-Z]+/g, ''));
+        this.#height_units = height.replace(/[0-9.]+/g, '');
+        this.#element.css('height', this.height);
+    }
+
+    get left() { return this.#element.css('left') }
+    set left(left) {
+        this.#left = parseFloat(left.replace(/[a-zA-Z]+/g, ''));
+        this.#left_units = left.replace(/[0-9.]+/g, '');
+        this.#element.css('left', this.left);
+    }
+
+    get top() { return this.#element.css('top'); }
+    set top(top) {
+        this.#top = parseFloat(top.replace(/[a-zA-Z]+/g, ''));
+        this.#top_units = top.replace(/[0-9.]+/g, '');
+        this.#element.css('top', this.top);
+    }
+
+    get element_title() { return this.#element_title; }
+    set element_title(title) {
+        this.#element_title = title;
+    }
+
+    get element_handle() { return this.#element_handle; }
+    set element_handle(handle) { this.#element_handle = handle; }
+
+    get element_handle_close() { return this.#element_handle_close; }
+    set element_handle_close(close) { this.#element_handle_close = close; }
+
+    get element_handle_min() { return this.#element_handle_min; }
+    set element_handle_min(min) { this.#element_handle_min = min; }
 
     get show_title() { return this.#show_title; }
     set show_title(show) { this.#show_title = show; }
@@ -528,4 +819,395 @@ class Display {
             this.#element.draggable('disable');
         }
     }
-}
+
+    get content() { return this.#content; }
+    set content(content) { this.#content = content; }
+
+    get close_cb() { return this.#close_cb; }
+    set close_cb(close_cb) { this.#close_cb = close_cb; }
+
+    get min_cb() { return this.#min_cb; }
+    set min_cb(min_cb) { this.#min_cb = min_cb; }
+
+    append(content, id) {
+        let ref = this.#element;
+        if(id) {
+            // Busca el padre del nuevo elemento en el control
+            let el = this.#element.find(id);
+            if(el) {
+                ref = el;
+            }
+        }
+        
+        ref.append(content);
+    }
+
+    prepend(content, id) {
+        let ref = this.#element;
+        if(id) {
+            // Busca el padre del nuevo elemento en el control
+            let el = this.#element.find(id);
+            if(el) {
+                ref = el;
+            }
+        }
+
+        ref.prepend(content);
+    }
+
+    append_content(content, id) {
+        let ref = this.#content;
+        if(id) {
+            // Busca el padre del nuevo elemento en content
+            let el = this.#content.find(id);
+            if(el) {
+                ref = el;
+            }
+        }
+        
+        ref.append(content);
+    }
+
+    prepend_content(content, id) {
+        let ref = this.#content;
+        if(id) {
+            //TODO BUSCAR ELEMENTO EN this.#content
+            let el = this.#content.find(id);
+            if(el) {
+                ref = el;
+            }
+        }
+
+        ref.prepend(content);
+    }
+
+    static build_p(content, id, dclass=Display.CLASS_CONTENT) {
+        if(!id) id = '';
+        let div = $(`<p id="${id}" class="${dclass}">${content}</p>`);
+        return div;
+    }
+
+    static build_div(content, id, dclass=Display.CLASS_CONTENT) {
+        if(!id) id = '';
+        let div = $(`<div id="${id}" class="${dclass}">${content}</div>`);
+        return div;
+    }
+
+    static build_separator(params) {
+        params = params || {};
+        let class_ = params.class || '';
+        let sep = $(Display.SEPARATOR, { class: class_ });
+        if(params.id) sep.attr('id', params.id);
+        if(params.css) sep.css(params.css);
+        return sep;
+    }
+
+    remove(id) {
+        //TODO this.content find id
+        if(id) {
+            let el = this.#content.find(id);
+            if(el) {
+                $(el).remove();
+            }
+        }
+    }
+} // Display
+
+
+
+
+/** 'Inputbox'
+ * @param container Container { class | css }
+ * @param label Set a label for input control: { text | class | position | css }
+ * @param input Set input control properties: { text | class | css | placeholder }
+ * @param Event Object with {name} and {callback function} .
+*/
+
+class Inputbox {
+    
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+    
+    static NAME = "input-box";
+
+    //----------------------------- PROPERTIES -----------------------------
+
+    #id;
+    #label = { enabled: false };
+    #input = {};
+    #container = {};
+    #event;
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor(params) {
+        if(!params) params = {};
+        this.init(params);
+    }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    #create_control() {
+        // Creates div container
+        this.#container.control = $('<div>', {
+                            id: this.#id,
+                            class: (this.#container.class) ? this.#container.class : '',
+                        });
+
+        // Apply custom css style
+        if(this.#container.css) {
+            this.#container.control.css(this.#container.css);
+        }
+
+        if(this.#container.tooltip) {
+            this.#container.control.attr('title', this.#container.tooltip);
+        }
+
+        // Creates inputbox
+        this.#input.control = $('<input>', {
+            id: `${this.#id}-input`,
+            class: (this.#input.class) ? this.#input.class : '',
+            value: this.#input.text || '',
+            placeholder: (this.#input.placeholder) ? this.#input.placeholder : '',
+          });
+        
+        // Apply custom css style
+        if(this.#input.css) {
+            this.#input.control.css(this.#input.css);
+        }
+        this.#container.control.append(this.#input.control);
+
+        // Creates label if defined
+        if(this.#label.enabled) {
+            this.#label.control = $('<span>', {
+                                        id: `${this.#id}-label`,
+                                        text: this.#label.text,
+                                        class: (this.#label.class) ? this.#label.class : ''
+                                });
+            if((this.#label.position == undefined) || (this.#label.position == Const.LABEL_POSITION_BEFORE)) {
+                this.#container.control.prepend(this.#label.control);
+            }
+            else if (this.#label.position == Const.LABEL_POSITION_AFTER) {
+                this.#container.control.append(this.#label.control);
+            }
+        }
+        
+        // Apply custom css style
+        if(this.#label.css) {
+            this.#label.control.css(this.#label.css);
+        }
+        
+        // Add current object information to DOM element
+        this.#container.control.data('Inputbox', this)
+    }
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+    
+    init(params) {
+
+        // Set control ID name
+        if(params.id) {
+            this.#id = params.id;
+        }
+        
+        // Set container's custom style classes
+        if(params.container) {
+            this.#container = params.container;
+        }
+
+        // Input control settings
+        if(params.input) {
+            this.#input = params.input;
+        }
+
+        // Label settigns
+        if(params.label) {
+            this.#label.enabled = true;
+            this.#label.position = params.label.position;
+            this.#label.text = params.label.text;
+        }
+
+        // If custom event provided
+        if(params.event) {
+            this.#event.name = params.event.name;
+            this.#event.callback = params.event.callback;
+            $(document).on(this.#event.name, (e) => this.#event.callback(e));
+        }
+
+        this.#create_control();
+    }
+
+    //----------------------------- GETTERS & SETTERS -----------------------------
+    
+    // Input
+    get input_text() { return this.#input.text; }
+    set input_text(text) { this.#input.text = text; }
+    
+    get placeholder() { return this.#input.placeholder; }
+    set placeholder(placeholder) {
+        this.#input.placeholder = placeholder;
+        this.#input.control.attr('placeholder', placeholder);
+    }
+
+    get tooltip() { return this.#container.control.title; }
+    set tooltip(tooltip) { this.#container.control.attr('title', tooltip); }
+
+    get input_class() { return this.#input.class; }
+    set input_class(class_) { this.#input.class = class_; }
+
+    get input() { return this.#input.control; }
+    set input(control) { this.#input.control = control; }
+
+    // Label
+    get label_text() { return this.#label.text; }
+    set label_text(text) { this.#label.text = text; }
+
+    get label_class() { return this.#label.class; }
+    set label_class(class_) { this.#label.class = class_; }
+
+    get label() { return this.#label.control; }
+    set label(control) { this.#label.control = control; }
+
+    // Container
+    get class() { return this.#container.class; }
+    set class(class_) { this.#container.class = class_; }
+
+    get control() { return this.#container.control; }
+    set control(control) { this.#container.control = control; }
+
+    // Event
+    get event() { return this.#event; }
+    set event(event) { this.#event = event; }
+} // Inputbox
+
+
+
+
+
+/** 'Radiobutton' */
+
+class RadioButton {
+    
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+    
+    static NAME = "radio-button";
+
+    //----------------------------- PROPERTIES -----------------------------
+
+    #id = '';
+    #name = '';
+    #buttons = { control: {} };
+    #label = { };
+    #container = {};
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor(params) {
+        if(!params) params = {};
+        this.init(params);
+    }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    #create_control() {
+        this.#container.control = $('<div>', {
+                                    id: this.#id,
+                                    class: this.#container.class || '',
+                                });
+        if(this.#container.css) {
+            this.#container.control.css(this.#container.css);
+        }
+        
+        // Create buttons
+        this.#buttons.control = this.#buttons.control || {};
+        Object.keys(this.#buttons.values).forEach(button_name => {
+            let value = this.#buttons.values[button_name];
+            this.#buttons.control[value] = $(`<input type='radio' id='${this.#id}-radio-${value}' name='${this.#name}' class='${Const.CLASS_BUTTON_GENERAL}' value='${value}'>`)
+            // Applies custom style
+            if(this.#buttons.css) {
+                this.#buttons.control[value].css(this.#buttons.css);
+            }
+            // Add control to container
+            this.#container.control.append(this.#buttons.control[value]);
+            
+            // Add label for button to container
+            let label = $(`<label for='${this.#id}-radio-${value}'>${button_name}</label>`)
+            this.#container.control.append(label);
+        });
+
+        // Set default checked if defined
+        if(this.#buttons.checked != undefined) {
+            this.#buttons.control[this.#buttons.checked].prop('checked', true)
+        }
+
+        // Creates label
+        this.#label.control = $('<label>', {
+            id: `${this.#id}-label`,
+            text: this.#label.text || '',
+            class: this.#label.class || '',
+        });
+        //Apply custom style if provided
+        if(this.#label.css) {
+            this.#label.control.css(this.#label.css);
+        }
+        
+        //Set label position if defined
+        if(this.#label.position) {
+            if(this.#label.position == Const.LABEL_POSITION_BEFORE) {
+                this.#container.control.prepend(this.#label.control);
+            }
+            else if(this.#label.position == Const.LABEL_POSITION_AFTER) {
+                this.#container.control.append(this.#label.control);
+            }
+        }
+        else {
+            this.#container.control.prepend(this.#label.control);
+        }
+    }
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+    
+    init(params) {
+        //TODO AGREGAR PARAMETRO ELEMENT, PARA AGREGAR OPCION DE UTILIZAR UN CONTENEDOR EXTERNO YA CREADO
+        if(params.id) {
+            this.#id = params.id;
+        }
+
+        if(params.name) {
+            this.#name = params.name;
+        }
+
+        if(params.container) {
+            this.#container = params.container;
+        }
+
+        if(params.buttons) {
+            this.#buttons = params.buttons;
+        }
+
+        if(params.label) {
+            this.#label = params.label;
+        }
+
+        this.#create_control();
+
+        this.#container.control.data('RadioButton', this);
+    }
+
+    //----------------------------- GETTERS & SETTERS -----------------------------
+
+    get control() { return this.#container.control; }
+    set control(control) { this.#container.control = control; }
+
+    get buttons() { return this.#buttons.control; }
+    set buttons(buttons) { return this.#buttons.control = buttons; }
+
+    get name() { return this.#name; }
+    set name(name) { this.#name = name; }
+
+    get selected() {
+        let res = this.#container.control.find(`input[name=${this.#name}]:checked`).val();
+        return res;
+    }
+    set selected(name) { this.#buttons.control[name].prop('checked', 'true'); }
+
+} // RadioButton

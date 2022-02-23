@@ -9,13 +9,15 @@
     --back: #1f232d;
     --font-size-title: 1.1em;
     --font-size-handle: 0.85em;
-    --font-weight-title: bold;
-    --font-color: #b0b2bd;
+    --font-weight-title: 500;/*bold;*/
+    /* --font-color: #b0b2bd; */
+    --font-color: #c2c2c2;
     --menu-back: #1f232d;
     
+    --input-border-color: #504f4f;
     --border-color: #353535;
     --border-invisible: black;
-    --border-radius: 10px;
+    --border-radius: 6px; /*10px;*/
     --border-width: 1px;
     --border-style: solid;
 
@@ -39,7 +41,7 @@
 
 /* --------------------------------- MAIN LAYOUT --------------------------------- */
 body {
-    font-family: var(--font); /*sans-serif;*/
+    font-family: var(--font);
     overflow: hidden;
 }
 
@@ -66,7 +68,7 @@ input {
     height: 5vh;
     position: absolute;
     opacity: 1;
-    z-index: var(--index-content);
+    z-index: var(--z-content);
 }
 
 #chart-main {
@@ -90,7 +92,7 @@ input {
     background-color: inherit;
     cursor: pointer;
     position: absolute;
-    z-index: var(--index-menu);
+    z-index: var(--z-menu);
 }
 
 .side-menu > * {
@@ -168,6 +170,14 @@ input[type="radio"]:checked + label {
     color: var(--font-color);
     border-radius: 5px;
     padding: 0.5em 1em;
+}
+
+.button-general.slim {
+    padding: 0.2em 0.4em;
+}
+
+.slim:hover {
+    background-color: var(--button-back) !important;
 }
 
 .button-general p {
@@ -268,7 +278,7 @@ input[type="radio"]:checked + label {
     bottom:10vh;
     left: 5vw;
     background-color: red;
-    z-index: var(--index-menu);
+    z-index: var(--z-menu);
 }
 
 /* --------------------------------- FOOTER MENU --------------------------------- */
@@ -356,7 +366,7 @@ input[type=radio] {
 
 .menu-field {
     font-size: 120%;
-    margin: 1em 0.2em 1em 2em;
+    margin: 1em 1em 1em 1em;
     display: block;
 }
 
@@ -367,7 +377,7 @@ input[type=radio] {
 }
 
 .menu-field input {
-    border: var(--border-width) var(--border-style) var(--font-color);
+    border: var(--border-width) var(--border-style) var(--input-border-color);
     border-radius: 3px;
 }
 
@@ -375,10 +385,12 @@ input[type=radio] {
     border-radius: 3px;
     padding: 0.1em 0.2em;
     background-color: var(--hover-back);
+    padding: 0.25em 0.5em;
 }
 
 .menu-field input[type="radio"]:checked + label {
     background-color: var(--selected);
+    padding: 0.25em 0.5em;
 }
 
 .menu-field-label {
@@ -394,11 +406,11 @@ input[type=radio] {
 }
 
 .scroll-custom::-webkit-scrollbar {
-    width: 15px;
+    width: 10px;
 }
 
 .scroll-custom::-webkit-scrollbar-track {
-    width: 15px;
+    width: 10px;
     color: var(--hover-back);
     background: var(--back);
 }
@@ -408,7 +420,7 @@ input[type=radio] {
 }
 
 .scroll-custom::-webkit-scrollbar-thumb {
-    border-radius: 15px;
+    border-radius: 10px;
     background-color: var(--hover-back);
     border: 3px solid var(--back);
 }

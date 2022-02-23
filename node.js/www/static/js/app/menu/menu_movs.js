@@ -141,7 +141,7 @@ class MenuMovs {
             $(MenuMovs.MENU_ICON).prop('title', MenuMovs.TITLE);
             $(MenuMovs.MENU).hide();
 
-            //TODO MOVER A FICHERO MAS APROPIADO
+            //TODO MOVER A FICHERO MAS APROPIADO, HACER MENU FLOTANTE
             $(EventController.FOOTER_MENU_OPTIONS).append($(MenuMovs.MENU));
 
             // Forces closing menu

@@ -14,7 +14,7 @@
     display: none;
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: var(--index-menu);
+    z-index: var(--z-menu);
 }
 
 #patterns-menu-title {
@@ -47,33 +47,28 @@
 }
 
 #patterns-menu-add {
-    margin-left: 4em;
-    margin-right: 1em;
-    margin-top: 1em;
+    margin: 1em 1em 1em 2em;
     /* display: inline-block; */
     float: left;
     cursor: pointer;
 }
 
 #patterns-menu-save {
-    margin-right: 1em;
-    margin-top: 1em;
+    margin: 1em 1em 1em 0em;
     /* display: inline-block; */
     float: left;
     cursor: pointer;
 }
 
 #patterns-menu-clear {
-    margin-right: 1em;
-    margin-top: 1em;
+    margin: 1em 1em 1em 0em;
     /* display: inline-block; */
     float: left;
     cursor: pointer;
 }
 
 #patterns-menu-submit {
-    margin-right: 1em;
-    margin-top: 1em;
+    margin: 1em;
     float: right;
     /* display: inline-block; */
     cursor: pointer;

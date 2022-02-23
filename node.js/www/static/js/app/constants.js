@@ -79,7 +79,6 @@ class Const {
     // RETROCESOS = VALORES
     // DESDE_ID = 'DESDE';
     static HASTA_ID = 'HASTA';
-    static RETROCESOS_ID = 'RETROCESOS';
     static INICIO_ID = 'INICIO';
     static FIN_ID = 'FIN';
     static CORRECCION_DESDE_ID = 'CORRECCION';
@@ -182,14 +181,31 @@ class Const {
     static EVENT_TERMINAL_CREATED = 'terminal-created';
     static EVENT_CLOSE = 'event-close';
 
-    // CONTROLS
+    // CLASS CONTROLS
     static CLASS_DISABLED = 'disabled';
     static CLASS_HOVERABLE_CLOSE = 'hoverable-close';
     static CLASS_HOVERABLE_ICON = 'hoverable-icon';
     static CLASS_HOVERABLE_ICON_SELECTED = 'hoverable-icon-selected';
     static CLASS_BUTTON_GENERAL = 'button-general';
+    static CLASS_BUTTON_SLIM = 'button-general slim';
     static CLASS_HOVERABLE_TEXT = 'hoverable-text';
     static CLASS_HOVERABLE_TEXT_SELECTED = 'hoverable-text-selected';
+    static CLASS_TEXT_INPUT = 'text-input';
+    static CLASS_MENU_FIELD = 'menu-field';
+    static CLASS_MENU_INPUT_SHORT = 'input-short';
+    static CLASS_MENU_OPTIONS_RADIO = 'menu-options-radio';
+    static CLASS_DROPDOWN_ARROW = 'dropdown-arrow';
+    static CLASS_SCROLL_CUSTOM = 'scroll-custom';
+    // CLASS ICONS
+    static CLASS_ICON_ARROW_DOWN = 'lni lni-chevron-down';
+    static CLASS_ICON_ADD = 'lni lni-circle-plus';
+    static CLASS_ICON_SAVE = 'lni lni-save';
+    static CLASS_ICON_CLEAR = 'lni lni-eraser';
+
+    // LABEL POSITION
+    static LABEL_POSITION_INSIDE = 'inside';
+    static LABEL_POSITION_BEFORE = 'before';
+    static LABEL_POSITION_AFTER = 'after';
 
     // ----------------------------------------------------------- NODE ----------------------------------------------------------------------
     // TREND LABELS
@@ -364,7 +380,6 @@ class Time {
         "5m",
         "15m",
         "30m",
-        "45m",
         "1h",
         "2h",
         "4h",

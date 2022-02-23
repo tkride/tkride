@@ -66,7 +66,7 @@
     top: 20vh;
     position: absolute;
     display: none;
-    z-index: var(--index-panel);
+    z-index: var(--z-panel);
 }
 
 #chart-filter-title {
@@ -206,17 +206,18 @@ input {
     top: 11px;
     color: var(--font-color);
     position: absolute;
-    z-index: var(--index-panel);
+    z-index: var(--z-panel);
 }
 
 .chart-time-frame {
     font-size: 1em;
-    margin-left: 5em;
+    left: 4.6em;
+    margin-right: 1em;
     /* top: 0.85em; */
     top: 12px;
     color: var(--font-color);;
     position: absolute;
-    z-index: var(--index-panel);
+    z-index: var(--z-panel);
 }
 
 .chart-time-frame-time-selected {

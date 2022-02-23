@@ -436,7 +436,8 @@ class ModelChart {
 
 
             level_ = data_source[Const.NIVEL_ID][0];
-            name_ = data_source[Const.NAME_ID][0];
+            // name_ = data_source[Const.NAME_ID][0];
+            name_ = data_source[Const.ID_ID][0];
             model_key_ = query.model_key;
             if(!this.#pattern_result) { this.#pattern_result = {}; }
             if(!this.#pattern_result[level_]) { this.#pattern_result[level_] = {}; }
@@ -516,7 +517,8 @@ class ModelChart {
     set pattern_result(result) {
         if(result) {
             if(!this.#pattern_result[result.level]) this.#pattern_result[result.level] = {};
-            this.#pattern_result[result.level][result[Const.NAME_ID]] = result;
+            // this.#pattern_result[result.level][result[Const.NAME_ID]] = result;
+            this.#pattern_result[result.level][result[Const.ID_ID]] = result;
         }
     }
 

@@ -442,7 +442,8 @@ class PanelPatterns {
                             data_plot[name][Const.DATA_ID][this.level] = data.filter( (v, i) => selected_data.includes(i));
                         }
                         else {
-                            let parent_name = parent_info[Const.NAME_ID];
+                            // let parent_name = parent_info[Const.NAME_ID];
+                            let parent_name = parent_info[Const.ID_ID];
                             let from = parent_info[Const.FROM_ID];
                             let until = parent_info[Const.UNTIL_ID];
                             data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [from, until], [Const.INIT_ID, Const.END_ID])
@@ -476,9 +477,9 @@ class PanelPatterns {
                 this.#visual_conf.prev_name = this.#prev_results;
                 console.timeEnd('update current');
 
-                if(Object.keys(data_plot).length > 0) {
-                    $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_conf, this.query]);
-                }
+                // if(Object.keys(data_plot).length > 0) {
+                $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_conf, this.query]);
+                // }
             }
         }
         catch(error) {
@@ -525,7 +526,8 @@ class PanelPatterns {
 
             stats = {
                 model_info: this.#model_key,
-                title: data[Const.NAME_ID],
+                // title: data[Const.NAME_ID],
+                title: data[Const.ID_ID],
                 header: [Const.BULL_ID.toUpperCase(), Const.BEAR_ID.toUpperCase()],
                 rows: {
                     OK: [ [sbull[Const.OK_ID][Const.NUM_ID], '('+(sbull[Const.OK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'], [sbear[Const.OK_ID][Const.NUM_ID], '('+(sbear[Const.OK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'] ],
@@ -637,7 +639,7 @@ class PanelPatterns {
             }
             i++;
         } while(i < this.#results_selected.length);
-        this.#results_selected.splice(i, 0, name);
+        if(name) this.#results_selected.splice(i, 0, name);
 
         if(tree_order == -1) throw('ERROR: unknown pattern result name:', name);
 
@@ -721,7 +723,8 @@ class PanelPatterns {
                     this.query = query;
                     this.#model_key = query.model_key;
                     this.level = query[Const.LEVEL_ID];
-                    let name = query[Const.NAME_ID];
+                    // let name = query[Const.NAME_ID];
+                    let name = query[Const.ID_ID];
                     this.#create_results_tree(name);
                 }
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL + ' > *').each((i, e) => $(e).show())
@@ -735,7 +738,7 @@ class PanelPatterns {
             // if($(dd_control).data('source')) {
             //     items = eval($(dd_control).data('source'));
             // }
-            // this.#results_dd = new Dropdown(dd_control, items);
+            // this.#results_dd = new Dropdown({ element: dd_control, items:items });
 
             // $(document).on(PanelPatterns.EVENT_PATTERNS_RESULTS_SELECTED, (e, result) => {
             //     console.log(result, e);
@@ -784,7 +787,7 @@ class PanelPatterns {
 
             $(document).on('click', PanelPatterns.ELEMENT_PATTERNS_RESULTS_TABLE_NAME, e => this.#select_data(e.target));
 
-            this.#visual_selection_dd = new Dropdown($(PanelPatterns.ELEMENT_PATTERNS_RESULTS_SELECTED), []);
+            this.#visual_selection_dd = new Dropdown({ element: $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_SELECTED), items: [] });
 
             $(PanelPatterns.MENU_ICON).prop('title', PanelPatterns.TITLE);
         }

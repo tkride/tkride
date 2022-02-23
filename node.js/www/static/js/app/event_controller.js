@@ -39,16 +39,16 @@ class EventController {
 
     #manage_patterns_menu() {
         if(MenuPatterns.is_visible()) {
-            $(MenuPatterns.MENU).hide();
-            $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-            $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
+            $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).hide();
+            $(MenuPatterns.ELEMENT_ID_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuPatterns.ELEMENT_ID_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
             $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
         }
         else {
-            $(MenuPatterns.MENU).show();
+            $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).show();
             $(document).trigger(MenuPatterns.EVENT_BUILD_MENU);
-            $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-            $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
+            $(MenuPatterns.ELEMENT_ID_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuPatterns.ELEMENT_ID_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
             $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
         }
     }
@@ -117,7 +117,7 @@ class EventController {
                 $(document).trigger(ControlSettings.EVENT_MOVS_MENU, [main.ctrl.current_active, main.ctrl.current_model_key]);
             });
 
-            $(document).on('click', MenuPatterns.MENU_ICON, e => {
+            $(document).on('click', MenuPatterns.ELEMENT_ID_MENU_ICON, e => {
                 that.#manage_patterns_menu();
             });
 
@@ -135,9 +135,9 @@ class EventController {
             });
 
             $(document).on(MenuPatterns.EVENT_MENU_CLOSE, e => {
-                $(MenuPatterns.MENU).hide();
-                $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-                $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
+                $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).hide();
+                $(MenuPatterns.ELEMENT_ID_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                $(MenuPatterns.ELEMENT_ID_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             });
 
