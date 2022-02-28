@@ -252,6 +252,7 @@ class Const {
     static DATA_PARENT_ID = 'data_parent';
     static DATA_TYPE_ID = 'datatype';
     static FROM_ID = 'from';
+    static FROM_STOP_ID = 'from_stop';
     static UNTIL_ID = 'until';
     static LOGICAL_LOWER_THAN = '<';
     static LOGICAL_HIGHER_THAN = '>';
@@ -281,6 +282,9 @@ class Const {
     static ONLY_MAX_ID = 'onlymax';
     static PATTERN_RESULTS_ID = 'patternresults';
     static PATTERNS_ID = 'patterns';
+    static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource'
+    static RET_LEVELS_FROM_ID = 'levelsfrom'
+    // static RET_STOP_LEVELS_ID = 'stoplevels'
 
     static LOGICAL_ID = 'logical';
     static RET_MIN_ID = 'retmin';

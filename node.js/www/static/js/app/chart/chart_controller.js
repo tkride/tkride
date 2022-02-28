@@ -98,25 +98,21 @@ class ChartController {
     #process_patterns_ret(ops, that) {
         return new Promise((resolve, reject) => {
             let model_key = that.current_model_key;
-            // let result = that.#chart_models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.NAME_ID]);
-            let result = that.#chart_models[model_key].get_pattern_result(ops[Const.NIVEL_ID], ops[Const.ID_ID]);
-            let in_memory = true;
+            // let result = that.#chart_models[model_key].get_pattern_result(ops[Const.ID_ID]);
+            let result = that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]];
+            let in_memory = false;
+            // If result exists, check same parameters and values in query
             if(result) {
+                in_memory = true;
                 let old_q = Object.keys(result.query);
                 let new_q = Object.keys(ops);
-
                 if(old_q.length == new_q.length) {
                     old_q.forEach(k => {
-                        // Check same parameters in query 
                         in_memory &= (new_q.indexOf(k) != -1);
-                        // Check same values in query parameters
                         in_memory &= (result.query[k] == ops[k]);
                     });
                 }
                 else in_memory = false;
-            }
-            else {
-                in_memory = false;
             }
 
             if(in_memory) {
@@ -126,11 +122,11 @@ class ChartController {
                 try {
                     // ops[Const.DATA_ID] = that.#models[model_key][Const.MOVS_ID]; //[level];
                     ops[Const.MODEL_ID] = that.#models[model_key];
+                    ops[Const.PATTERNS_ID] = that.#models[Const.PATTERNS_ID];
+                    // Process recursively all parent results
                     let ret = Retracements.process(ops);
                     //TODO MOVER PATTERN RESULT DE #chart_models A #models
-                    // that.#chart_models[model_key].pattern_result[ops[Const.NAME_ID]] = ret;
-                    // that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.NAME_ID]] = ret;
-                    that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
+                    // that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
                     // Store retracements results
                     // ops[Const.DATA_ID] = ret;
                     if(ret) resolve(ret);

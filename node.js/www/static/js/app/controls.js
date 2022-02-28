@@ -6,6 +6,11 @@
  * @param el DOM control ID. If DOM element passed, uses it, if string passed, creates it.
  * @param items List of items for dropdown list. If no provided, check for html micro-data
  *              'data-items'.
+ * @param header Header control settings { selected | label | arrow }. Can be used all together.
+ * @param header.selected { true: show selected item from items list in control header | false(default): don't show }
+ * @param header.label { text: label text shown in control header | position: { before | after | inside } | class: specific class applied to label | css: custom style applied to label }
+ * @param header.label.position { 'before': Shows label before control.  |  'after': shows label after control.  |  'inside': shows label in control header. }
+ * @param header.arrow { true: show down arrow in control header | false(default): don't show }
  * @param event_name Event/Callback callback name when clicking a list item. If no one provided,
  *                   check for HTML micro-data 'data-event'. If function provided, then
  *                   callback is called when clicking items, instead of triggering event.
@@ -30,6 +35,7 @@ class Dropdown {
     #container_id;
     #header = { label: { enabled: false }, selected: { enabled: false }, arrow: { enabed: false} };
     #items_cont;
+    #class;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -82,6 +88,10 @@ class Dropdown {
             }
         }
 
+        if(params.class) {
+            this.#class = params.class;
+        }
+
         // If parent does not exist, creates it
         if(dd.length == 0) {
             // dd = $('<div id="' + this.#container_id + '" class="' + Dropdown.CLASS_DROPDOWN + ' ' + Const.CLASS_BUTTON_SLIM + '"></div>');
@@ -91,14 +101,12 @@ class Dropdown {
         if(params.header) {
             // Build label
             if(params.header.label) {
-                if(params.header.label.text) {
-                    this.#header.label.enabled = true;
-                    this.#header.label.text = params.header.label.text;
-                    if(params.header.label.position) {
-                        this.#header.label.position = params.header.label.position;
-                    }
-                    // Add header span control to set text (label)
-                    this.#header.label.control = $(`<span id='${this.#container_id}-label'></span>`);
+                this.#header.label = params.header.label;
+                this.#header.label.enabled = true;
+                let label_class = (this.#header.label.class) ? this.#header.label.class : '';
+                this.#header.label.control = $(`<span id='${this.#container_id}-label' class='${label_class}'></span>`);
+                if(this.#header.label.css) {
+                    this.#header.label.control.css(this.#header.label.css);
                 }
             }
 
@@ -106,7 +114,7 @@ class Dropdown {
             if(params.header.selected) {
                 this.#header.selected.enabled = true;
                 // Add header span control to set text (selected item)
-                this.#header.selected.control = $(`<span id='${this.#container_id}-selected' class=''></span>`);
+                this.#header.selected.control = $(`<span id='${this.#container_id}-selected'></span>`);
             }
             
             if(params.header.arrow) {
@@ -122,6 +130,7 @@ class Dropdown {
 
         if(dd.length) {
             this.#control = dd;
+
             if(params.css) {
                 if(params.css.container) {
                     this.#control.css(params.css.container);
@@ -138,7 +147,7 @@ class Dropdown {
             //If label text configured
             if(this.#header.label.enabled) {
                 if(this.#header.label.position == Const.LABEL_POSITION_BEFORE) {    
-                    this.#control.splice(0, 0, this.#header.label.control);
+                    this.#control.splice(0, 0, this.#header.label.control[0]);
                 }
                 else if(this.#header.label.position == Const.LABEL_POSITION_AFTER) {
                     this.#control.push(this.#header.label.control);
@@ -167,6 +176,15 @@ class Dropdown {
 
             // Set label text
             if(this.#header.label.enabled) this.#header.label.control.text(this.#header.label.text);
+
+            
+            // Create main control container
+            let main_container = $('<div>', {
+                id: this.#container_id + '-container',
+                class: (this.#class) ? this.#class : ''
+            });
+            main_container.append(this.#control);
+            this.#control = main_container;
         }
         else {
             throw ('Element:', el, ' do not exist in DOM.');
@@ -177,7 +195,8 @@ class Dropdown {
 
     //----------------------------- GETTERS & SETTERS -----------------------------
 
-    get control() { return this.#control.find(`${this.#container_id}`);}
+    // get control() { return this.#control.find(`${this.#container_id}`);}
+    get control() { return this.#control;}
 
     get controls() { return this.#control;}
 
@@ -196,29 +215,33 @@ class Dropdown {
         if(items instanceof Array == false) {
             items = [items];
         }
+
+        // Clears whitespaces around elements
+        if(items) items = items.map(s => s.trim());
+        
         items.forEach( it => {
             let it_el = $('<div id="' + this.#container_id + '-' + it + '">' + it + '</div>');
             this.#items_cont.append(it_el);
-            if(this.#event_name) {
-                $(it_el).on('click', e => {
-                    if(this.#header.selected.enabled) this.selected = it;
+            $(it_el).on('click', e => {
+                if(this.#header.selected.enabled) this.selected = it;
+                if(this.#event_name) {
                     $(document).trigger(this.#event_name, [it, e]);
                     e.stopPropagation();
-                });
-            }
-            else if(this.#callback) {
-                $(it_el).on('click', e => {
-                    if(this.#header.selected.enabled) this.selected = it;
-                    this.#callback(it, e);
-                });
-            }
+                }
+                else if(this.#callback) this.#callback(it, e);
+            });
         });
 
         this.#items = items;
 
         //Set first item by default
-        if(this.#header.selected.enabled)
-            this.selected = items[0];
+        if(this.#header.selected.enabled) {
+            this.selected = '';
+            // this.selected = items[0];
+            // Event listener or callback methos Need to be defined before this point
+            // if(this.#event_name) $(document).trigger(this.#event_name, [items[0], this]);
+            // else if(this.#callback) this.#callback(items[0], this);
+        }
     }
 
     get selected() { return this.#header.selected.text; }
@@ -229,14 +252,12 @@ class Dropdown {
 
     select(item, e) {
         if(this.#items.includes(item)) {
-            if(this.#event_name) {
-                if(this.#header.selected.enabled) this.selected = item;
-                $(document).trigger(this.#event_name, [item, e]);
-            }
-            else if(this.#callback) {
-                if(this.#header.selected.enabled) this.selected = item;
-                this.#callback(item, e);
-            }
+            if(this.#header.selected.enabled) this.selected = item;
+            if(this.#event_name) $(document).trigger(this.#event_name, [item, e]);
+            else if(this.#callback) this.#callback(item, e);
+        }
+        else {
+            this.selected = '';
         }
     }
 
@@ -920,7 +941,12 @@ class Display {
  * @param container Container { class | css }
  * @param label Set a label for input control: { text | class | position | css }
  * @param input Set input control properties: { text | class | css | placeholder }
- * @param Event Object with {name} and {callback function} .
+ * @param event Get/Set event/callback. Object with {name} and {callback function} .
+ * @param event.name Get/Set event name.
+ * @param event.callback Get/Set callback method.
+ * @param text Get/Set the content of input control.
+ * @param placeholder Get/Set a placeholder for input control.
+ * @param label_text Get/Set label text.
 */
 
 class Inputbox {
@@ -1039,8 +1065,11 @@ class Inputbox {
     //----------------------------- GETTERS & SETTERS -----------------------------
     
     // Input
-    get input_text() { return this.#input.text; }
-    set input_text(text) { this.#input.text = text; }
+    get text() { return this.#input.text; }
+    set text(text) {
+        this.#input.text = text;
+        this.#input.control.val(text);
+    }
     
     get placeholder() { return this.#input.placeholder; }
     set placeholder(placeholder) {
@@ -1208,6 +1237,10 @@ class RadioButton {
         let res = this.#container.control.find(`input[name=${this.#name}]:checked`).val();
         return res;
     }
-    set selected(name) { this.#buttons.control[name].prop('checked', 'true'); }
+    set selected(name) {
+        if(name) {
+            this.#buttons.control[name].prop('checked', 'true')
+        }
+    }
 
 } // RadioButton

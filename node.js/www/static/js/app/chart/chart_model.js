@@ -507,7 +507,7 @@ class ModelChart {
 
     get pattern_result() { return this.#pattern_result; }
     
-    get_pattern_result(level, id) {
+    get_pattern_result(id) {
         if(this.#pattern_result && this.#pattern_result[level] ) {
             return this.#pattern_result[level][id];
         }

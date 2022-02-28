@@ -14,6 +14,7 @@ class MenuPatterns {
     static ELEMENT_ID_MENU_ICON = '#patterns';
     
     //Menu buttons
+    static ELEMENT_ID_CLOSE = '#patterns-menu-close';
     static ID_BUTTON_ADD = 'patterns-menu-add';
         static ELEMENT_ID_BUTTON_ADD = '#patterns-menu-add';
     static ID_BUTTON_SAVE = 'patterns-menu-save';
@@ -24,19 +25,26 @@ class MenuPatterns {
         static ELEMENT_ID_BUTTON_SUBMIT = '#patterns-menu-submit';
 
     // Retracement menu type elements
+    static ELEMENT_ID_TYPE_SELECTED = '#patterns-select-type';
+    static PATTERNS_TYPE_OPTIONS = [Const.MOVIMIENTOS_ID, Const.RETROCESOS_ID, Const.TENDENCIA_ID, Const.SIGUIENTE_ID];
+    static PATTERN_TYPE_CALLBACK = {};
+
     // Pattern name and stored pattern dropdown
     static ID_PATTERNS_MENU_PATTERN_NAME = 'patterns-menu-pattern-name';
     static ELEMENT_ID_PATTERNS_MENU_PATTERN_NAME_INPUT = '#patterns-menu-pattern-name-input';
     static ID_PATTERNS_MENU_STORED_PATTERNS = 'patterns-menu-stored-patterns';
+    static ELEMENT_ID_PATTERNS_MENU_STORED_PATTERNS = '#patterns-menu-stored-patterns';
     // Pattern type dropdown
     static ID_PATTERNS_MENU_TYPE_SELECT = 'patterns-menu-type';
     static ELEMENT_ID_PATTERNS_MENU_TYPE_SELECT = '#patterns-menu-type';
     // Search in results input and dropdown
-    static ID_PATTERNS_MENU_SEARCH_IN_INPUT = 'patterns-menu-search-in-name'; //'search-in-ret-name';
-    static ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT = '#patterns-menu-search-in-name-input';
+    static ID_PATTERNS_MENU_SEARCH_IN_PATTERNS = 'patterns-menu-search-in-patterns';
+    static ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_PATTERNS = '#patterns-menu-search-in-patterns';
+    // static ID_PATTERNS_MENU_SEARCH_IN_INPUT = 'patterns-menu-search-in-name'; //'search-in-ret-name';
+    // static ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT = '#patterns-menu-search-in-name-input';
     // Movements level
     static ID_PATTERNS_MENU_MOV_LEVEL_ID = 'patterns-menu-mov-level';
-    static ELEMENT_ID_PATTERNS_MENU_LEVEL_ID = '#patterns-menu-mov-level';
+    static ELEMENT_ID_PATTERNS_MENU_LEVEL_ID_INPUT = '#patterns-menu-mov-level-input';
     // Footer buttons
     static ID_PATTERNS_MENU_FOOTER = 'patterns-menu-footer';
     // All content containers filter
@@ -66,12 +74,25 @@ class MenuPatterns {
     static FILTER_MAX_RET_ID = 'RETROCESO';
     static ONLY_MAX_DEFAULT_VALUE = Const.MAXIMO;
 
-    // Retracements combobox
-    static ELEMENT_ID_TYPE_SELECTED = '#patterns-select-type';
-    static PATTERNS_TYPE_OPTIONS = [Const.MOVIMIENTOS_ID, Const.RETROCESOS_ID, Const.TENDENCIA_ID, Const.SIGUIENTE_ID];
-    static PATTERN_TYPE_CALLBACK = {};
+    // Stop data source
+    static ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE = 'patterns-menu-ret-levels-data-source';
+    static ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE = '#patterns-menu-ret-levels-data-source';
+    // Retracement from search
+    static ID_PATTERNS_MENU_RET_LEVELS_FROM = 'patterns-menu-ret-levels-from';
+    static ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM = '#patterns-menu-ret-levels-from';
 
-    static ELEMENT_ID_CLOSE = '#patterns-menu-close';
+    // Events
+    static EVENT_BUILD_MENU = 'event-patterns-build-menu';
+    static EVENT_SHOW_PATTERNS = 'event-patterns-show-patterns';
+    static EVENT_MENU_CLOSE = 'event-patterns-close-patterns-menu';
+    static EVENT_SUBMIT = 'event-patterns-submit';
+    // static EVENT_SEARCH_IN_RET_SELECTED = 'event-search-in-ret-selected';
+    static EVENT_CLEAR_FORM = 'event-patterns-clear-form';
+    static EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED = 'event-patterns-ret-selected';
+    static EVENT_TYPE_SELECTED = 'event-patterns-select-type';
+    static EVENT_RET_SELECTED = 'event-patterns-ret-selected';
+    // static EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED = 'patterns-menu-ret-levels-data-source-selected';
+    // static EVENT_PATTERNS_MENU_RET_STOP_LEVELS_SELECTED = 'patterns-menu-ret-stop-levels-selected';
 
 //--------------------------------------------------------------------------------------------//
 
@@ -83,18 +104,6 @@ class MenuPatterns {
         'search-in-next': Const.SIGUIENTE_ID,
     };
 
-
-    // Events
-    static EVENT_BUILD_MENU = 'event-patterns-build-menu';
-    static EVENT_SHOW_PATTERNS = 'event-patterns-show-patterns';
-    static EVENT_MENU_CLOSE = 'event-patterns-close-patterns-menu';
-    static EVENT_SUBMIT = 'event-patterns-submit';
-    static EVENT_SEARCH_IN_RET_SELECTED = 'event-search-in-ret-selected';
-    static EVENT_CLEAR_FORM = 'event-patterns-clear-form';
-    static EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED = 'event-patterns-ret-selected';
-    static EVENT_TYPE_SELECTED = 'event-patterns-select-type';
-
-    static EVENT_RET_SELECTED = 'event-patterns-ret-selected';
 
     static EMPTY_FORM = {
         [Const.TIPO_PARAM_ID]: Const.MOVIMIENTOS_ID,
@@ -126,6 +135,8 @@ class MenuPatterns {
     values_hist = [];
     #models;
     stored_compositions = {};
+    CALLBACK_LOAD_CONTROLS_VALUES = {};
+    CALLBACK_READ_CONTROLS_VALUES = {};
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -146,41 +157,84 @@ class MenuPatterns {
     #load_controls_values(pattern) {
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_PATTERN_NAME_INPUT).val(pattern[Const.ID_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_TYPE_SELECT).data('Dropdown').select(pattern[Const.TIPO_PARAM_ID]);
-        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(pattern[Const.SEARCH_IN_ID]);
-        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_LEVEL_ID).val(pattern[Const.LEVEL_ID]);
+        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(pattern[Const.SEARCH_IN_ID]);
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_PATTERNS).data('Dropdown').select(pattern[Const.SEARCH_IN_ID]);
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_LEVEL_ID_INPUT).val(pattern[Const.LEVEL_ID]);
 
-// xxx //TODO CARGAR SEGUN SELECCION DE TIPO
+        if(this.CALLBACK_LOAD_CONTROLS_VALUES[pattern[Const.TIPO_PARAM_ID]]) {
+            this.CALLBACK_LOAD_CONTROLS_VALUES[pattern[Const.TIPO_PARAM_ID]](pattern);
+        }
+    }
 
-        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FROM).data('RadioButton').selected = pattern[Const.FROM_ID];
-        this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FROM, pattern[Const.FROM_ID]);
+    #load_controls_values_movements(pattern) {
+    }
+
+    #load_controls_values_retracements(pattern) {
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FROM).data('RadioButton').selected = pattern[Const.FROM_ID];
+        // this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FROM, pattern[Const.FROM_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_ITERATE_INPUT).val(pattern[Const.ITERATE_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_VALUES_INPUT).val(pattern[Const.RET_LEVELS_ID]);
-        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected = pattern[Const.ONLY_MAX_ID];
-        this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX, pattern[Const.ONLY_MAX_ID]);
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected = pattern[Const.ONLY_MAX_ID];
+        // this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX, pattern[Const.ONLY_MAX_ID]);
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').select(pattern[Const.RET_LEVELS_DATA_SOURCE_ID]);
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected = pattern[Const.RET_LEVELS_FROM_ID];
+        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS_DROPDOWN).data('Dropdown').select(pattern[Const.RET_STOP_LEVELS_ID]);
+        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS).data('Inputbox').text = pattern[Const.RET_STOP_LEVELS_ID];
     }
+
+    #load_controls_values_trends(pattern) {
+    }
+
+    #load_controls_values_next(pattern) {
+    }
+
 
     #read_controls_values() {
         let pattern = {};
         try {
             pattern[Const.ID_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_PATTERN_NAME_INPUT).val();
             pattern[Const.TIPO_PARAM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_TYPE_SELECT).data('Dropdown').selected;
-            pattern[Const.SEARCH_IN_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val();
-            pattern[Const.LEVEL_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_LEVEL_ID).val();
+            // pattern[Const.SEARCH_IN_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val();
+            pattern[Const.SEARCH_IN_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_PATTERNS).data('Dropdown').selected;
+            pattern[Const.LEVEL_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_LEVEL_ID_INPUT).val();
     
-// xxx //TODO LEER SEGUN SELECCION DE TIPO
-
-            // pattern[Const.FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FROM).data('RadioButton').selected;
-            pattern[Const.FROM_ID] = this.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FROM);
-            pattern[Const.ITERATE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_ITERATE_INPUT).val();
-            pattern[Const.RET_LEVELS_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_VALUES_INPUT).val();
-            // pattern[Const.ONLY_MAX_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected;
-            pattern[Const.ONLY_MAX_ID] = this.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX);
+            if(this.CALLBACK_READ_CONTROLS_VALUES[pattern[Const.TIPO_PARAM_ID]]) {
+                let pattern_type = this.CALLBACK_READ_CONTROLS_VALUES[pattern[Const.TIPO_PARAM_ID]]();
+                pattern = { ...pattern, ...pattern_type };
+            }
         }
         catch(error) {
             console.error(`ERROR: MenuPatterns::#read_controls_values: ${error}`);
         }
         return pattern;
     }
+
+    #read_controls_values_movements() {
+
+    }
+    
+    #read_controls_values_retracements() {
+        let pattern = {};
+        pattern[Const.FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FROM).data('RadioButton').selected;
+        // pattern[Const.FROM_ID] = that.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FROM);
+        pattern[Const.ITERATE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_ITERATE_INPUT).val();
+        pattern[Const.RET_LEVELS_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_VALUES_INPUT).val();
+        pattern[Const.ONLY_MAX_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected;
+        // pattern[Const.ONLY_MAX_ID] = that.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX);
+        pattern[Const.RET_LEVELS_DATA_SOURCE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').selected;
+        pattern[Const.RET_LEVELS_FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected;
+        // pattern[Const.RET_STOP_LEVELS_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS).data('Inputbox').text;
+        return pattern;
+    }
+    
+    #read_controls_values_trends() {
+
+    }
+    
+    #read_controls_values_next() {
+
+    }
+    
 
     #create_menu() {
         // Creates main menu container
@@ -189,7 +243,7 @@ class MenuPatterns {
                                       center:true,
                                       draggable: true,
                                       new_classes: 'scroll-custom',
-                                      //show: false,
+                                    //   width: '300px',
                                      });
         this.#display.element_handle_close.on('click', e =>  $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE) );
         this.#display.control.hide();
@@ -202,7 +256,11 @@ class MenuPatterns {
         let name = new Inputbox({
                                     id: MenuPatterns.ID_PATTERNS_MENU_PATTERN_NAME,
                                     container: { class: Const.CLASS_MENU_FIELD },
-                                    input: { class: Const.CLASS_TEXT_INPUT, placeholder: 'Nombre del patrón  ' },
+                                    label: { text: 'Nombre', position: Const.LABEL_POSITION_BEFORE },
+                                    input: { class: Const.CLASS_TEXT_INPUT,
+                                             placeholder: 'Nombre del patrón  ',
+                                             css: { 'max-width': '9em',  'font-size': '0.8em' },
+                                    }
                                 });
 
         let stored_patterns = new Dropdown({
@@ -210,7 +268,7 @@ class MenuPatterns {
                                         items: Object.keys(this.#models.patterns),
                                         event: MenuPatterns.EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED,
                                         header: { arrow: true },
-                                        css: { items: { 'font-size': '0.8em', 'font-weight': '400' } },
+                                        css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
                                     });
         stored_patterns.controls.each( (i, c) => name.control.append(c) );
         $(document).on(MenuPatterns.EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED, (e, ret_name) => {
@@ -243,21 +301,23 @@ class MenuPatterns {
         });
 
         // Creates pattern results search in selection
-        let results = new Inputbox({
-                                    id: MenuPatterns.ID_PATTERNS_MENU_SEARCH_IN_INPUT,
-                                    container: { class: Const.CLASS_MENU_FIELD },
-                                    input: { placeholder: 'Bucar en resultado... ' }
-                                 });
+        // let results = new Inputbox({
+        //                             id: MenuPatterns.ID_PATTERNS_MENU_SEARCH_IN_INPUT,
+        //                             container: { class: Const.CLASS_MENU_FIELD },
+        //                             input: { placeholder: 'Bucar en resultado... ' }
+        //                          });
         let searchin_combobox = new Dropdown({
-                                            id: MenuPatterns.ID_PATTERNS_MENU_STORED_PATTERNS,
+                                            id: MenuPatterns.ID_PATTERNS_MENU_SEARCH_IN_PATTERNS,
                                             items: Object.keys(this.#models.patterns),
-                                            event: MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED,
-                                            header: { arrow: true },
-                                            css: { items: { 'font-size': '0.8em', 'font-weight': '400' } },
+                                            // event: MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED,
+                                            class: Const.CLASS_MENU_FIELD,
+                                            header: { selected: true, label: { text: 'Buscar en resultado', position: Const.LABEL_POSITION_BEFORE} },
+                                            css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
                                         });
-        searchin_combobox.controls.each( (i, c) => results.control.append(c) );
+        // searchin_combobox.controls.each( (i, c) => results.control.append(c) );
+        searchin_combobox.controls.each( (i, c) => this.#display.append_content(c) );
         // Append control element to display
-        this.#display.append_content(results.control);
+        // this.#display.append_content(results.control);
         
         // Nivel de movimientos
         let mov_level = new Inputbox({
@@ -295,7 +355,7 @@ class MenuPatterns {
             });
         // Append control element to display
         ret_content.append(ret_values.control);
-            
+
         // Add from option
         let from = new RadioButton({
                                         id: MenuPatterns.ID_PATTERNS_MENU_RET_FROM,
@@ -313,7 +373,6 @@ class MenuPatterns {
                                                 }
                                     });
         // Append control element to display
-        // this.display.append(from.control);
         ret_content.append(from.control);
 
         // Add iterate value
@@ -322,7 +381,7 @@ class MenuPatterns {
             container: { class: Const.CLASS_MENU_FIELD },
             label: { text: 'Itera búsqueda', position: Const.LABEL_POSITION_BEFORE },
             input: { class: Const.CLASS_MENU_INPUT_SHORT, text: '0' }
-            });
+        });
         // Append control element to display
         ret_content.append(iterate.control);
 
@@ -344,7 +403,67 @@ class MenuPatterns {
         });
         // Append control element to display
         ret_content.append(filter_max.control);
+
+        // Append levels data source
+        let levels_data_source = new Dropdown({
+            id: MenuPatterns.ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE,
+            items: Object.keys(this.#models.patterns),
+            // event: MenuPatterns.EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED,
+            class: Const.CLASS_MENU_FIELD,
+            header: { selected: true, label: { text: 'Datos fuente de niveles', position: Const.LABEL_POSITION_BEFORE } },
+            css: { items: { 'font-size': '0.8em', 'font-weight': '400' } },
+        });
+        levels_data_source.controls.each( (i, c) => ret_content.append(c) );
+
+        // Add from option
+        let levels_from = new RadioButton({
+            id: MenuPatterns.ID_PATTERNS_MENU_RET_LEVELS_FROM,
+            container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
+            name: Const.FROM_STOP_ID,
+            label: { text: 'Desde de niveles', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
+            buttons: { values: {
+                                [Const.INICIO_ID]: Const.INIT_ID,
+                                [Const.FIN_ID]: Const.END_ID,
+                                [Const.CORRECCION_DESDE_ID]: Const.CORRECTION_ID
+                        },
+                        checked: Const.INIT_ID,
+                        class: Const.CLASS_BUTTON_GENERAL,
+                        css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
+                    }
+        });
+        // Append control element to display
+        ret_content.append(levels_from.control);
+
+        // // Append stop data levels
+        // let stop_data_levels_input = new Inputbox({
+        //     id: MenuPatterns.ID_PATTERNS_MENU_RET_STOP_LEVELS,
+        //     container: { class: Const.CLASS_MENU_FIELD },
+        //     label: { text: 'Nivel stop', position: Const.LABEL_POSITION_BEFORE },
+        //     input: { class: Const.CLASS_MENU_INPUT_SHORT, text: '' }
+        // });
+
+        // let stop_data_levels = new Dropdown({
+        //     id: MenuPatterns.ID_PATTERNS_MENU_RET_STOP_LEVELS_DROPDOWN,
+        //     items: [],
+        //     event: MenuPatterns.EVENT_PATTERNS_MENU_RET_STOP_LEVELS_SELECTED,
+        //     class: Const.CLASS_MENU_FIELD,
+        //     header: { selected: true }
+        // });
+        // stop_data_levels.controls.each( (i, c) => stop_data_levels_input.control.append(c) );
         
+        // ret_content.append(stop_data_levels_input.control);
+        
+        // $(document).on(MenuPatterns.EVENT_PATTERNS_MENU_RET_STOP_LEVELS_SELECTED, (e, level) => {
+            // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS).data('Inputbox').text = level;
+        // });
+
+        // $(document).on(MenuPatterns.EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED, (e, pattern) => {
+        //     if(this.#models[Const.PATTERNS_ID][pattern]) {
+        //         let stop_levels = this.#models[Const.PATTERNS_ID][pattern][Const.RET_LEVELS_ID].split(',');
+        //         stop_data_levels.items = stop_levels;
+        //     }
+        // });
+
         // Append control element to display
         this.#display.append_content(ret_content);
     }
@@ -357,14 +476,6 @@ class MenuPatterns {
 
     #create_menu_buttons() {
         let menu_footer = $('<div>', { id: MenuPatterns.ID_PATTERNS_MENU_FOOTER });
-        menu_footer.css( {
-            // 'margin-right': '1em',
-            // 'padding-bottom': '2em',
-            // 'height': '5em',
-        });
-
-        // Add separator
-        // menu_footer.append(Display.build_separator({ css: { 'width': '310px' } }));
 
         // Add button add pattern
         let button_add = $('<div>', {
@@ -437,12 +548,26 @@ class MenuPatterns {
             [Const.TENDENCIA_ID]: this.#show_menu_trends,
             [Const.SIGUIENTE_ID]: this.#show_menu_next,
         };
+        
+        this.CALLBACK_READ_CONTROLS_VALUES = {
+            [Const.MOVIMIENTOS_ID]: this.#read_controls_values_movements,
+            [Const.RETROCESOS_ID]: this.#read_controls_values_retracements,
+            [Const.TENDENCIA_ID]: this.#read_controls_values_trends,
+            [Const.SIGUIENTE_ID]: this.#read_controls_values_next,
+        }
+        
+        this.CALLBACK_LOAD_CONTROLS_VALUES = {
+            [Const.MOVIMIENTOS_ID]: this.#load_controls_values_movements,
+            [Const.RETROCESOS_ID]: this.#load_controls_values_retracements,
+            [Const.TENDENCIA_ID]: this.#load_controls_values_trends,
+            [Const.SIGUIENTE_ID]: this.#load_controls_values_next,
+        }
 
         this.#create_menu();
 
-        $(document).on(MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED, (e, ret_name, el) => {
-            $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(ret_name);
-        });
+        // $(document).on(MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED, (e, ret_name, el) => {
+            // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(ret_name);
+        // });
 
         $(document).on(MenuPatterns.EVENT_CLEAR_FORM, e => this.#load_controls_values(MenuPatterns.EMPTY_FORM));
 

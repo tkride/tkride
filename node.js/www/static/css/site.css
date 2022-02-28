@@ -403,6 +403,7 @@ input[type=radio] {
     overflow: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--hover-back) var(--back);
+    left: 0;
 }
 
 .scroll-custom::-webkit-scrollbar {

@@ -423,9 +423,14 @@ class PanelPatterns {
     // LLEGAN DE 0(TARGET) A MAYOR (PHY, ...)
                 // Add all patterns selected data to output
                 let parent_info;
-                this.#results_selected.forEach(name => {
+                // this.#results_selected.forEach(name => {
+                // this.#data_tree.forEach(name => {
+                let name = this.#current_name;
+                do {
                     if(name) {
                         let trend = Const.TREND_VAL[this.trend];
+                        let curr_query = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name][Const.QUERY_ID];
+
                         data_plot[name] = Object.assign(new Retracement(), this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name]);
                         // If showing multiple results, son data (ex:PHY) should be always OK data (instead NOK (ex:TARGETS)) ...
                         // ... we search NOK in previous valid results, not previous NOK results
@@ -433,7 +438,14 @@ class PanelPatterns {
                         if(parent_info) {
                             current_result_data = Const.DATA_ID;
                         }
-                        let data = data_plot[name][current_result_data][this.level].filter(df => trend.includes(df[Const.TREND_ID]));
+
+                        // Filters by selected trend
+                        let data = data_plot[name][current_result_data][this.level].filter(df => {
+                            if(trend != undefined)
+                                return trend.includes(df[Const.TREND_ID]);
+                        });
+
+
                         data_plot[name][Const.DATA_ID] = { };
                         data_plot[name][Const.NOK_ID] = { };
 
@@ -442,13 +454,23 @@ class PanelPatterns {
                             data_plot[name][Const.DATA_ID][this.level] = data.filter( (v, i) => selected_data.includes(i));
                         }
                         else {
-                            // let parent_name = parent_info[Const.NAME_ID];
                             let parent_name = parent_info[Const.ID_ID];
                             let from = parent_info[Const.FROM_ID];
                             let until = parent_info[Const.UNTIL_ID];
                             data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [from, until], [Const.INIT_ID, Const.END_ID])
                         }
-                        parent_info = Object.assign({}, data_plot[name][Const.QUERY_ID]);
+
+                        parent_info = Object.assign({}, curr_query);
+                        name = parent_info[Const.SEARCH_IN_ID];
+                    }
+                // });
+                } while(name);
+
+                //TODO TEMPORAL ? ELIMINAR DATOS NO INCLUIDOS
+                // Deletes unselected results from final data
+                Object.keys(data_plot).forEach( name => {
+                    if(this.#results_selected.includes(name) == false) {
+                        data_plot[name][Const.DATA_ID] = {}
                     }
                 });
 
@@ -559,10 +581,8 @@ class PanelPatterns {
 
             // If new data is selected
             if($(el).hasClass(Const.CLASS_HOVERABLE_ICON_SELECTED)) {
+                // Insert new selected into correct order tree
                 name_order = this.#set_result_tree_order(name);
-                if(name_order.name != name) {
-                    console.error(`New selected name "${name_order.name}" does not match with real selected one in controls "${name}"`);
-                }
             }
 
             // If data is unselected
@@ -571,15 +591,18 @@ class PanelPatterns {
                 let idx = this.#results_selected.indexOf(name);
                 if(idx > -1) {
                     this.#results_selected.splice(idx, 1);
-                    name_order = this.#set_result_tree_order()
+                    // name_order = this.#set_result_tree_order()
                 }
             }
+
+            // Get lower order selected data
+            name_order = this.#set_result_tree_order()
             
             // Set current real selected name and order
             name = name_order.name;
             tree_order = name_order.order;
             // The lower order controls explorer results, and then must be updated
-            if((this.#current_order == undefined) || (this.#current_order == -1) || (tree_order < this.#current_order)) {
+            if((this.#current_order == undefined) || (this.#current_order == -1) || (tree_order != this.#current_order)) {
                 // Stores previous result count number
                 this.#prev_count = this.current_count;
                 // Stores current selected data trend

@@ -9,6 +9,8 @@
     position: relative;
     padding: 0.5em 0.5em;
     display: inline-block;
+    min-height: 1em;
+    min-width: 1em;
 }
 
 /* .dropdown::after {
@@ -172,7 +174,7 @@ tr:last-child td:first-child {
     font-weight: var(--font-weight-title);
     color: var(--font-color);
     /* width: 90%; */
-    max-height: 400px;
+    max-height: 500px;
     margin: 1em 0em;
     overflow-x: hidden !important;
 }

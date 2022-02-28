@@ -17,6 +17,8 @@ class PatternsModel {
             [Const.FROM_ID]: 'init',
             [Const.ITERATE_ID]: '0', //'5',
             [Const.ONLY_MAX_ID]: '0', //'1',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         TARGETS: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -29,6 +31,92 @@ class PatternsModel {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_FROM_ID]: 'init',
+        },
+        CC_SC_UP: {
+            [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
+            [Const.TIPO_PARAM_ID]: 'RETROCESOS',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'PHY',
+            [Const.ID_ID]: 'CC_SC_UP',
+            [Const.RET_LEVELS_ID]: '0.1, 0.238, 0.381, 0.55, 0.6',
+            // [Const.TREND_ID]: 'both',
+            [Const.FROM_ID]: 'end',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_FROM_ID]: 'init',
+        },
+        CC_SC_DOWN: {
+            [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
+            [Const.TIPO_PARAM_ID]: 'RETROCESOS',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'CC_SC_UP',
+            [Const.ID_ID]: 'CC_SC_DOWN',
+            [Const.RET_LEVELS_ID]: '0.09, 0.18',
+            // [Const.TREND_ID]: 'both',
+            [Const.FROM_ID]: 'end',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_SC_UP',
+            [Const.RET_LEVELS_FROM_ID]: 'end',
+        },
+        CC_SC_TARGETS: {
+            [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
+            [Const.TIPO_PARAM_ID]: 'RETROCESOS',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'CC_SC_DOWN',
+            [Const.ID_ID]: 'CC_SC_TARGETS',
+            [Const.RET_LEVELS_ID]: '>0.61',
+            // [Const.TREND_ID]: 'both',
+            [Const.FROM_ID]: 'end',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_SC_UP',
+            [Const.RET_LEVELS_FROM_ID]: 'init',
+        },
+        CC_1: {
+            [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
+            [Const.TIPO_PARAM_ID]: 'RETROCESOS',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'PHY',
+            [Const.ID_ID]: 'CC_1',
+            [Const.RET_LEVELS_ID]: '0.395, 0.55, 0.6',
+            // [Const.TREND_ID]: 'both',
+            [Const.FROM_ID]: 'end',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_FROM_ID]: 'init',
+        },
+        CC: {
+            [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
+            [Const.TIPO_PARAM_ID]: 'RETROCESOS',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'CC_1',
+            [Const.ID_ID]: 'CC',
+            [Const.RET_LEVELS_ID]: '0.09, 0.18',
+            // [Const.TREND_ID]: 'both',
+            [Const.FROM_ID]: 'end',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_1',
+            [Const.RET_LEVELS_FROM_ID]: 'end',
+        },
+        CC_TARGETS: {
+            [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
+            [Const.TIPO_PARAM_ID]: 'RETROCESOS',
+            [Const.LEVEL_ID]:'1',
+            [Const.SEARCH_IN_ID]:'CC',
+            [Const.ID_ID]: 'CC_TARGETS',
+            [Const.RET_LEVELS_ID]: '>0.61',
+            // [Const.TREND_ID]: 'both',
+            [Const.FROM_ID]: 'end',
+            [Const.ITERATE_ID]: '0',
+            [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_1',
+            [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         ZR: {
             [Const.BUSCAR_EN_COMBO_ID]: 'MOVIMIENTOS',
@@ -41,6 +129,8 @@ class PatternsModel {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_FROM_ID]: '',
         },
         '▲': {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -53,6 +143,8 @@ class PatternsModel {
             [Const.FROM_ID]: 'init',
             [Const.ITERATE_ID]: '5',
             [Const.ONLY_MAX_ID]: '1',
+            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_FROM_ID]: '',
         },
     };
 
@@ -90,6 +182,20 @@ class PatternsModel {
                 this.#models.patterns = this.#load_patterns();
             }
         }
+    }
+
+    static get_parent_patterns(name) {
+        let parents = [];
+        do {
+            if(this.#models[Const.PATTERNS_ID][name]) {
+                name = this.#models[Const.PATTERNS_ID][name][Const.SEARCH_IN_ID];
+                if(name) parents.push(name);
+            }
+            else {
+                name = undefined;
+            }
+        } while(name);
+        return parents;
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------
