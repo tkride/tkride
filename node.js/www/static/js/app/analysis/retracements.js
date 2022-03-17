@@ -111,42 +111,36 @@ class Retracements {
                 let nok = [];
                 mov_source.map( (m, i) => {
                     let ok = false;
+                    //TODO CAMBIAR NOMBRE DEL CAMPO ret_min POR retmin PARA UTILIZAR LA DEFINICION Const.RET_MIN_ID
+                    let ret_max = ret.ret_max;
+                    let ret_min = ret.ret_min;
                     // If checks levels in external data
                     if(level_source) {
-                        // let m_source = level_source.filter(s => s[levels_from].time == m[Const.INIT_ID].time)[0];
                         let m_source = level_source[i];
                         if(m_source) {
-                            let ret_max = ret.ret_max;
-                            let ret_min = ret.ret_min;
-                            if(Math.abs(ret_max) != Infinity) {
-                                let new_max = m_source[Const.END_ID].price - (m_source[Const.DELTA_INIT_ID] * ret.ret_max);
-                                let new_delta_end_max = (new_max - m[Const.END_ID].price);
-                                ret_max = ((new_delta_end_max * m[Const.TREND_ID]) < 0) ?
-                                                    Math.abs(new_delta_end_max / m[Const.DELTA_INIT_ID]) : 0;
-                            }
-                            if(Math.abs(ret_min) != Infinity) {
-                                let new_min = m_source[Const.END_ID].price - (m_source[Const.DELTA_INIT_ID] * ret.ret_min);
-                                let new_delta_end_min = (new_min - m[Const.END_ID].price);
-                                ret_min = ((new_delta_end_min * m[Const.TREND_ID] * trend_sign) < 0) ?
-                                                    Math.abs(new_delta_end_min / m[Const.DELTA_INIT_ID]) : 0;
-                            }
-                            
-                            if(levels_from == Const.END_ID) {
-                                ret_max = (Math.abs(ret_max) == Infinity) ? 0 : ret_max;
-                                ret_min = (Math.abs(ret_min) == Infinity) ? 0 : ret_min;
-                                ok = ((m[Const.RET_ID] <= ret_min) && (m[Const.RET_ID] >= ret_max));
-                            }
-                            else {
-                                ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
-                            }
+                                let new_ret =
+                                Retracements.get_parent_retracement_limits( { parent: m_source, movement: m,
+                                                                              [Const.RET_MAX_ID]: ret.ret_max, [Const.RET_MIN_ID]: ret.ret_min,
+                                                                              trend_sign: trend_sign, levels_from: levels_from } );
+                                ret_max = new_ret.ret_max;
+                                ret_min = new_ret.ret_min;
                         }
                         else {
-                            let a = 'dump';
+                            console.warn(`No match level source for: ${level_source[i]}`);
                         }
                     }
-                    // else if checks levels in current data
-                    //TODO CAMBIAR NOMBRE DEL CAMPO ret_min POR retmin PARA UTILIZAR LA DEFINICION Const.RET_MIN_ID
-                    else ok = ((m[Const.RET_ID] >= ret.ret_min) && (m[Const.RET_ID] <= ret.ret_max));
+                    
+                    ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
+
+                    // If iteration defined
+                    if(ret[Const.ITERATE_ID]) {
+
+                    }
+
+                    // If filter only max is defined
+                    if(ret[Const.ONLY_MAX_ID]) {
+
+                    }
 
                     if(ok) retracements.push(m);
                     else nok.push(m);
@@ -468,5 +462,43 @@ model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return data_parent;
     }
 
+    static get_parent_retracement_limits(params) {
+        let ret_max;
+        let ret_min;
+        try {
+            let parent = params.parent;
+            let mov = params.movement;
+            ret_max = params[Const.RET_MAX_ID];
+            ret_min = params[Const.RET_MIN_ID];
+            let trend_sign = params.trend_sign;
+            let levels_from = params.levels_from;
+            
+            if(Math.abs(ret_max) != Infinity) {
+                let new_max = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_max);
+                let new_delta_end_max = (new_max - mov[Const.END_ID].price);
+                ret_max = ((new_delta_end_max * mov[Const.TREND_ID]) < 0) ?
+                                    Math.abs(new_delta_end_max / mov[Const.DELTA_INIT_ID]) : 0;
+            }
+            if(Math.abs(ret_min) != Infinity) {
+                let new_min = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_min);
+                let new_delta_end_min = (new_min - mov[Const.END_ID].price);
+                ret_min = ((new_delta_end_min * mov[Const.TREND_ID] * trend_sign) < 0) ?
+                                    Math.abs(new_delta_end_min / mov[Const.DELTA_INIT_ID]) : 0;
+            }
+            
+            if(levels_from == Const.END_ID) {
+                let ret_min_tmp = (Math.abs(ret_max) == Infinity) ? 0 : ret_max;
+                ret_max = (Math.abs(ret_min) == Infinity) ? 0 : ret_min;
+                ret_min = ret_min_tmp;
+            }
+        }
+        catch(error) {
+            let msg = `ERROR: @Retracements::get_parent_retracement_limits: ${error}.`;
+            console.error(msg);
+            throw(msg);
+        }
+
+        return { ret_max, ret_min };
+    }
 }
 
