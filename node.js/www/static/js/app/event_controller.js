@@ -150,41 +150,40 @@ class EventController {
                     events = this.#cfg.get(key_up, e.type);
                     //TODO AL ACTIVAR COMANDO DESHABILITAR KEYS DEL CONTROLADOR PARA QUE NO SALTE EL FILTRO NI EL PANEL DE MARCO TEMPORAL
                     if(events.event.length) {
-                        events.event.forEach(ev => { $(document).trigger(ev, e); });
+                        events.event.forEach(ev => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            $(document).trigger(ev, e);
+                        });
                     }
-                    else if(events.released.length) {}
+                    // else if(events.released.length) {}
                     else {
                         $(document).trigger(ChartController.EVENT_KEYUP, e);
                     }
                 }
-                // if(e.keyCode == KeyCode.ESC) { $(document).trigger(Const.EVENT_CLOSE); }
-                // else {
-                //     $(document).trigger(ChartController.EVENT_KEYUP, e);
-                // }
             });
 
             // Close all clear keys pressed
             $(document).on(Const.EVENT_CLOSE, e => {
-                // that.keys_down = [];
-                // that.#cfg.clear();
+                that.keys_down = [];
+                that.#cfg.clear();
             });
 
-            // // Manages main keyup events
-            // $(document).on('keydown', e => {
-            //     if(that.keys_down.indexOf(e.keyCode) === -1) { that.keys_down.push(e.keyCode); }
-            //     $(document).trigger(ChartController.EVENT_KEYDOWN, e);
-            // });
             // Manages main keyup events
             $(document).on('keydown', e => {
                 if(that.keys_down.indexOf(e.keyCode) === -1) {
                     that.keys_down.push(e.keyCode);
                     let events = this.#cfg.get(that.keys_down, e.type);
                     if(events.event.length) {
-                        events.event.forEach(ev => { $(document).trigger(ev, e); });
+                        events.event.forEach(ev => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            $(document).trigger(ev, e);
+                        });
                     }
-                    // else {
-                    //     $(document).trigger(ChartController.EVENT_KEYDOWN, e);
-                    // }
+                    else {
+                        $(document).trigger(ChartController.EVENT_KEYDOWN, e);
+                    }
                 }
             });
 

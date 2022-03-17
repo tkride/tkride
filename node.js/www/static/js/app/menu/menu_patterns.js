@@ -177,9 +177,7 @@ class MenuPatterns {
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected = pattern[Const.ONLY_MAX_ID];
         // this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX, pattern[Const.ONLY_MAX_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').select(pattern[Const.RET_LEVELS_DATA_SOURCE_ID]);
-        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected = pattern[Const.RET_LEVELS_FROM_ID];
-        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS_DROPDOWN).data('Dropdown').select(pattern[Const.RET_STOP_LEVELS_ID]);
-        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS).data('Inputbox').text = pattern[Const.RET_STOP_LEVELS_ID];
+        // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected = pattern[Const.RET_LEVELS_FROM_ID];
     }
 
     #load_controls_values_trends(pattern) {
@@ -222,8 +220,7 @@ class MenuPatterns {
         pattern[Const.ONLY_MAX_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected;
         // pattern[Const.ONLY_MAX_ID] = that.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX);
         pattern[Const.RET_LEVELS_DATA_SOURCE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').selected;
-        pattern[Const.RET_LEVELS_FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected;
-        // pattern[Const.RET_STOP_LEVELS_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS).data('Inputbox').text;
+        // pattern[Const.RET_LEVELS_FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected;
         return pattern;
     }
     
@@ -415,54 +412,24 @@ class MenuPatterns {
         });
         levels_data_source.controls.each( (i, c) => ret_content.append(c) );
 
-        // Add from option
-        let levels_from = new RadioButton({
-            id: MenuPatterns.ID_PATTERNS_MENU_RET_LEVELS_FROM,
-            container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
-            name: Const.FROM_STOP_ID,
-            label: { text: 'Desde de niveles', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
-            buttons: { values: {
-                                [Const.INICIO_ID]: Const.INIT_ID,
-                                [Const.FIN_ID]: Const.END_ID,
-                                [Const.CORRECCION_DESDE_ID]: Const.CORRECTION_ID
-                        },
-                        checked: Const.INIT_ID,
-                        class: Const.CLASS_BUTTON_GENERAL,
-                        css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
-                    }
-        });
-        // Append control element to display
-        ret_content.append(levels_from.control);
-
-        // // Append stop data levels
-        // let stop_data_levels_input = new Inputbox({
-        //     id: MenuPatterns.ID_PATTERNS_MENU_RET_STOP_LEVELS,
-        //     container: { class: Const.CLASS_MENU_FIELD },
-        //     label: { text: 'Nivel stop', position: Const.LABEL_POSITION_BEFORE },
-        //     input: { class: Const.CLASS_MENU_INPUT_SHORT, text: '' }
+        // // Add from option
+        // let levels_from = new RadioButton({
+        //     id: MenuPatterns.ID_PATTERNS_MENU_RET_LEVELS_FROM,
+        //     container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
+        //     name: Const.FROM_STOP_ID,
+        //     label: { text: 'Desde de niveles', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
+        //     buttons: { values: {
+        //                         [Const.INICIO_ID]: Const.INIT_ID,
+        //                         [Const.FIN_ID]: Const.END_ID,
+        //                         [Const.CORRECCION_DESDE_ID]: Const.CORRECTION_ID
+        //                 },
+        //                 checked: Const.INIT_ID,
+        //                 class: Const.CLASS_BUTTON_GENERAL,
+        //                 css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
+        //             }
         // });
-
-        // let stop_data_levels = new Dropdown({
-        //     id: MenuPatterns.ID_PATTERNS_MENU_RET_STOP_LEVELS_DROPDOWN,
-        //     items: [],
-        //     event: MenuPatterns.EVENT_PATTERNS_MENU_RET_STOP_LEVELS_SELECTED,
-        //     class: Const.CLASS_MENU_FIELD,
-        //     header: { selected: true }
-        // });
-        // stop_data_levels.controls.each( (i, c) => stop_data_levels_input.control.append(c) );
-        
-        // ret_content.append(stop_data_levels_input.control);
-        
-        // $(document).on(MenuPatterns.EVENT_PATTERNS_MENU_RET_STOP_LEVELS_SELECTED, (e, level) => {
-            // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_STOP_LEVELS).data('Inputbox').text = level;
-        // });
-
-        // $(document).on(MenuPatterns.EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED, (e, pattern) => {
-        //     if(this.#models[Const.PATTERNS_ID][pattern]) {
-        //         let stop_levels = this.#models[Const.PATTERNS_ID][pattern][Const.RET_LEVELS_ID].split(',');
-        //         stop_data_levels.items = stop_levels;
-        //     }
-        // });
+        // // Append control element to display
+        // ret_content.append(levels_from.control);
 
         // Append control element to display
         this.#display.append_content(ret_content);

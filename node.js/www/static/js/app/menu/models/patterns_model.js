@@ -15,10 +15,10 @@ class PatternsModel {
             [Const.RET_LEVELS_ID]: '1.27,1.68',
             [Const.TREND_ID]: 'both',
             [Const.FROM_ID]: 'init',
-            [Const.ITERATE_ID]: '0', //'5',
-            [Const.ONLY_MAX_ID]: '0', //'1',
+            [Const.ITERATE_ID]: '10',
+            [Const.ONLY_MAX_ID]: '1',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
-            [Const.RET_LEVELS_FROM_ID]: 'init',
+            // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         TARGETS: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -32,7 +32,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
-            [Const.RET_LEVELS_FROM_ID]: 'init',
+            // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC_SC_UP: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -46,7 +46,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
-            [Const.RET_LEVELS_FROM_ID]: 'init',
+            // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC_SC_DOWN: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -60,7 +60,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_SC_UP',
-            [Const.RET_LEVELS_FROM_ID]: 'end',
+            // [Const.RET_LEVELS_FROM_ID]: 'end',
         },
         CC_SC_TARGETS: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -74,7 +74,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_SC_UP',
-            [Const.RET_LEVELS_FROM_ID]: 'init',
+            // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC_1: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -88,7 +88,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
-            [Const.RET_LEVELS_FROM_ID]: 'init',
+            // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -102,7 +102,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_1',
-            [Const.RET_LEVELS_FROM_ID]: 'end',
+            // [Const.RET_LEVELS_FROM_ID]: 'end',
         },
         CC_TARGETS: {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -116,7 +116,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_1',
-            [Const.RET_LEVELS_FROM_ID]: 'init',
+            // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         ZR: {
             [Const.BUSCAR_EN_COMBO_ID]: 'MOVIMIENTOS',
@@ -130,7 +130,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
-            [Const.RET_LEVELS_FROM_ID]: '',
+            // [Const.RET_LEVELS_FROM_ID]: '',
         },
         '▲': {
             [Const.BUSCAR_EN_COMBO_ID]: 'RETROCESOS',
@@ -144,7 +144,7 @@ class PatternsModel {
             [Const.ITERATE_ID]: '5',
             [Const.ONLY_MAX_ID]: '1',
             [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
-            [Const.RET_LEVELS_FROM_ID]: '',
+            // [Const.RET_LEVELS_FROM_ID]: '',
         },
     };
 

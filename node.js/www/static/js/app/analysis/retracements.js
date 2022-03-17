@@ -67,13 +67,16 @@ class Retracements {
 
             let from = ret[Const.QUERY_ID][Const.FROM_ID];
             let until = ret[Const.QUERY_ID][Const.UNTIL_ID];
-            let levels_from = ret[Const.RET_LEVELS_FROM_ID];
+            // let levels_from = ret[Const.RET_LEVELS_FROM_ID];
+            let levels_from;
 
             // Iterate over all levels
             data_source.forEach((mov_source, i) => {
                 let level = i;
                 let trend_sign = 1;
                 let level_source;
+                let levels_trend;
+                let search_source;
 
                 if(ret[Const.DATA_ID][level] == undefined) ret[Const.DATA_ID][level] = [];
                 if(ret[Const.NOK_ID][level] == undefined) ret[Const.NOK_ID][level] = [];
@@ -97,31 +100,45 @@ class Retracements {
                                                                     //   fields_data: [Const.TREND_ID],
                                                                       fields_ref: [Const.INIT_ID, Const.END_ID] //, Const.TREND_ID]
                                                                     });
+                    if(level_source.length) {
+                        levels_trend = ((level_source[0][Const.END_ID].price - level_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
+                    }
                 }
 
                 // Search data in results
                 if(search_in_data != undefined) {
-                    mov_source = Retracements.filter(mov_source, search_in_data[level], [Const.INIT_ID, Const.END_ID, Const.TREND_ID], [from, until, Const.TREND_ID]);
+                    search_source = Retracements.filter(mov_source, search_in_data[level], [Const.INIT_ID, Const.END_ID, Const.TREND_ID], [from, until, Const.TREND_ID]);
+                    // If base parent data, and levels from parent, check levels trend vs current data trend, to determine from configuration
+                    if(level_source && search_source.length) {
+                        let mov_trend = ((search_source[0][Const.END_ID].price - search_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
+                        levels_from = (levels_trend != mov_trend) ? Const.END_ID : Const.INIT_ID;
+                    }
                 }
+                else {
+                    search_source = mov_source;
+                }
+
 
                 // Get results: Stores matches (and matched parent results if exists search_in_data).
                 //              Stores not valid (nok), and parent nok (if search_in_data exists).
-                //TODO CUANDO SE HAGAN ITERACIONES, CAMBIARA LA CONDICION!!
                 let retracements = [];
                 let nok = [];
-                mov_source.map( (m, i) => {
+                search_source.map( (m, i) => {
                     let ok = false;
                     //TODO CAMBIAR NOMBRE DEL CAMPO ret_min POR retmin PARA UTILIZAR LA DEFINICION Const.RET_MIN_ID
-                    let ret_max = ret.ret_max;
-                    let ret_min = ret.ret_min;
+                    let ret_max = ret[Const.RET_MAX_ID];
+                    let ret_min = ret[Const.RET_MIN_ID];
                     // If checks levels in external data
                     if(level_source) {
-                        let m_source = level_source[i];
-                        if(m_source) {
+                        let parent_source = level_source[i];
+                        if(parent_source) {
                                 let new_ret =
-                                Retracements.get_parent_retracement_limits( { parent: m_source, movement: m,
-                                                                              [Const.RET_MAX_ID]: ret.ret_max, [Const.RET_MIN_ID]: ret.ret_min,
-                                                                              trend_sign: trend_sign, levels_from: levels_from } );
+                                Retracements.get_projected_retracement_limits( { parent: parent_source,
+                                                                                 movement: m,
+                                                                                 [Const.RET_MAX_ID]: ret.ret_max,
+                                                                                 [Const.RET_MIN_ID]: ret.ret_min,
+                                                                                 trend_sign: trend_sign,
+                                                                                 levels_from: levels_from } );
                                 ret_max = new_ret.ret_max;
                                 ret_min = new_ret.ret_min;
                         }
@@ -131,20 +148,38 @@ class Retracements {
                     }
                     
                     ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
+                    if(ok) retracements.push(m);
+                    else nok.push(m);
 
                     // If iteration defined
                     if(ret[Const.ITERATE_ID]) {
-
+                // TODO Y TENER EN CUENTA QUE LOS RESULTADOS BASE, PUEDEN NO ESTAR EN LOS MOVIMIENTOS FUENTE DIRECTAMENTE (MERGE DE MOVIMIENTOS, RESULTADOS DE ITERACIONES)
+                        //TODO BUSCAR EN LOS MOVIMIENTOS A PARTIR DEL SELECCIONADO (O RESULTADO PADRE SELECCIONADO)
+                        // let search_remain = search_source.slice(i);
+                        // TODO ENCONTRAR EL MOVIMIENTO ACTUAL EN LA FUENTE
+                        // let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[Const.CORRECTION_ID].time);
+                        let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[until].time);
+                        let mov_remain = mov_source.slice(idx_mov);
+                        let res_it = Retracements.process_iteration({
+                                                         start_movement: m,
+                                                        //  source: search_remain,
+                                                         source: mov_remain,
+                                                         ret_max: ret_max,
+                                                         ret_min: ret_min,
+                                                         iterations: ret[Const.ITERATE_ID]
+                        });
+                        
+                        // Append iteration results to retracements
+                        retracements.push(...res_it.ok);
+                        nok.push(...res_it.nok);
                     }
-
-                    // If filter only max is defined
-                    if(ret[Const.ONLY_MAX_ID]) {
-
-                    }
-
-                    if(ok) retracements.push(m);
-                    else nok.push(m);
                 });
+
+                // If filter only max is defined
+                if(ret[Const.ONLY_MAX_ID] != Const.NO) {
+                    retracements = Retracements.filter_max_movements(retracements, ret[Const.ONLY_MAX_ID]);
+                    // nok = Retracements.filter_max_movements(nok, ret[Const.ONLY_MAX_ID]);
+                }
 
                 // Append calculated retracement level price data
                 ret[Const.RET_LEVELS_ID].forEach( l => {
@@ -157,7 +192,7 @@ class Retracements {
 
                 // STATS: Group statistics results by trend
                 let stats = Retracements.#get_stats(retracements,
-                                                    mov_source,
+                    search_source,
                                                     (search_in_data != undefined) ? search_in_model[Const.STATS_ID][level] : undefined,
                                                     trend_sign);
                 ret[Const.STATS_ID][level].push(...stats);
@@ -177,10 +212,7 @@ class Retracements {
         }
 
 // TODO TEMPORAL: PARA HACER PROCESO RECURSIVO
-let model_key = request[Const.MODEL_KEY_ID];
-let model = request[Const.MODEL_ID];
-// model[model_key][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
-model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
+request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 // TODO -----------------------------------------
 
         return ret;
@@ -332,7 +364,7 @@ model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
      * @param f2 Specific fields comparison for r2. If omitted = f1.
      * @returns Array r1 filtered with movs/retracements given in r2
      */
-    static filter(r1, r2, f1, f2) {
+    static filter_(r1, r2, f1, f2) {
         if(!f1 || !f1.length) f1 = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
         if(!f2 || !f2.length) f2 = f1;
         let ind1 = 0;
@@ -341,15 +373,17 @@ model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             if(ind1 >= r1.length) ind1 = 0; // Retracement not find drives to end of source data...restart with next search
             for( ; ind1 < r1.length; ind1++) {
                 let res = true;
-                f2.forEach( (f, i) => {
-                    if(f != undefined) {
-                        if(r2[ind2][f].time != undefined)
+                // f2.forEach( (f, i) => {
+                f2.every( (f, i) => {
+                    if((f != undefined) && (f1[i] != undefined)) {
+                        if(r2[ind2][f].time != undefined) {
                             res &= (r2[ind2][f].time == r1[ind1][f1[i]].time)
                                     && (r2[ind2][f].price == r1[ind1][f1[i]].price);
-
+                        }
                         else { res &= (r2[ind2][f] == r1[ind1][f1[i]]);}
                     }
-                    else res = false;
+                    return res;
+                    // else res = false;
                 });
                 if(res) {
                     ret.push(r1[ind1++]);
@@ -359,6 +393,42 @@ model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         }
         return ret;
     }
+
+    /**@pre Sorted data 
+     * @param r1 Data to be filtered
+     * @param r2 Filter reference
+     * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
+     * @param f2 Specific fields comparison for r2. If omitted = f1.
+     * @returns Array r1 filtered with movs/retracements given in r2
+     */
+     static filter(r1, r2, f1, f2) {
+         let res;
+         try {
+            res = r1.filter(m1 => {
+                return r2.find( m2 => {
+                    return f1.every( (c1, i) => {
+                        let c2 = f2[i];
+                        if((c1 != undefined) && (c2 != undefined)) {
+                            if(m1[c1].time != undefined) {
+                                return (m2[c2].time == m1[c1].time);
+                            }
+                            else {
+                                return (m2[c2] == m2[c1]);
+                            }
+                        }
+                        else return true;
+                    });
+                });
+            });
+        }
+        catch(error) {
+            let msg = `EXCEPTION Retracements.filter: ${error}`;
+            console.error(msg);
+            throw(msg);
+        }
+        return res;
+    }
+
 
     static get_family_trend(model, query) {
         let trend_sign = 1;
@@ -462,7 +532,18 @@ model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return data_parent;
     }
 
-    static get_parent_retracement_limits(params) {
+    /**
+     * get_parent_retracement_limits: Get retracement limits projected from another movement
+     * @param {*} params { parent, movement, retmax, retmin, trend_sign, levels_from }
+     * @param parent Parent movement information.
+     * @param movement Current analized movement information.
+     * @param retmax Current max retracement value for parent movement.
+     * @param retmin Current min retracement value for parent movement.
+     * @param trend_sign Stored equivalent trend sign, based on first pattern.
+     * @param levels_from Point from movement, where retracement starts: [ init | end | correction ].
+     * @returns Object with { ret_max, ret_min } values.
+     */
+    static get_projected_retracement_limits(params) {
         let ret_max;
         let ret_min;
         try {
@@ -500,5 +581,254 @@ model[Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
         return { ret_max, ret_min };
     }
+
+
+    /**
+     * process_iteration: Searches movements that matches retracement restrictions specified, mergin availables movements.
+     * @param {*} params { start_movement, source, start_idx, ret_max, ret_min }
+     * @param start_movement Base start movement, from where iteration starts.
+     * @param source Movements data source array, starting with next to start movement.
+     * @param ret_max Maximum retracement allowed.
+     * @param ret_min Minimum retracement allowed.
+     * @param iterations Number of max iterations (if restriction allows them).
+     * @returns Object with { ok (matches with restriction) , nok (not matches restrictions) } arrays of movements.
+     */
+    static process_iteration(params) {
+        let ok = [];
+        let nok = [];
+        try {
+            let m = JSON.parse(JSON.stringify(params.start_movement));
+            let source = params.source;
+            let ret_max = params.ret_max;
+            let ret_min = params.ret_min;
+            let max_iter = params.iterations;
+            let iter = 0;
+            
+            let ms = source.filter( mov => mov[Const.TREND_ID] == m[Const.TREND_ID]);
+
+            for(let i = 0; (i < ms.length) && (iter < max_iter); i++, iter++) {
+                // Merge with next movement
+                let new_mov = Retracements.merge_movements(m, ms[i]);
+
+                //
+                if(new_mov == null) {
+                    break;
+                }
+
+                // If generated movement is diferent
+                if(JSON.stringify(new_mov) != JSON.stringify(m)) {
+                    // Check retracement restrictions
+                    //TODO EL LIMITE TAMBIEN SE TIENE QUE COMPROBAR POR EL MINIMO, RECORDAR QUE HACIA SI HABIA UNA CORRECCION POR DEBAJO DEL INICIO, PERO NO ERA FINAL DEL MOVIMIENTO
+                    //TODO SE DESPLAZABA EL INICIO DEL MOVIMIENTO
+                    let check = ((new_mov[Const.RET_ID] >= ret_min) && (new_mov[Const.RET_ID] <= ret_max));
+                    if(check) { ok.push(new_mov); }
+                    else {
+                        nok.push(new_mov);
+                        if(new_mov[Const.RET_ID] > ret_max) break;
+                    }
+                    m = new_mov;
+                }
+            }
+        }
+        catch(error) {
+            let msg = `ERROR: @Retracements::process_iteration: ${error}.`;
+            console.log(msg);
+            throw(msg);
+        }
+
+        return { ok, nok };
+    }
+
+    /**
+     * merge_movements: Merges 2 movements, taking greater END and lower CORRECTION for BULL movement (and inverse for BEAR).
+     * @param {*} m1 Base movement from where is started.
+     * @param {*} m2 Second movement, from where END and CORRECTION are checked to merge them.
+     * @returns New merged resulting movement, with posible new END, CORRECTION, DELTA_INIT, DELTA_END and RETRACEMENT values.
+     * Returns null if error movement: null values or new INIT-END gives new movement.
+     */
+    static merge_movements(m1, m2) {
+        let new_mov = JSON.parse(JSON.stringify(m1));
+
+        // TODO ? RESTRINGIR TODOS LOS NULL ?
+        // First check no null values in movements
+        if( (m1[Const.INIT_ID].price != null) &&
+        (m2[Const.INIT_ID].price != null) &&
+        (m1[Const.END_ID].price != null) &&
+        (m2[Const.END_ID].price != null) &&
+        (m1[Const.CORRECTION_ID].price != null) &&
+        (m2[Const.CORRECTION_ID].price != null) )
+        {
+            let init_lower = ( ( (m2[Const.INIT_ID].price - new_mov[Const.INIT_ID].price) * new_mov[Const.TREND_ID]) < 0);
+            let end_greater = ( ( (m2[Const.END_ID].price - new_mov[Const.END_ID].price) * new_mov[Const.TREND_ID]) > 0);
+            let correction_lower = ( ( (m2[Const.CORRECTION_ID].price - new_mov[Const.CORRECTION_ID].price) * new_mov[Const.TREND_ID]) < 0);
+
+            // BULL: init< / BEAR: init>
+            if(init_lower) {
+                // BULL: end< / BEAR: end>
+                if(!end_greater) {
+                    // BULL: correction< / BEAR: correction>
+                    if(correction_lower) {
+                        new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
+                        new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
+                        new_mov[Const.RET_ID] = Math.abs(new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID]);        
+                    }
+                    // No valid new movement
+                    else { new_mov = null; }
+                }
+                // No valid new movement
+                else { new_mov = null; }
+            }
+            // BULL: init>= / BEAR: init<=
+            else {
+                // BULL: end> / BEAR: end<
+                if(end_greater) {
+                    new_mov[Const.END_ID] = m2[Const.END_ID];
+                    new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
+                    new_mov[Const.DELTA_INIT_ID] = new_mov[Const.END_ID].price - new_mov[Const.INIT_ID].price;
+                    new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
+                    new_mov[Const.RET_ID] = Math.abs(new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID]);
+                }
+                // BULL: end< / BEAR: end>
+                else {
+                    new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
+                    new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
+                    new_mov[Const.RET_ID] = Math.abs(new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID]);
+                }
+            }
+        }
+        else {
+            new_mov = null;
+        }
+
+        return new_mov;
+    }
+
+    /**
+     * filter_max_movements_
+     * @param source Data source to be filtered.
+     * @param type Tipe of filter: { Const.ONLY_MAX_MOVEMENT | Const.ONLY_MAX_RETRACEMENT }.
+     * @returns source with data filtered.
+     */
+    //TODO NO FILTRA BIEN LOS MÁXIMOS MOVIMIENTOS BAJISTAS
+    static filter_max_movements_(source, type) {
+        console.time('filter_max');
+        //TODO Para cada instante de las correcciones (comenzando por la última)
+        let max_filtered = [];
+        let total_len = source.length;
+        let last_idx = total_len - 1;
+        let ok = 0;
+        while(last_idx > 0) {
+            // Select all retracements which ends at same time that current correction
+            let corr_current = source.filter(m => m[Const.CORRECTION_ID].time == source[last_idx][Const.CORRECTION_ID].time);
+
+            // If more than 1 result, max filter can be applied
+            if(corr_current.length > 1) {
+                let corr_curr_time = corr_current.reduce( (a, b) => (a[Const.CORRECTION_ID].time > b[Const.CORRECTION_ID].time) ? a : b );
+                corr_curr_time = corr_curr_time[Const.CORRECTION_ID].time;
+
+                // From current correction, selects first init time
+                let init_current_time = corr_current.reduce( (a, b) => a[Const.INIT_ID].time < b[Const.INIT_ID].time ? a : b);
+                init_current_time = init_current_time[Const.INIT_ID].time;
+
+                // Select all retracements with init time equal or after current init (and correction equal or before to current correction)
+                let group_curr = source.filter(m => (m[Const.INIT_ID].time >= init_current_time) && (m[Const.CORRECTION_ID].time <= corr_curr_time) );
+
+                // Deletes from source, all involved data in group
+                source = source.filter( m => group_curr.includes(m) == false );
+
+                // Get max
+                if(type == Const.ONLY_MAX_MOVEMENT) {
+                    // From this group, greater movement
+                    group_curr = group_curr.reduce( (prev, curr) => {
+                        let max_prev = Math.abs(prev[Const.DELTA_INIT_ID]) + Math.abs(prev[Const.DELTA_END_ID])
+                        let max_curr = Math.abs(curr[Const.DELTA_INIT_ID]) + Math.abs(curr[Const.DELTA_END_ID])
+                        if(max_prev > max_curr) return prev;
+                        return curr;
+                    });
+                }
+                else if(type == Const.ONLY_MAX_RETRACEMENT) {
+                    // From this group, greater retracement
+                    group_curr = group_curr.reduce( (prev, curr) => (prev[Const.RET_ID] > curr[Const.RET_ID]) ? prev: max_curr);
+                }
+                max_filtered.push(group_curr);
+            }
+            
+            // If length hasn't changed, decrements iterator index ...
+            if(source.length == total_len) {
+                last_idx--;
+                ok++;
+            }
+            // ... else, restart from last, with modified data source
+            else {
+                total_len = source.length;
+                last_idx = total_len - 1 - ok;
+            }
+        }
+        console.timeEnd('filter_max');
+        return max_filtered;
+    } // filter_max_movements_
+
+    /**
+     * filter_max_movements
+     * @param source Data source to be filtered.
+     * @param type Tipe of filter: { Const.ONLY_MAX_MOVEMENT | Const.ONLY_MAX_RETRACEMENT }.
+     * @returns source with data filtered.
+     */
+    //TODO NO FILTRA BIEN LOS MAXIMOS MOVIMIENTOS BAJISTAS
+    static filter_max_movements(source, type) {
+        console.time('filter_max');
+        let total_len = source.length;
+        let idx = 0;
+        while(idx < total_len) {
+                                                    //TODO ENER EN CUENTA LA TENDENCIA !!!!!
+            // Get first init current time
+            let init_current_time = source[idx][Const.INIT_ID].time;
+            let trend_current = source[idx][Const.TREND_ID];
+
+            // Select all retracements which starts at same time that current init with same trend
+            let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
+
+            // Get last correction instant for all movements that start at same time
+            let corr_current_time = init_current.reduce( (a, b) => (a[Const.CORRECTION_ID].time > b[Const.CORRECTION_ID].time) ? a : b );
+            corr_current_time = corr_current_time[Const.CORRECTION_ID].time;
+
+            // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
+            let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
+                                                    && (m[Const.CORRECTION_ID].time <= corr_current_time)
+                                                    && (m[Const.TREND_ID] == trend_current) );
+
+            // If more than 1 result, max filter can be applied
+            if(group_current.length > 1) {
+                // Delete from source current movement group
+                // source.splice(idx, group_current.length);
+                source = source.filter( m => group_current.includes(m) == false);
+
+                // Get max
+                if(type == Const.ONLY_MAX_MOVEMENT) {
+                    // From this group, greater movement
+                    group_current = group_current.reduce( (prev, curr) => {
+                        let max_prev = Math.abs(prev[Const.DELTA_INIT_ID]) + Math.abs(prev[Const.DELTA_END_ID])
+                        let max_curr = Math.abs(curr[Const.DELTA_INIT_ID]) + Math.abs(curr[Const.DELTA_END_ID])
+                        if(max_prev > max_curr) return prev;
+                        return curr;
+                    });
+                }
+                else if(type == Const.ONLY_MAX_RETRACEMENT) {
+                    // From this group, greater retracement
+                    group_current = group_current.reduce( (prev, curr) => (prev[Const.RET_ID] > curr[Const.RET_ID]) ? prev: curr);
+                }
+
+                // Re-insert filtered max
+                source.splice(idx, 0, group_current);
+
+                // Update current total length
+                total_len = source.length;
+            }
+            
+            idx++;
+        }
+        console.timeEnd('filter_max');
+        return source;
+    } // filter_max_movements
 }
 

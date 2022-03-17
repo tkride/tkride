@@ -69,8 +69,9 @@ class MaxRelative {
         console.time('new');
 
         //First value
-        if(max_data[0][Const.IDX_MAX_MAX] > max_data[1][Const.IDX_MAX_MAX])
-        max.push([max_data[0][Const.IDX_MAX_TIMESTAMP], max_data[0][Const.IDX_MAX_MAX], null]);
+        if(max_data[0][Const.IDX_MAX_MAX] > max_data[1][Const.IDX_MAX_MAX]) {
+            max.push([max_data[0][Const.IDX_MAX_TIMESTAMP], max_data[0][Const.IDX_MAX_MAX], null]);
+        }
 
         // Iterate over all values
         max_data.slice(1,-1).map( (curr, i) => {
@@ -83,8 +84,9 @@ class MaxRelative {
         });
 
         //Last value
-        if(max_data[max_data.length-1][Const.IDX_MAX_MAX] > max_data[max_data.length-2][Const.IDX_MAX_MAX])
-        max.push([max_data[max_data.length-1][Const.IDX_MAX_TIMESTAMP], max_data[max_data.length-1][Const.IDX_MAX_MAX], null]);
+        if(max_data[max_data.length-1][Const.IDX_MAX_MAX] > max_data[max_data.length-2][Const.IDX_MAX_MAX]) {
+            max.push([max_data[max_data.length-1][Const.IDX_MAX_TIMESTAMP], max_data[max_data.length-1][Const.IDX_MAX_MAX], null]);
+        }
         
         // Extract relative minimum
         let min = [];
@@ -93,8 +95,9 @@ class MaxRelative {
         }
 
         //First values
-        if(min_data[0][Const.IDX_MAX_MIN] < min_data[1][Const.IDX_MAX_MIN])
-            min.push([min_data[0][Const.IDX_MAX_TIMESTAMP], min_data[0][Const.IDX_MAX_MIN], null]);
+        if(min_data[0][Const.IDX_MAX_MIN] < min_data[1][Const.IDX_MAX_MIN]) {
+            min.push([min_data[0][Const.IDX_MAX_TIMESTAMP], null, min_data[0][Const.IDX_MAX_MIN]]);
+        }
 
         // Iterate over all values
         min_data.slice(1,-1).map( (curr, i) => {
@@ -106,8 +109,9 @@ class MaxRelative {
             }
         });
         //Last value
-        if(min_data[min_data.length-1][Const.IDX_MAX_MIN] < min_data[min_data.length-2][Const.IDX_MAX_MIN])
-        min.push([min_data[min_data.length-1][Const.IDX_MAX_TIMESTAMP], min_data[min_data.length-1][Const.IDX_MAX_MIN], null]);
+        if(min_data[min_data.length-1][Const.IDX_MAX_MIN] < min_data[min_data.length-2][Const.IDX_MAX_MIN]) {
+            min.push([min_data[min_data.length-1][Const.IDX_MAX_TIMESTAMP], null, min_data[min_data.length-1][Const.IDX_MAX_MIN]]);
+        }
 
         console.timeEnd('new');
 
@@ -291,6 +295,7 @@ class Movements {
                 let dend = v[first] - data[i+1][sec];
                 let ret = Math.abs(dend / dinit);
 
+                //TODO DEBERIA SER OBJETO TIPO Movement
                 let mov = {
                     [Const.TIMESTAMP_ID]: data[i][Const.IDX_MAX_TIMESTAMP],
                     [Const.INIT_ID]: new TimePrice(data[i][Const.IDX_MAX_TIMESTAMP], data[i][first]),
@@ -352,25 +357,25 @@ class Movements {
             min = min.map(v => [ v[0], null, (v[1] == Infinity) ? null : v[1] ]).filter(v => v[Const.IDX_MAX_MIN] != null);
             filtered.push(max.concat(min).sort());
 
-            // Merge same timestamps
-            for(let i = 0; i < filtered[filtered.length-1].length - 1; i++) {
-                if( filtered[filtered.length-1][i][Const.IDX_MAX_TIMESTAMP] == filtered[filtered.length-1][i+1][Const.IDX_MAX_TIMESTAMP] ) {
-                    let v1;
-                    let v2;
-                    if(filtered[filtered.length-1][i][Const.IDX_MAX_MAX] != null)
-                        v1 = filtered[filtered.length-1][i][Const.IDX_MAX_MAX];
-                    else
-                        v1 = filtered[filtered.length-1][i+1][Const.IDX_MAX_MAX];
+            // // Merge same timestamps
+            // for(let i = 0; i < filtered[filtered.length-1].length - 1; i++) {
+            //     if( filtered[filtered.length-1][i][Const.IDX_MAX_TIMESTAMP] == filtered[filtered.length-1][i+1][Const.IDX_MAX_TIMESTAMP] ) {
+            //         let v1;
+            //         let v2;
+            //         if(filtered[filtered.length-1][i][Const.IDX_MAX_MAX] != null)
+            //             v1 = filtered[filtered.length-1][i][Const.IDX_MAX_MAX];
+            //         else
+            //             v1 = filtered[filtered.length-1][i+1][Const.IDX_MAX_MAX];
 
-                    if(filtered[filtered.length-1][i][Const.IDX_MAX_MIN] != null)
-                        v2 = filtered[filtered.length-1][i][Const.IDX_MAX_MIN];
-                    else
-                        v2 = filtered[filtered.length-1][i+1][Const.IDX_MAX_MIN];
+            //         if(filtered[filtered.length-1][i][Const.IDX_MAX_MIN] != null)
+            //             v2 = filtered[filtered.length-1][i][Const.IDX_MAX_MIN];
+            //         else
+            //             v2 = filtered[filtered.length-1][i+1][Const.IDX_MAX_MIN];
 
-                    filtered[filtered.length-1][i+1] = [ filtered[filtered.length-1][i][Const.IDX_MAX_TIMESTAMP], v1, v2 ];
-                    filtered[filtered.length-1].splice(i, 1)
-                }
-            }
+            //         filtered[filtered.length-1][i+1] = [ filtered[filtered.length-1][i][Const.IDX_MAX_TIMESTAMP], v1, v2 ];
+            //         filtered[filtered.length-1].splice(i, 1)
+            //     }
+            // }
         });
 
         return filtered;

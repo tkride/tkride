@@ -10,7 +10,6 @@ class Const {
     static EMPTY_STR = '';
     static NEW_LINE_STR = "\n"; //os.linesep;
 
-    static NO = 0;
     static IMPULSO = 1;
     static RETROCESO = -1;
     static ALCISTA = 1;
@@ -284,11 +283,14 @@ class Const {
     static PATTERNS_ID = 'patterns';
     static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource'
     static RET_LEVELS_FROM_ID = 'levelsfrom'
-    // static RET_STOP_LEVELS_ID = 'stoplevels'
 
     static LOGICAL_ID = 'logical';
-    static RET_MIN_ID = 'retmin';
-    static RET_MAX_ID = 'retmax';
+    static RET_MIN_ID = 'ret_min';
+    static RET_MAX_ID = 'ret_max';
+
+    static NO = 0;
+    static ONLY_MAX_MOVEMENT = 1;
+    static ONLY_MAX_RETRACEMENT = -1;
 
     // CANDLES INDEX
     static IDX_CANDLE_TIME = 0;

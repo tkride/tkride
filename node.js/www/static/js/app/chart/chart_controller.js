@@ -183,6 +183,7 @@ class ChartController {
         let end_time = Time.now(Time.FORMAT_STR);
         this.currActive[this.#TSQL.MARCO_ID] = this.#time_frame.time_frame;
         let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        // let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
 
         let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
                     [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
@@ -272,51 +273,79 @@ class ChartController {
     enable_events() {
         var that = this;
         
-        $(document).on(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL, (e, key) => {
-            if(that.active_chart) that.active_chart.setOption(ChartView.CHART_ZOOM_X_ENABLED);
-        });
+        if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL]) {
+            $(document).on(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL, (e, key) => {
+                if(that.active_chart) {
+                    that.active_chart.setOption(ChartView.CHART_ZOOM_X_ENABLED);
+                }
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        }
 
-        $(document).on(ControlSettings.EVENT_CHART_ZOOM_VERTICAL, (e, key) => {
-            let data_zoom = that.get_chart_option('dataZoom');
-            let data_zoom_y = data_zoom.filter(dz => { if (dz) return dz.id == ChartView.DATA_ZOOM_Y_INSIDE_ID; });
-            if(data_zoom_y.length == 0) {
-                that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_Y_INSIDE ] });
-            }
-            that.active_chart.setOption(ChartView.CHART_ZOOM_X_DISABLED);
-        });
-        $(document).on(ControlSettings.EVENT_CHART_ZOOM_VERTICAL_END, (e, key) => $(document).trigger(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL));
+        if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_ZOOM_VERTICAL]) {
+            $(document).on(ControlSettings.EVENT_CHART_ZOOM_VERTICAL, (e, key) => {
+                let data_zoom = that.get_chart_option('dataZoom');
+                let data_zoom_y = data_zoom.filter(dz => { if (dz) return dz.id == ChartView.DATA_ZOOM_Y_INSIDE_ID; });
+                if(data_zoom_y.length == 0) {
+                    that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_Y_INSIDE ] });
+                }
+                that.active_chart.setOption(ChartView.CHART_ZOOM_X_DISABLED);
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        }
+
+        if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_ZOOM_VERTICAL_END]) {
+            $(document).on(ControlSettings.EVENT_CHART_ZOOM_VERTICAL_END, (e, key) => {
+                $(document).trigger(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL);
+                e.stopPropagation();
+                e.preventDefault();
+            });
+        }
         
-        $(document).on(ControlSettings.EVENT_CHART_WHEEL_MOVE, (e, key) => that.active_chart.setOption(ChartView.CHART_ZOOM_X_DISABLED));
-        $(document).on(ControlSettings.EVENT_CHART_WHEEL_MOVE_END, (e, key) => $(document).trigger(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL));
+        if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_WHEEL_MOVE]) {
+            $(document).on(ControlSettings.EVENT_CHART_WHEEL_MOVE, (e, key) => that.active_chart.setOption(ChartView.CHART_ZOOM_X_DISABLED));
+        }
+
+        if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_WHEEL_MOVE_END]) {
+            $(document).on(ControlSettings.EVENT_CHART_WHEEL_MOVE_END, (e, key) => $(document).trigger(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL));
+        }
         
-        $(document).on(ControlSettings.EVENT_CHART_AUTO_SCALE, (e, key) => {
-            //TODO HAY QUE GUARDAR LA CONF DE ZOOM COMPLETA EN CTES, Y QUITAR LA PARTE DE ZOOM Y (yAxisIndex) PARA QUE HAGA AUTOSCALE EN Y
-            console.log('AUTOSCALE');
-            // var id = KeyTicker(that.current_active) + '_' + that.#activeChart.id;
-            // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
-            let model_key = that.current_model_key;
-            let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
-            let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
-            that.active_chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
-            that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER, ChartView.DATA_ZOOM_X_SLIDER ] }, { replaceMerge: ['dataZoom']} );
-            console.log(that.get_chart_option('yAxis'));
-            console.log(that.get_chart_option('dataZoom'));
-        });
+        if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_AUTO_SCALE]) {
+            $(document).on(ControlSettings.EVENT_CHART_AUTO_SCALE, (e, key) => {
+                //TODO HAY QUE GUARDAR LA CONF DE ZOOM COMPLETA EN CTES, Y QUITAR LA PARTE DE ZOOM Y (yAxisIndex) PARA QUE HAGA AUTOSCALE EN Y
+                console.log('AUTOSCALE');
+                // var id = KeyTicker(that.current_active) + '_' + that.#activeChart.id;
+                // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
+                let model_key = that.current_model_key;
+                let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
+                let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
+                that.active_chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
+                that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER, ChartView.DATA_ZOOM_X_SLIDER ] }, { replaceMerge: ['dataZoom']} );
+                console.log(that.get_chart_option('yAxis'));
+                console.log(that.get_chart_option('dataZoom'));
+            });
+        }
 
-        $(document).on(ChartController.EVENT_KEYUP, (e, key) => {
-            let filter_visible = that.#ticker_filter.is_visible();
-            let tframe_visible = that.#time_frame.is_visible();
-            let all_closed = (!filter_visible) && (!tframe_visible);
-            if(all_closed && (KeyCode.is_alpha(key.keyCode))) { $(document).trigger(TickerFilter.EVENT_ENABLE, key); }
-            else if(all_closed && (KeyCode.is_num(key.keyCode))) { $(document).trigger(TimeFrame.EVENT_ENABLE, key); }
-            //e.stopPropagation();
-        });
+        if(!$._data(document, 'events')[ControlSettings.EVENT_KEYUP]) {
+            $(document).on(ChartController.EVENT_KEYUP, (e, key) => {
+                let filter_visible = that.#ticker_filter.is_visible();
+                let tframe_visible = that.#time_frame.is_visible();
+                let all_closed = (!filter_visible) && (!tframe_visible);
+                if(all_closed && (KeyCode.is_alpha(key.keyCode))) { $(document).trigger(TickerFilter.EVENT_ENABLE, key); }
+                else if(all_closed && (KeyCode.is_num(key.keyCode))) { $(document).trigger(TimeFrame.EVENT_ENABLE, key); }
+                //e.stopPropagation();
+            });
+        }
 
-        $(document).on(ChartController.EVENT_ADD_CHART, (e, ops) => {
-            console.log('EVENT_ADD_CHART');
-            this.create_chart({col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
-            this.event_load_historic(this.currActive);
-        });
+        if(!$._data(document, 'events')[ControlSettings.EVENT_ADD_CHART]) {
+            $(document).on(ChartController.EVENT_ADD_CHART, (e, ops) => {
+                console.log('EVENT_ADD_CHART');
+                this.create_chart({col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
+                this.event_load_historic(this.currActive);
+            });
+        }
     }
 
     #create_menus() {
@@ -466,12 +495,18 @@ class ChartController {
 
             // Handles event Show Patterns results
             $(document).on(MenuPatterns.EVENT_SHOW_PATTERNS, function(e, query) {
+                let start_time = 0;
                 that.write_status({info:'Buscando coincidencias...', loading:1});
                 query.model_key = that.current_model_key;
+                start_time = performance.now();
                 if(that.#patterns_cb[query[Const.TIPO_PARAM_ID]]) {
                     that.#patterns_cb[query[Const.TIPO_PARAM_ID]](query, that)
                     .then( res => {
-                        that.write_status({clear: 1});
+                        // that.write_status({clear: 1});
+                        let end_time = performance.now();
+                        let total_time = (end_time - start_time).toFixed(3);
+                        console.log(`Pattern process time for ${query[Const.ID_ID]}: ${total_time}ms`);
+                        that.write_status({info:`Tiempo de proceso total para ${query[Const.ID_ID]}: ${total_time}ms`, timeout:5000});
                         $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, query);
                     })
                     .catch( err => {
@@ -774,7 +809,8 @@ class ChartController {
             if(content.loading) status.show_loading();
             else status.hide_loading();
 
-            if(content.timeout) setTimeout(() => { status.info = status.content; status.hide_loading() }, content.timeout);
+            // if(content.timeout) setTimeout(() => { status.info = status.content; status.hide_loading() }, content.timeout);
+            if(content.timeout) setTimeout(() => { status.content = ''; status.hide_loading() }, content.timeout);
 
             if(content.clear) { status.content = ''; }
 

@@ -279,6 +279,7 @@ class PanelPatterns {
         this.trend = '';
         this.#select_ok();
         this.#set_trend_bull();
+        this.#set_trend_bear();
         if(this.ok > 0) {
             this.current_count = 0;
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_CURRENT).val(this.current_count + 1);
@@ -419,12 +420,9 @@ class PanelPatterns {
                 if(selected_data == undefined) {
                     selected_data = [];
                 }
-    // TODO NO SE PUEDEN PRESENTAR PARES PHY+TARGETS CON EL MISMO ÍNDICE!! SI COINCIDEN ES POR CASUALIDAD! HAY QUE BUSCAR RESULTADOS DEL PADRE CON MISMO INSTANTE!!
-    // LLEGAN DE 0(TARGET) A MAYOR (PHY, ...)
+
                 // Add all patterns selected data to output
                 let parent_info;
-                // this.#results_selected.forEach(name => {
-                // this.#data_tree.forEach(name => {
                 let name = this.#current_name;
                 do {
                     if(name) {
@@ -463,7 +461,6 @@ class PanelPatterns {
                         parent_info = Object.assign({}, curr_query);
                         name = parent_info[Const.SEARCH_IN_ID];
                     }
-                // });
                 } while(name);
 
                 //TODO TEMPORAL ? ELIMINAR DATOS NO INCLUIDOS
