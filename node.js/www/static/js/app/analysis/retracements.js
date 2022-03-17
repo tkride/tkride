@@ -105,6 +105,18 @@ class Retracements {
                     }
                 }
 
+                // // Search data in results
+                // if(search_in_data != undefined) {
+                //     search_source = Retracements.filter(mov_source, search_in_data[level], [Const.INIT_ID, Const.END_ID, Const.TREND_ID], [from, until, Const.TREND_ID]);
+                //     // If base parent data, and levels from parent, check levels trend vs current data trend, to determine from configuration
+                //     if(level_source && search_source.length) {
+                //         let mov_trend = ((search_source[0][Const.END_ID].price - search_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
+                //         levels_from = (levels_trend != mov_trend) ? Const.END_ID : Const.INIT_ID;
+                //     }
+                // }
+                // else {
+                //     search_source = mov_source;
+                // }
                 // Search data in results
                 if(search_in_data != undefined) {
                     search_source = Retracements.filter(mov_source, search_in_data[level], [Const.INIT_ID, Const.END_ID, Const.TREND_ID], [from, until, Const.TREND_ID]);
@@ -357,9 +369,12 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return res;
     }
 
-    /**@pre Sorted data 
-     * @param r1 Data to be filtered
-     * @param r2 Filter reference
+
+    /**
+     * filter_: DELETE. Unused version. Filters data based in another source data, compairing specified fields.
+     * @pre Sorted data 
+     * @param r1 Data to be filtered.
+     * @param r2 Filter reference.
      * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
      * @param f2 Specific fields comparison for r2. If omitted = f1.
      * @returns Array r1 filtered with movs/retracements given in r2
@@ -394,7 +409,10 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return ret;
     }
 
-    /**@pre Sorted data 
+
+    /**
+     * filter: Filters data based in another source data, compairing specified fields.
+     * @pre Sorted data 
      * @param r1 Data to be filtered
      * @param r2 Filter reference
      * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
@@ -430,6 +448,12 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
     }
 
 
+    /**
+     * get_family_trend: Get family trend based on 'from' setting in each query, and base data trend. 
+     * @param {*} model Full data model.
+     * @param {*} query Query to build current data.
+     * @returns trend_sign: 1 (Const.BULL) | -1 (Const.BEAR).
+     */
     static get_family_trend(model, query) {
         let trend_sign = 1;
         if(query) {
@@ -444,6 +468,14 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return trend_sign;
     }
 
+
+    /**
+     * check_pattern_is_parent: Check given base data is descendant from given final parent name.
+     * @param {*} pattern_results Full data model.
+     * @param {*} query Query to build current base data.
+     * @param {*} final_parent Final parent data name.
+     * @returns true: final_parent is ascendant from base data. | false: other case.
+     */
     static check_pattern_is_parent(pattern_results, query, final_parent) {
         let res = false;
         while(query && final_parent && !res) {
@@ -455,6 +487,15 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return res;
     }
 
+
+    /**
+     * get_parent_data: Get parent data from query and model, stopping in final_parent given.
+     * @throws Exception if non-existnts pattern name is found, or if current data is not descendant from parent name. Also for any unexpected operation exception.
+     * @param {*} pattern_results Full data model.
+     * @param {*} query Query to build current base data.
+     * @param {*} final_parent Parent data name where stop search.
+     * @returns Parent data.
+     */
     static get_parent_data(pattern_results, query, final_parent) {
         let res;
         try {
@@ -483,6 +524,20 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return res;
     }
 
+
+    /**
+     * filter_parent_data: filter parent data relative to current results.
+     * @param pattern_results Full model data.
+     * @param query Query used to get current data results.
+     * @param final_parent Final parent name to stop recursive search.
+     * @param filter_params { data_level | data_ref | fields_data_content | fields_data | fields_Ref }
+     * @param filter_params.data_level Current movement results level o be analysed.
+     * @param filter_params.data_ref Start source reference data. Current results from which search is done, and parent data must be matched.
+     * @param filter_params.fields_data_content Current data movement fields to perform filter comparation.
+     * @param filter_params.fields_ref Reference parent data fields to perform filter comparation.
+     * @param filter_params.fields_data DELETE? Unused now. 
+     * @returns Parent data.
+     */
     static filter_parent_data(pattern_results, query, final_parent, filter_params) {
         let data_parent;
         try {
@@ -499,7 +554,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                     // Works with copy of level parent data
                     data_parent = JSON.parse(JSON.stringify(parent_data_ref[level]));
                 }
-                // Higher level parent data, must be filtered matching valid son results
+                // Higher level parent data, must be filtered matching valid son's results
                 else {
                     if(data_parent) {
                         let fields = [];
@@ -531,6 +586,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         }
         return data_parent;
     }
+
 
     /**
      * get_parent_retracement_limits: Get retracement limits projected from another movement
