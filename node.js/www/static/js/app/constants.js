@@ -266,6 +266,7 @@ class Const {
     static TRENDS_ID = 'trends';
     // MOVEMENTS/RETRACEMENTS COLUMN HEADERS
     static TIMESTAMP_ID = 'timestamp';
+    static HASH_ID = 'hash';
     static INIT_ID = 'init';
     static END_ID = 'end';
     static CORRECTION_ID = 'correction';
@@ -283,10 +284,12 @@ class Const {
     static PATTERNS_ID = 'patterns';
     static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource'
     static RET_LEVELS_FROM_ID = 'levelsfrom'
-
+    
     static LOGICAL_ID = 'logical';
     static RET_MIN_ID = 'ret_min';
     static RET_MAX_ID = 'ret_max';
+    
+    static HASH_SEP_STR = '-';
 
     static NO = 0;
     static ONLY_MAX_MOVEMENT = 1;

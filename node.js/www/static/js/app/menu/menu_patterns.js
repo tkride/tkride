@@ -237,6 +237,7 @@ class MenuPatterns {
         // Creates main menu container
         this.#display = new Display({ id: MenuPatterns.ID_MENU_PATTERNS,
                                       title: 'Patrones',
+                                      title_css: { 'font-size': '1.2em' },
                                       center:true,
                                       draggable: true,
                                       new_classes: 'scroll-custom',

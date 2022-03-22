@@ -298,6 +298,7 @@ class Movements {
                 //TODO DEBERIA SER OBJETO TIPO Movement
                 let mov = {
                     [Const.TIMESTAMP_ID]: data[i][Const.IDX_MAX_TIMESTAMP],
+                    [Const.HASH_ID]: data[i][Const.IDX_MAX_TIMESTAMP] + '',
                     [Const.INIT_ID]: new TimePrice(data[i][Const.IDX_MAX_TIMESTAMP], data[i][first]),
                     [Const.END_ID]: new TimePrice(data[i+1][Const.IDX_MAX_TIMESTAMP], data[i+1][sec]),
                     [Const.CORRECTION_ID]: new TimePrice(v[Const.IDX_MAX_TIMESTAMP], v[first]),

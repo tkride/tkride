@@ -454,8 +454,9 @@ class PanelPatterns {
                         else {
                             let parent_name = parent_info[Const.ID_ID];
                             let from = parent_info[Const.FROM_ID];
-                            let until = parent_info[Const.UNTIL_ID];
-                            data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [from, until], [Const.INIT_ID, Const.END_ID])
+                            let { from_ref, until_ref, from_new, until_new } = Retracements.get_comparison_fields(from);
+                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [until_ref], [until_new]);
+                            data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [from_ref, until_ref], [from_new, until_new]);
                         }
 
                         parent_info = Object.assign({}, curr_query);
@@ -487,7 +488,8 @@ class PanelPatterns {
                     this.#visual_conf.zoom = {
                         startValue: {x: dateMin, y:priceMin},
                         endValue: { x: dateMax, y:priceMax},
-                        margin: {x: 30, y: 150}, //Margin values [x:candles, y:% (max-min)]
+                        // margin: {x: 30, y: 150}, //Margin values [x:candles, y:% (max-min)]
+                        margin: {x: 60, y: 300}, //Margin values [x:candles, y:% (max-min)]
                         onlyValid: [true, true]
                     };
                 }

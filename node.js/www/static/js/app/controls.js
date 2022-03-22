@@ -588,6 +588,7 @@ class Display {
     #top = 0;
     #top_units = '';
     #title = '';
+    #title_css = '';
     #tooltip = '';
     #show_title = true;
     #draggable = true;
@@ -626,6 +627,7 @@ class Display {
         // Title configuration
         this.#element_title = $(Display.ELEMENT_TITLE);
         this.#element_title.text(this.#title);
+        this.#element_title.css(this.#title_css);
         this.#element.append(this.#element_title);
 
         // Dimensions
@@ -731,6 +733,7 @@ class Display {
 
         // Set title
         if(params.title) this.#title = params.title;
+        if(params.title_css) this.#title_css = params.title_css;
         if(params.show_title != undefined) this.#show_title = params.show_title;
 
         // Set contents

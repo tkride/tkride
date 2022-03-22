@@ -7,13 +7,13 @@ class Retracement {
     nok = {};
     searchindata = {};
     stats = {};
-    // name;
     searchin = '';
     level;
     levels = {};
     trend;
     trend_parent;
     from;
+    until;
     onlymax = 0;
     ret_min = -Infinity; //Number.MIN_SAFE_INTEGER;
     ret_max = Infinity; //Number.MAX_SAFE_INTEGER;
@@ -51,7 +51,8 @@ class Retracements {
             let search_in_model = ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][search_in];
             let search_in_data = ((search_in_model != undefined) && (search_in != undefined)) ?
                                             JSON.parse(JSON.stringify(search_in_model[Const.DATA_ID])) : undefined;
-            // If parent results not in current results, then process to make them available
+            
+            // If parent results not processed yet, then process to make them available
             if(search_in && !search_in_data) {
                 let request_parent = JSON.parse(JSON.stringify(ret[Const.PATTERNS_ID][search_in]));
                 request_parent[Const.MODEL_ID] = ret[Const.MODEL_ID];
@@ -63,10 +64,12 @@ class Retracements {
                                                 JSON.parse(JSON.stringify(search_in_model[Const.DATA_ID])) : undefined;
             }
 
+            //
             let level_data_source = ret[Const.RET_LEVELS_DATA_SOURCE_ID];
 
             let from = ret[Const.QUERY_ID][Const.FROM_ID];
             let until = ret[Const.QUERY_ID][Const.UNTIL_ID];
+            let { until_ref, until_new } = Retracements.get_comparison_fields(from);
             // let levels_from = ret[Const.RET_LEVELS_FROM_ID];
             let levels_from;
 
@@ -82,9 +85,7 @@ class Retracements {
                 if(ret[Const.NOK_ID][level] == undefined) ret[Const.NOK_ID][level] = [];
                 if(ret[Const.STATS_ID][level] == undefined) ret[Const.STATS_ID][level] = [];
 
-
                 // Check real request trend (when starts search from END, current mov trend is the opposite)
-                // trend_sign = Retracements.get_family_trend(ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID], ret[Const.QUERY_ID], search_in);
                 trend_sign = Retracements.get_family_trend(ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID], ret[Const.QUERY_ID]);
 
                 // Update real source trend in retracement data (when searching targets, the results trend, should be stored as source retracement data trend).
@@ -92,7 +93,7 @@ class Retracements {
                     mov_source.map( v => v[Const.TREND_ID] = (v[Const.TREND_ID]*trend_sign) );
                 }
 
-                // Check if limits defined in parent data
+                // If limits defined in any parent data, get it
                 if(level_data_source) {
                     level_source = Retracements.filter_parent_data(ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID], ret[Const.QUERY_ID], level_data_source,
                                                                     { data_level: level, data_ref: mov_source,
@@ -105,22 +106,11 @@ class Retracements {
                     }
                 }
 
-                // // Search data in results
-                // if(search_in_data != undefined) {
-                //     search_source = Retracements.filter(mov_source, search_in_data[level], [Const.INIT_ID, Const.END_ID, Const.TREND_ID], [from, until, Const.TREND_ID]);
-                //     // If base parent data, and levels from parent, check levels trend vs current data trend, to determine from configuration
-                //     if(level_source && search_source.length) {
-                //         let mov_trend = ((search_source[0][Const.END_ID].price - search_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
-                //         levels_from = (levels_trend != mov_trend) ? Const.END_ID : Const.INIT_ID;
-                //     }
-                // }
-                // else {
-                //     search_source = mov_source;
-                // }
-                // Search data in results
+                // Search data in parent results (search_in_data)
                 if(search_in_data != undefined) {
-                    search_source = Retracements.filter(mov_source, search_in_data[level], [Const.INIT_ID, Const.END_ID, Const.TREND_ID], [from, until, Const.TREND_ID]);
-                    // If base parent data, and levels from parent, check levels trend vs current data trend, to determine from configuration
+                    search_source = Retracements.filter(mov_source, search_in_data[level], [until_new, Const.TREND_ID], [until_ref, Const.TREND_ID], false);
+                    // search_source = Retracements.filter(mov_source, search_in_data[level], [until_new], [until_ref], false);
+                    // If base parent data, and levels from any parent, check levels trend vs current data trend, to determine from configuration
                     if(level_source && search_source.length) {
                         let mov_trend = ((search_source[0][Const.END_ID].price - search_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
                         levels_from = (levels_trend != mov_trend) ? Const.END_ID : Const.INIT_ID;
@@ -130,19 +120,40 @@ class Retracements {
                     search_source = mov_source;
                 }
 
-
-                // Get results: Stores matches (and matched parent results if exists search_in_data).
-                //              Stores not valid (nok), and parent nok (if search_in_data exists).
+                // Get results: Stores matches (matched parent results if exists search_in_data).
+                //              Stores not valid ,nok (matched parent nok if search_in_data exists).
                 let retracements = [];
                 let nok = [];
                 search_source.map( (m, i) => {
                     let ok = false;
+                    
+                    // If movement has same information than any previous, object is treated as reference! Need to deepcopy (?)
+                    m = JSON.parse(JSON.stringify(m));
+                    // console.log(Retracements.toString(m));
+                    // Build real movement, based on result (if result obtained from iteration, may not fit with regular movements)
+                    if(search_in_data) {
+                        m[Const.TIMESTAMP_ID] = search_in_data[level][i][Const.TIMESTAMP_ID];
+                        m[Const.HASH_ID] = search_in_data[level][i][Const.HASH_ID];// + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
+                        if(from) { m[Const.INIT_ID] = search_in_data[level][i][from]; }
+                        if(until) { m[Const.END_ID] = search_in_data[level][i][until]; }
+                        if(from) { m[Const.DELTA_INIT_ID] = m[Const.END_ID].price - m[Const.INIT_ID].price; }
+                        if(until) { m[Const.DELTA_END_ID] = m[Const.CORRECTION_ID].price - m[Const.END_ID].price; }
+                        if((from != undefined) || (until != undefined)) { m[Const.RET_ID] = Math.abs(m[Const.DELTA_END_ID] / m[Const.DELTA_INIT_ID]); }
+                        // console.log(Retracements.toString(m)); console.log('');
+                    }
+
+                    // Appends new familiy results hash identification;
+                    Retracements.append_hash(m);
+
                     //TODO CAMBIAR NOMBRE DEL CAMPO ret_min POR retmin PARA UTILIZAR LA DEFINICION Const.RET_MIN_ID
                     let ret_max = ret[Const.RET_MAX_ID];
                     let ret_min = ret[Const.RET_MIN_ID];
                     // If checks levels in external data
                     if(level_source) {
+                        // TODO NO: PUEDEN HABER MULTIPLES SOLUCIONES
                         let parent_source = level_source[i];
+                        // TODO TAMPOCO: PUEDEN HABER MULTIPLES SOLUCIONES
+                        // let parent_source = level_source.filter( ls => ls[Const.TIMESTAMP_ID] == m[Const.TIMESTAMP_ID])[0];
                         if(parent_source) {
                                 let new_ret =
                                 Retracements.get_projected_retracement_limits( { parent: parent_source,
@@ -164,7 +175,7 @@ class Retracements {
                     else nok.push(m);
 
                     // If iteration defined
-                    if(ret[Const.ITERATE_ID]) {
+                    if(ret[Const.ITERATE_ID] && (m[Const.RET_ID] <= ret_max)) {
                 // TODO Y TENER EN CUENTA QUE LOS RESULTADOS BASE, PUEDEN NO ESTAR EN LOS MOVIMIENTOS FUENTE DIRECTAMENTE (MERGE DE MOVIMIENTOS, RESULTADOS DE ITERACIONES)
                         //TODO BUSCAR EN LOS MOVIMIENTOS A PARTIR DEL SELECCIONADO (O RESULTADO PADRE SELECCIONADO)
                         // let search_remain = search_source.slice(i);
@@ -178,7 +189,9 @@ class Retracements {
                                                          source: mov_remain,
                                                          ret_max: ret_max,
                                                          ret_min: ret_min,
-                                                         iterations: ret[Const.ITERATE_ID]
+                                                         iterations: ret[Const.ITERATE_ID],
+                                                         from: from,
+                                                         trend_sign: trend_sign,
                         });
                         
                         // Append iteration results to retracements
@@ -198,6 +211,9 @@ class Retracements {
                     retracements.map( (v, i) => v[l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l) );
                 });
                 
+                // Sort results by timestamp
+                retracements.sort();
+
                 // Push current level results into Retracement final object
                 ret[Const.DATA_ID][level].push(...retracements);
                 ret[Const.NOK_ID][level].push(...nok);
@@ -230,6 +246,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return ret;
     }
     
+
     static #parse_request(ret, request) {
         // Validate data source
         let data_type = request[Const.BUSCAR_EN_COMBO_ID];
@@ -309,6 +326,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         ret[Const.MODEL_KEY_ID] = request[Const.MODEL_KEY_ID];
     }
 
+
     static #get_stats(rets, data_source, search_in_model, trend_sign) {
         let res = [];
         Const.BOTH.forEach( s => {
@@ -334,6 +352,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         });
         return res;
     }
+
 
     /** 
      * @param m1 Movement 1
@@ -417,25 +436,46 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
      * @param r2 Filter reference
      * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
      * @param f2 Specific fields comparison for r2. If omitted = f1.
+     * @param compare_hash true: Check hash id relationship matches. false: othercase. (Default value: true).
      * @returns Array r1 filtered with movs/retracements given in r2
      */
-     static filter(r1, r2, f1, f2) {
-         let res;
+     static filter(r1, r2, f1, f2, compare_hash = true) {
+        if(!f1 || !f1.length) f1 = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
+        if(!f2 || !f2.length) f2 = f1;
+         let res = [];
          try {
-            res = r1.filter(m1 => {
-                return r2.find( m2 => {
-                    return f1.every( (c1, i) => {
+            r2.map(m2 => {
+                // let idx;
+                r1.map( (m1, j) => {
+                    let check_res = true;
+                    for(let i = 0; i < f1.length; i++) {
+                        let c1 = f1[i];
                         let c2 = f2[i];
                         if((c1 != undefined) && (c2 != undefined)) {
                             if(m1[c1].time != undefined) {
-                                return (m2[c2].time == m1[c1].time);
+                                if (m2[c2].time != m1[c1].time) {
+                                    check_res = false;
+                                    break;
+                                }
                             }
-                            else {
-                                return (m2[c2] == m2[c1]);
+                            else if(m2[c2] != m1[c1]) {
+                                check_res = false;
+                                break;
                             }
                         }
-                        else return true;
-                    });
+                    }
+                    
+                    if(check_res) {
+                        if(compare_hash) {
+                            if(m1[Const.HASH_ID].length > m2[Const.HASH_ID].length) {
+                                check_res = m1[Const.HASH_ID].includes(m2[Const.HASH_ID]);
+                            }
+                            else {
+                                check_res = m2[Const.HASH_ID].includes(m1[Const.HASH_ID]);
+                            }
+                        }
+                        if(check_res) { res.push(m1); }
+                    }
                 });
             });
         }
@@ -445,6 +485,38 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             throw(msg);
         }
         return res;
+    }
+
+
+    /**
+     * get_comparison_fields: Get fields to be compared, based on truth table build from 'from' field.
+     * @param {*} from 'from' field from query.
+     * @returns Object { from_ref, until_ref, from_new, until_new }
+     */
+    static get_comparison_fields(from) {
+        let until_ref;
+        let until_new;
+        let from_ref;
+        let from_new;
+        if(from == Const.INIT_ID) {
+            from_ref = Const.INIT_ID;
+            until_ref = Const.END_ID;
+            from_new = Const.INIT_ID;
+            until_new = Const.END_ID;
+        }
+        else if(from == Const.END_ID) {
+            from_ref = Const.END_ID;
+            until_ref = Const.CORRECTION_ID;
+            from_new = Const.INIT_ID;
+            until_new = Const.END_ID;
+        }
+        else if(from == Const.CORRECTION_ID) {
+            from_ref = Const.CORRECTION_ID;
+            until_ref = Const.CORRECTION_ID;
+            from_new = Const.INIT_ID;
+            until_new = Const.INIT_ID;
+        }
+        return { from_ref, until_ref, from_new, until_new };
     }
 
 
@@ -533,9 +605,9 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
      * @param filter_params { data_level | data_ref | fields_data_content | fields_data | fields_Ref }
      * @param filter_params.data_level Current movement results level o be analysed.
      * @param filter_params.data_ref Start source reference data. Current results from which search is done, and parent data must be matched.
-     * @param filter_params.fields_data_content Current data movement fields to perform filter comparation.
+     * @param filter_params.fields_data_content Current data query fields name to perform filter comparation. Ex. FROM, UNTIL, ...
+     * @param filter_params.fields_data Data fields to perform comparison. Ex. 'end', 'correction', 'trend', ...
      * @param filter_params.fields_ref Reference parent data fields to perform filter comparation.
-     * @param filter_params.fields_data DELETE? Unused now. 
      * @returns Parent data.
      */
     static filter_parent_data(pattern_results, query, final_parent, filter_params) {
@@ -544,35 +616,33 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             let data_ref = filter_params.data_ref;
             let level = filter_params.data_level;
             let parent_name;
+            
             do {
                 // Get inmediate parent data
                 parent_name = query[Const.SEARCH_IN_ID];
 
                 // First parent data don't need to be filtered
                 if(!data_parent) {
-                    let parent_data_ref = Retracements.get_parent_data(pattern_results, query, parent_name);
+                    let data_base_levels = Retracements.get_parent_data(pattern_results, query, parent_name);
                     // Works with copy of level parent data
-                    data_parent = JSON.parse(JSON.stringify(parent_data_ref[level]));
+                    data_parent = JSON.parse(JSON.stringify(data_base_levels[level]));
                 }
                 // Higher level parent data, must be filtered matching valid son's results
                 else {
-                    if(data_parent) {
-                        let fields = [];
-                        if(filter_params.fields_data_content) filter_params.fields_data_content.forEach( f => fields.push(query[f]) );
-                        if(filter_params.fields_data) filter_params.fields_data.forEach( f => fields.push(f) );
-                        data_parent = Retracements.filter(data_ref,
-                                                          data_parent,
-                                                          fields,
-                                                          filter_params.fields_ref
-                        );
-                        // let from = (filter_params.fields_data && filter_params.fields_data.from) ? filter_params.fields_data.from : query[Const.FROM_ID];
-                        // let until = (filter_params.fields_data && filter_params.fields_data.until) ? filter_params.fields_data.until : query[Const.UNTIL_ID];
-                        // let trend = (filter_params.fields_data && filter_params.fields_data.trend) ? filter_params.fields_data.trend : filter_params.fields_ref.trend;
-                                                          //   [from, until, trend],
-                                                          //   [filter_params.fields_ref.from, filter_params.fields_ref.until, filter_params.fields_ref.trend]);
-                    }
-                }
+                    let data_base = data_parent;
+                    let data_parent_levels = Retracements.get_parent_data(pattern_results, query, parent_name);
+                    // Works with copy of level parent data
+                    data_parent = JSON.parse(JSON.stringify(data_parent_levels[level]));
 
+                    let fields = [];
+                    if(filter_params.fields_data_content) filter_params.fields_data_content.forEach( f => fields.push(query[f]) );
+                    if(filter_params.fields_data) filter_params.fields_data.forEach( f => fields.push(f) );
+                    data_parent = Retracements.filter(data_parent,
+                                                      data_base,
+                                                      fields,
+                                                      filter_params.fields_ref);
+                }
+                // Updates current data query (next parent if exist)
                 if(parent_name) {
                     query = pattern_results[parent_name][Const.QUERY_ID];
                 }
@@ -641,12 +711,14 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
     /**
      * process_iteration: Searches movements that matches retracement restrictions specified, mergin availables movements.
-     * @param {*} params { start_movement, source, start_idx, ret_max, ret_min }
+     * @param {*} params { start_movement, source, start_idx, ret_max, ret_min, iterations, from, trend_sign }
      * @param start_movement Base start movement, from where iteration starts.
      * @param source Movements data source array, starting with next to start movement.
      * @param ret_max Maximum retracement allowed.
      * @param ret_min Minimum retracement allowed.
      * @param iterations Number of max iterations (if restriction allows them).
+     * @param from 'From' where movement is started, referenced from a parent source.
+     * @param trend_sign Result ascendant trend sign.
      * @returns Object with { ok (matches with restriction) , nok (not matches restrictions) } arrays of movements.
      */
     static process_iteration(params) {
@@ -659,12 +731,15 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             let ret_min = params.ret_min;
             let max_iter = params.iterations;
             let iter = 0;
+            let end_fixed = (params.from == Const.END_ID) ? true : false;
+            let trend_sign = (params.trend_sign < 0) ? Const.BEAR : Const.BULL;
             
             let ms = source.filter( mov => mov[Const.TREND_ID] == m[Const.TREND_ID]);
+            let prev_ret = m[Const.RET_ID];
 
             for(let i = 0; (i < ms.length) && (iter < max_iter); i++, iter++) {
                 // Merge with next movement
-                let new_mov = Retracements.merge_movements(m, ms[i]);
+                let new_mov = Retracements.merge_movements(m, ms[i], trend_sign, end_fixed);
 
                 //
                 if(new_mov == null) {
@@ -673,15 +748,19 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
                 // If generated movement is diferent
                 if(JSON.stringify(new_mov) != JSON.stringify(m)) {
-                    // Check retracement restrictions
                     //TODO EL LIMITE TAMBIEN SE TIENE QUE COMPROBAR POR EL MINIMO, RECORDAR QUE HACIA SI HABIA UNA CORRECCION POR DEBAJO DEL INICIO, PERO NO ERA FINAL DEL MOVIMIENTO
                     //TODO SE DESPLAZABA EL INICIO DEL MOVIMIENTO
+                    
+                    // Updates hash id for family results
+                    Retracements.increment_hash(new_mov);
+                    
+                    // Check retracement restrictions
                     let check = ((new_mov[Const.RET_ID] >= ret_min) && (new_mov[Const.RET_ID] <= ret_max));
-                    if(check) { ok.push(new_mov); }
-                    else {
+                    if( (check == false) || (prev_ret > new_mov[Const.RET_ID]) ) {
                         nok.push(new_mov);
                         if(new_mov[Const.RET_ID] > ret_max) break;
                     }
+                    else { ok.push(new_mov); }
                     m = new_mov;
                 }
             }
@@ -695,14 +774,17 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         return { ok, nok };
     }
 
+
     /**
      * merge_movements: Merges 2 movements, taking greater END and lower CORRECTION for BULL movement (and inverse for BEAR).
      * @param {*} m1 Base movement from where is started.
      * @param {*} m2 Second movement, from where END and CORRECTION are checked to merge them.
+     * @param {*} trend_sign Result ascendant trend sign.
+     * @param {*} end_fixed true: Fixes 'end' timestamp of new movement.
      * @returns New merged resulting movement, with posible new END, CORRECTION, DELTA_INIT, DELTA_END and RETRACEMENT values.
      * Returns null if error movement: null values or new INIT-END gives new movement.
      */
-    static merge_movements(m1, m2) {
+    static merge_movements(m1, m2, trend_sign = 1, end_fixed = false) {
         let new_mov = JSON.parse(JSON.stringify(m1));
 
         // TODO ? RESTRINGIR TODOS LOS NULL ?
@@ -714,9 +796,9 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         (m1[Const.CORRECTION_ID].price != null) &&
         (m2[Const.CORRECTION_ID].price != null) )
         {
-            let init_lower = ( ( (m2[Const.INIT_ID].price - new_mov[Const.INIT_ID].price) * new_mov[Const.TREND_ID]) < 0);
-            let end_greater = ( ( (m2[Const.END_ID].price - new_mov[Const.END_ID].price) * new_mov[Const.TREND_ID]) > 0);
-            let correction_lower = ( ( (m2[Const.CORRECTION_ID].price - new_mov[Const.CORRECTION_ID].price) * new_mov[Const.TREND_ID]) < 0);
+            let init_lower = ( ( (m2[Const.INIT_ID].price - new_mov[Const.INIT_ID].price) * new_mov[Const.TREND_ID] * trend_sign) < 0);
+            let end_greater = ( ( (m2[Const.END_ID].price - new_mov[Const.END_ID].price) * new_mov[Const.TREND_ID] * trend_sign) > 0);
+            let correction_lower = ( ( (m2[Const.CORRECTION_ID].price - new_mov[Const.CORRECTION_ID].price) * new_mov[Const.TREND_ID] * trend_sign) < 0);
 
             // BULL: init< / BEAR: init>
             if(init_lower) {
@@ -726,7 +808,13 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                     if(correction_lower) {
                         new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
                         new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
-                        new_mov[Const.RET_ID] = Math.abs(new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID]);        
+                        new_mov[Const.RET_ID] = new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID];
+                        if(new_mov[Const.RET_ID] > 0) {
+                            new_mov = null;
+                        }
+                        else {
+                            new_mov[Const.RET_ID] = Math.abs(new_mov[Const.RET_ID]);
+                        }
                     }
                     // No valid new movement
                     else { new_mov = null; }
@@ -738,17 +826,34 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             else {
                 // BULL: end> / BEAR: end<
                 if(end_greater) {
-                    new_mov[Const.END_ID] = m2[Const.END_ID];
-                    new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
-                    new_mov[Const.DELTA_INIT_ID] = new_mov[Const.END_ID].price - new_mov[Const.INIT_ID].price;
-                    new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
-                    new_mov[Const.RET_ID] = Math.abs(new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID]);
+                    if(end_fixed) {
+                        new_mov = null;
+                    }
+                    else {
+                        new_mov[Const.END_ID] = m2[Const.END_ID];
+                        new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
+                        new_mov[Const.DELTA_INIT_ID] = new_mov[Const.END_ID].price - new_mov[Const.INIT_ID].price;
+                        new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
+                        new_mov[Const.RET_ID] = new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID];
+                        if(new_mov[Const.RET_ID] > 0) {
+                            new_mov = null;
+                        }
+                        else {
+                            new_mov[Const.RET_ID] = Math.abs(new_mov[Const.RET_ID]);
+                        }
+                    }
                 }
                 // BULL: end< / BEAR: end>
                 else {
                     new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
                     new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
-                    new_mov[Const.RET_ID] = Math.abs(new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID]);
+                    new_mov[Const.RET_ID] = new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID];
+                    if(new_mov[Const.RET_ID] > 0) {
+                        new_mov = null;
+                    }
+                    else {
+                        new_mov[Const.RET_ID] = Math.abs(new_mov[Const.RET_ID]);
+                    }
                 }
             }
         }
@@ -758,6 +863,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
         return new_mov;
     }
+
 
     /**
      * filter_max_movements_
@@ -886,5 +992,38 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         console.timeEnd('filter_max');
         return source;
     } // filter_max_movements
+
+
+    /**
+     * append_hash: Appends hash count identificator, to family results.
+     * @param {*} m Movement.
+     */
+     static append_hash(m) {
+        m[Const.HASH_ID] = m[Const.HASH_ID] + Const.HASH_SEP_STR + 0;
+    }
+
+
+    /**
+     * increment_hash: Increments last hash count id, to be used as familiy results identification. Append first if not created
+     * @param {*} m Movement.
+     */
+    static increment_hash(m) {
+        let hash = m[Const.HASH_ID];
+        let hash_values = hash.split(Const.HASH_SEP_STR);
+        if(hash_values.length <= 1) {
+            hash = hash + Const.HASH_SEP_STR + 0;
+        }
+        else {
+            let hash_count = parseInt(hash_values[hash_values.length - 1]);
+            hash_values[hash_values.length - 1] = '' + (++hash_count);
+            hash = hash_values.reduce( (a, b) => a + Const.HASH_SEP_STR + b);
+        }
+        m[Const.HASH_ID] = hash;
+    }
+
+
+    static toString(m) {
+        return `${m[Const.HASH_ID]} ► ${new Date(m[Const.INIT_ID].time).toLocaleString()}(${m.init.price}) | ${new Date(m[Const.END_ID].time).toLocaleString()}(${m.end.price}) | ${new Date(m[Const.CORRECTION_ID].time).toLocaleString()}(${m.correction.price}) | ${m.retracement} | ${m.trend}`
+    }
 }
 
