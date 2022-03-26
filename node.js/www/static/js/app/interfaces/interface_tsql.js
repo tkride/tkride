@@ -4,6 +4,8 @@
 class InterfaceTSQL {
 
     //----------------------------- STATIC, CONSTANTS -----------------------------
+    static NAME = 'interface-tsql';
+    static url_section = 'tsql';
 
     //----------------------------- PROPERTIES -----------------------------
     #root_url = '';
@@ -16,7 +18,7 @@ class InterfaceTSQL {
     //----------------------------- CONSTRUCTOR -----------------------------
     // constructor(root_url, headers) {
     constructor(root_url) {
-        this.#root_url = root_url;
+        this.#root_url = root_url + InterfaceTSQL.url_section;
         // this.#headers = headers;
     }
 

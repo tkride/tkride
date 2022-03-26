@@ -3,7 +3,7 @@
 
 class Const {
     // static ROOT_URL = "http://tapsproject.net:8080/";
-    static ROOT_URL = "http://tkride.com:8081/tsql";
+    static ROOT_URL = "http://tkride.com:8081/";
     static POST_ID = 'POST';
 
     // GENERALES
@@ -198,6 +198,7 @@ class Const {
     // CLASS ICONS
     static CLASS_ICON_ARROW_DOWN = 'lni lni-chevron-down';
     static CLASS_ICON_ADD = 'lni lni-circle-plus';
+    static CLASS_ICON_DELETE = 'lni lni-cross-circle';
     static CLASS_ICON_SAVE = 'lni lni-save';
     static CLASS_ICON_CLEAR = 'lni lni-eraser';
 
@@ -524,4 +525,18 @@ class Time {
         }
         return res;
     }
+}
+
+class DDBB {
+    static LOAD_SESSION = 'load_session';
+    static CHECK_USER_LOGGED = 'check_user_logged';
+    static AUTHENTICATE_USER = 'authenticate_user';
+    static DELETE_PATTERN = 'delete_pattern';
+    static SAVE_PATTERN = 'save_pattern';
+    static LOAD_USER_PATTERNS = 'load_user_patterns';
+    static DDBB_ERROR = 'Error en base de datos';
+    static DUPLICATE_KEY = 1062;
+    static DUPLICATE_KEY_MSG = 'Identificador duplicado';
+    static TABLE_NOT_FOUND = 1146;
+    static TABLE_NOT_FOUND_MSG = 'Tabla no encontrada';
 }

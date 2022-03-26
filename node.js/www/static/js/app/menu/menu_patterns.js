@@ -19,8 +19,10 @@ class MenuPatterns {
         static ELEMENT_ID_BUTTON_ADD = '#patterns-menu-add';
     static ID_BUTTON_SAVE = 'patterns-menu-save';
         static ELEMENT_ID_BUTTON_SAVE = '#patterns-menu-save';
-    static ID_BUTTON_CLEAR = 'patterns-menu-clear';
-        static ELEMENT_ID_BUTTON_CLEAR = '#patterns-menu-clear';
+    static ID_BUTTON_DELETE = 'patterns-menu-delete';
+        static ELEMENT_ID_BUTTON_DELETE = '#patterns-menu-delete';
+    static ID_BUTTON_RESET = 'patterns-menu-reset';
+        static ELEMENT_ID_BUTTON_RESET = '#patterns-menu-reset';
     static ID_BUTTON_SUBMIT = 'patterns-menu-submit';
         static ELEMENT_ID_BUTTON_SUBMIT = '#patterns-menu-submit';
 
@@ -88,9 +90,15 @@ class MenuPatterns {
     static EVENT_SUBMIT = 'event-patterns-submit';
     // static EVENT_SEARCH_IN_RET_SELECTED = 'event-search-in-ret-selected';
     static EVENT_CLEAR_FORM = 'event-patterns-clear-form';
+    static EVENT_DELETE_PATTERN = 'event-patterns-delete-pattern';
+    static EVENT_SAVE_PATTERN = 'event-patterns-save-pattern';
+    static EVENT_DDBB_LOAD_USER_PATTERNS = 'event-patterns-ddbb-load-user-patterns';
+    static EVENT_DDBB_DELETE_PATTERN = 'event-patterns-ddbb-delete-pattern';
+    static EVENT_DDBB_SAVE_PATTERN = 'event-patterns-ddbb-save-pattern';
     static EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED = 'event-patterns-ret-selected';
     static EVENT_TYPE_SELECTED = 'event-patterns-select-type';
     static EVENT_RET_SELECTED = 'event-patterns-ret-selected';
+    static EVENT_UPDATE_MODEL = 'event-patterns-update-model';
     // static EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED = 'patterns-menu-ret-levels-data-source-selected';
     // static EVENT_PATTERNS_MENU_RET_STOP_LEVELS_SELECTED = 'patterns-menu-ret-stop-levels-selected';
 
@@ -186,7 +194,6 @@ class MenuPatterns {
     #load_controls_values_next(pattern) {
     }
 
-
     #read_controls_values() {
         let pattern = {};
         try {
@@ -208,7 +215,6 @@ class MenuPatterns {
     }
 
     #read_controls_values_movements() {
-
     }
     
     #read_controls_values_retracements() {
@@ -225,19 +231,34 @@ class MenuPatterns {
     }
     
     #read_controls_values_trends() {
-
     }
     
     #read_controls_values_next() {
 
     }
+
+    #delete_pattern() {
+        let values = this.#read_controls_values();
+        let pattern = { [Const.NAME_ID]: values[Const.ID_ID ]};
+        $(document).trigger(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, [pattern]);
+    }
     
+    // TODO FALTA BOTON BORRAR PATRON !!!
+    //TODO HAY QUE ENVIAR EL USUARIO AL CARGAR MAIN Y ESTAR LOGGEADO PARA QUE LO GUARDE CHART CONTROLLER
+    #save_pattern() {
+        // Get stored info from controls
+        let pattern = this.#read_controls_values();
+        if(pattern[Const.ID_ID]) {
+            // Send DDBB query via chart controller
+            $(document).trigger(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, [pattern]);
+        }
+    }
 
     #create_menu() {
         // Creates main menu container
         this.#display = new Display({ id: MenuPatterns.ID_MENU_PATTERNS,
                                       title: 'Patrones',
-                                      title_css: { 'font-size': '1.2em' },
+                                      title_css: { 'font-size': '1.75em' },
                                       center:true,
                                       draggable: true,
                                       new_classes: 'scroll-custom',
@@ -245,7 +266,7 @@ class MenuPatterns {
                                      });
         this.#display.element_handle_close.on('click', e =>  $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE) );
         this.#display.control.hide();
-                                     
+
         // Add separator
         this.#display.append(Display.build_separator());
 
@@ -263,7 +284,7 @@ class MenuPatterns {
 
         let stored_patterns = new Dropdown({
                                         id: MenuPatterns.ID_PATTERNS_MENU_STORED_PATTERNS,
-                                        items: Object.keys(this.#models.patterns),
+                                        items: [], //Object.keys(this.#models.patterns),
                                         event: MenuPatterns.EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED,
                                         header: { arrow: true },
                                         css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
@@ -306,7 +327,8 @@ class MenuPatterns {
         //                          });
         let searchin_combobox = new Dropdown({
                                             id: MenuPatterns.ID_PATTERNS_MENU_SEARCH_IN_PATTERNS,
-                                            items: Object.keys(this.#models.patterns),
+                                            // items: Object.keys(this.#models.patterns),
+                                            items: [],
                                             // event: MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED,
                                             class: Const.CLASS_MENU_FIELD,
                                             header: { selected: true, label: { text: 'Buscar en resultado', position: Const.LABEL_POSITION_BEFORE} },
@@ -405,7 +427,8 @@ class MenuPatterns {
         // Append levels data source
         let levels_data_source = new Dropdown({
             id: MenuPatterns.ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE,
-            items: Object.keys(this.#models.patterns),
+            // items: Object.keys(this.#models.patterns),
+            items: [],
             // event: MenuPatterns.EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED,
             class: Const.CLASS_MENU_FIELD,
             header: { selected: true, label: { text: 'Datos fuente de niveles', position: Const.LABEL_POSITION_BEFORE } },
@@ -447,9 +470,9 @@ class MenuPatterns {
 
         // Add button add pattern
         let button_add = $('<div>', {
-                            id: MenuPatterns.ID_BUTTON_ADD,
-                            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_ADD}`,
-                            title: 'Agregar patrón al proceso'
+            id: MenuPatterns.ID_BUTTON_ADD,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_ADD}`,
+            title: 'Agregar patrón al proceso'
         });
         menu_footer.append(button_add);
 
@@ -460,16 +483,25 @@ class MenuPatterns {
             title: 'Guardar patrón'
         });
         menu_footer.append(button_save);
+        button_save.on('click', e => $(document).trigger(MenuPatterns.EVENT_SAVE_PATTERN))
 
-        // Add button clear form
-        let button_clear = $('<div>', {
-            id: MenuPatterns.ID_BUTTON_CLEAR,
+        // Add button delete pattern
+        let button_delete = $('<div>', {
+            id: MenuPatterns.ID_BUTTON_DELETE,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_DELETE}`,
+            title: 'Eliminar patrón'
+        });
+        menu_footer.append(button_delete);
+        button_delete.on('click', e => $(document).trigger(MenuPatterns.EVENT_DELETE_PATTERN));
+
+        // Add button reset form
+        let button_reset = $('<div>', {
+            id: MenuPatterns.ID_BUTTON_RESET,
             class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_CLEAR}`,
             title: 'Limpiar formulario'
         });
-        menu_footer.append(button_clear);
-        // button_clear.on('click', e => this.#load_controls_values(MenuPatterns.EMPTY_FORM) );
-        button_clear.on('click', e => $(document).trigger(MenuPatterns.EVENT_CLEAR_FORM));
+        menu_footer.append(button_reset);
+        button_reset.on('click', e => $(document).trigger(MenuPatterns.EVENT_CLEAR_FORM));
 
         // Add button submit form to process pattern
         let button_submit = $('<div>', {
@@ -499,60 +531,86 @@ class MenuPatterns {
     #show_menu_next() {
     }
 
+    #update_model() {
+        // Update patterns list
+        let patterns_dd = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_STORED_PATTERNS).data('Dropdown');
+        patterns_dd.items = Object.keys(this.#models.patterns);
+        let searchin_combobox = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_PATTERNS).data('Dropdown');
+        
+        let selected = searchin_combobox.selected;
+        searchin_combobox.items = Object.keys(this.#models.patterns);
+        if(searchin_combobox.items.includes(selected)) { searchin_combobox.selected = selected; }
+        
+        let levels_data_source = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown');
+        selected = levels_data_source.selected;
+        levels_data_source.items = Object.keys(this.#models.patterns);
+        if(levels_data_source.items.includes(selected)) { levels_data_source.selected = selected; }
+    }
+
     //----------------------------- PUBLIC METHODS -----------------------------
 
     init(models) {
         var that = this;
+        try {
+            // Loads model data
+            if(models) {
+                this.#models = models;
+            }
+            else console.warn('Patterns Model not defined.');
 
-        // Loads model data
-        if(models) {
-            this.#models = models;
+            MenuPatterns.PATTERN_TYPE_CALLBACK = {
+                [Const.MOVIMIENTOS_ID]: this.#show_menu_movements,
+                [Const.RETROCESOS_ID]: this.#show_menu_retracements,
+                [Const.TENDENCIA_ID]: this.#show_menu_trends,
+                [Const.SIGUIENTE_ID]: this.#show_menu_next,
+            };
+            
+            this.CALLBACK_READ_CONTROLS_VALUES = {
+                [Const.MOVIMIENTOS_ID]: this.#read_controls_values_movements,
+                [Const.RETROCESOS_ID]: this.#read_controls_values_retracements,
+                [Const.TENDENCIA_ID]: this.#read_controls_values_trends,
+                [Const.SIGUIENTE_ID]: this.#read_controls_values_next,
+            }
+            
+            this.CALLBACK_LOAD_CONTROLS_VALUES = {
+                [Const.MOVIMIENTOS_ID]: this.#load_controls_values_movements,
+                [Const.RETROCESOS_ID]: this.#load_controls_values_retracements,
+                [Const.TENDENCIA_ID]: this.#load_controls_values_trends,
+                [Const.SIGUIENTE_ID]: this.#load_controls_values_next,
+            }
+
+            this.#create_menu();
+
+            // $(document).on(MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED, (e, ret_name, el) => {
+                // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(ret_name);
+            // });
+
+            $(document).on(MenuPatterns.EVENT_CLEAR_FORM, e => this.#load_controls_values(MenuPatterns.EMPTY_FORM));
+
+            $(document).on(MenuPatterns.EVENT_DELETE_PATTERN, e => this.#delete_pattern());
+
+            $(document).on(MenuPatterns.EVENT_SAVE_PATTERN, e => this.#save_pattern());
+
+            $(document).on(Const.EVENT_CLOSE, e => $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE));
+
+            $(document).on('click', MenuPatterns.ELEMENT_ID_CLOSE, e => $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE));
+
+            $(document).on(MenuPatterns.EVENT_SUBMIT, e => {
+                that.#options = that.#read_controls_values();
+                that.values_hist.push(that.#options);
+                $(document).trigger(MenuPatterns.EVENT_SHOW_PATTERNS, that.#options);
+                $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE);
+                $(MenuPatterns.ELEMENT_ID_MENU_CONTENT).unbind('keyup');
+                console.log(that.#options);
+            });
+
+            $(document).on(MenuPatterns.EVENT_BUILD_MENU, e => { $(MenuPatterns.ELEMENT_ID_TYPE_SELECTED).val('RETROCESOS').change(); });
+
+            $(document).on(MenuPatterns.EVENT_UPDATE_MODEL, e => this.#update_model() );
         }
-        else console.warn('Patterns Model not defined.');
-
-        MenuPatterns.PATTERN_TYPE_CALLBACK = {
-            [Const.MOVIMIENTOS_ID]: this.#show_menu_movements,
-            [Const.RETROCESOS_ID]: this.#show_menu_retracements,
-            [Const.TENDENCIA_ID]: this.#show_menu_trends,
-            [Const.SIGUIENTE_ID]: this.#show_menu_next,
-        };
-        
-        this.CALLBACK_READ_CONTROLS_VALUES = {
-            [Const.MOVIMIENTOS_ID]: this.#read_controls_values_movements,
-            [Const.RETROCESOS_ID]: this.#read_controls_values_retracements,
-            [Const.TENDENCIA_ID]: this.#read_controls_values_trends,
-            [Const.SIGUIENTE_ID]: this.#read_controls_values_next,
+        catch(error) {
+            console.error(error);
         }
-        
-        this.CALLBACK_LOAD_CONTROLS_VALUES = {
-            [Const.MOVIMIENTOS_ID]: this.#load_controls_values_movements,
-            [Const.RETROCESOS_ID]: this.#load_controls_values_retracements,
-            [Const.TENDENCIA_ID]: this.#load_controls_values_trends,
-            [Const.SIGUIENTE_ID]: this.#load_controls_values_next,
-        }
-
-        this.#create_menu();
-
-        // $(document).on(MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED, (e, ret_name, el) => {
-            // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(ret_name);
-        // });
-
-        $(document).on(MenuPatterns.EVENT_CLEAR_FORM, e => this.#load_controls_values(MenuPatterns.EMPTY_FORM));
-
-        $(document).on(Const.EVENT_CLOSE, e => $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE));
-
-        $(document).on('click', MenuPatterns.ELEMENT_ID_CLOSE, e => $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE));
-
-        $(document).on(MenuPatterns.EVENT_SUBMIT, e => {
-            that.#options = that.#read_controls_values();
-            that.values_hist.push(that.#options);
-            $(document).trigger(MenuPatterns.EVENT_SHOW_PATTERNS, that.#options);
-            $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE);
-            $(MenuPatterns.ELEMENT_ID_MENU_CONTENT).unbind('keyup');
-            console.log(that.#options);
-        });
-
-        $(document).on(MenuPatterns.EVENT_BUILD_MENU, e => { $(MenuPatterns.ELEMENT_ID_TYPE_SELECTED).val('RETROCESOS').change(); });
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------

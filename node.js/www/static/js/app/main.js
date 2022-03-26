@@ -3,9 +3,19 @@
 
 $(document).ready(function() {
 
-    // ---------------------------------------- INIT MAIN VAR ----------------------------------------
+    // ---------------------------------------- INIT MAIN VAR & COOKIES ----------------------------------------
 
     var that = this;
+    let raw_cookies = decodeURIComponent(document.cookie).split(';');
+    let cookies = {};
+    raw_cookies.forEach(c => {
+        let kv = c.split('=');
+        cookies[kv[0]] = kv[1];
+    });
+    let user;
+    if(cookies.cookie_user) {
+        user = cookies.cookie_user;
+    }
 
     // ---------------------------------------- CREATES CHART ----------------------------------------
     const create_controller = () => new Promise((resolve, reject) => {
@@ -17,7 +27,7 @@ $(document).ready(function() {
     // const init_controller = (ctrl, brokers, headers) => new Promise((resolve, reject) => {
     const init_controller = (ctrl) => new Promise((resolve, reject) => {
         if(ctrl) {
-            ctrl.init();
+            ctrl.init(user);
             resolve(ctrl);
         }
         else reject(null);

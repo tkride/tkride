@@ -551,9 +551,9 @@ class PanelPatterns {
                 title: data[Const.ID_ID],
                 header: [Const.BULL_ID.toUpperCase(), Const.BEAR_ID.toUpperCase()],
                 rows: {
-                    OK: [ [sbull[Const.OK_ID][Const.NUM_ID], '('+(sbull[Const.OK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'], [sbear[Const.OK_ID][Const.NUM_ID], '('+(sbear[Const.OK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'] ],
-                    NOK: [ [sbull[Const.NOK_ID][Const.NUM_ID], '('+(sbull[Const.NOK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'], [sbear[Const.NOK_ID][Const.NUM_ID], '('+(sbear[Const.NOK_ID][Const.PERCENT_ID]).toFixed(2)+'%)'] ],
-                    TOTAL: [sbull[Const.TOTAL_ID][Const.NUM_ID], sbear[Const.TOTAL_ID][Const.NUM_ID]],
+                    OK: [ [sbull[Const.OK_ID][Const.NUM_ID], ' ('+(sbull[Const.OK_ID][Const.PERCENT_ID]).toFixed(1)+'%)'], [sbear[Const.OK_ID][Const.NUM_ID], ' ('+(sbear[Const.OK_ID][Const.PERCENT_ID]).toFixed(1)+'%)'] ],
+                    NOK: [ [sbull[Const.NOK_ID][Const.NUM_ID], ' ('+(sbull[Const.NOK_ID][Const.PERCENT_ID]).toFixed(1)+'%)'], [sbear[Const.NOK_ID][Const.NUM_ID], ' ('+(sbear[Const.NOK_ID][Const.PERCENT_ID]).toFixed(1)+'%)'] ],
+                    TOTAL: [ [ sbull[Const.TOTAL_ID][Const.NUM_ID], ' ('+(sbull[Const.TOTAL_ID][Const.PERCENT_ID]).toFixed(1)+'%)' ], [ sbear[Const.TOTAL_ID][Const.NUM_ID], ' ('+(sbear[Const.TOTAL_ID][Const.PERCENT_ID]).toFixed(1)+'%)' ] ],
                 },
             };
         }
@@ -702,7 +702,7 @@ class PanelPatterns {
                 this.#create_names_tree(parent);
             }
             let table_data = this.#format_stats_data(data);
-            this.#tables[name] = new Table(table_data, PanelPatterns.ID_PATTERNS_RESULTS_STATS_TABLE);
+            this.#tables[name] = new Table({ data: table_data, title: PanelPatterns.ID_PATTERNS_RESULTS_STATS_TABLE, css: { 'font-size':'0.85em'} });
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_STATS_TABLE).append(this.#tables[name].table);
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_TABLE_NAME).addClass(Const.CLASS_HOVERABLE_TEXT);
             this.#current_name = name;

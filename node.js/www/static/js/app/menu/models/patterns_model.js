@@ -149,39 +149,56 @@ class PatternsModel {
     };
 
     //----------------------------- PROPERTIES -----------------------------
-    #ddbb_connection;
+    #interface_ddbb;
     // #patterns = {};
     // #results = {};
     #models;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor(ddbb_connection, models) {
+    constructor(interface_ddbb, models) {
         this.#models = models;
-        this.init(ddbb_connection);
+        this.#interface_ddbb = interface_ddbb;
+        this.init();
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
-    #connect_ddbb() {
-        return true;
-    }
-
-    #load_patterns() {
-        return PatternsModel.DUMMY_PATTERNS;
-    }
-
     //----------------------------- PUBLIC METHODS -----------------------------
-    
-    init(ddbb_connection) {
-        this.#ddbb_connection = ddbb_connection;
-        // TODO CONECTAR A BBDD PARA LEER PATRONES GUARDADOS
-        if(this.#connect_ddbb()) {
-            // this.#patterns = this.#load_patterns();
-            if(this.#models) {
-                this.#models.patterns = this.#load_patterns();
+
+    load_patterns() {
+        return new Promise((resolve, reject) => {
+            try {
+                this.#interface_ddbb.process({ user: this.#interface_ddbb.user, query: DDBB.LOAD_USER_PATTERNS, params: [ this.#interface_ddbb.user] })
+                .then(res => {
+                    let ddbb_res = res[1];
+                    res = res[0];
+                    let patterns = {};
+                    res.forEach( row => {
+                        try {
+                            let pattern = JSON.parse(row.values);
+                            patterns[pattern[Const.ID_ID]] = pattern;
+                        }
+                        catch(err) {
+                            console.error('Error loading pattern information:', err);
+                        }
+                    });
+                    this.#models.patterns = patterns;
+                    resolve(true);
+                });
             }
-        }
+            catch(error) {
+                console.error(error);
+                reject(error);
+            }
+        });
+        // return PatternsModel.DUMMY_PATTERNS;
+    }
+    
+    init() {
+        this.load_patterns()
+        .then()
+        .catch(error => console.error('PatternsModel: Error loading patterns from database: ', error));
     }
 
     static get_parent_patterns(name) {

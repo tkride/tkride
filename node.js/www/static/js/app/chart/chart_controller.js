@@ -58,6 +58,9 @@ class ChartController {
     currId = null;
     //Interface TSQL Controller
     interface;
+    interface_ddbb;
+    session_info;
+    user;
     //Ticker filter
     #ticker_filter;
     //Time frame
@@ -182,8 +185,8 @@ class ChartController {
         // Get initial date time
         let end_time = Time.now(Time.FORMAT_STR);
         this.currActive[this.#TSQL.MARCO_ID] = this.#time_frame.time_frame;
-        let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-        // let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        // let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
 
         let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
                     [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
@@ -227,6 +230,99 @@ class ChartController {
         // $(document).on(plot_event_id, e => { if(event_id) $(document).trigger(event_id); });
     }
 
+    event_ddbb_load_user_patterns() {
+        console.log('Load patterns.');
+        return this.interface_ddbb.process({ user: this.interface_ddbb.user, query: DDBB.LOAD_USER_PATTERNS, params: this.interface_ddbb.user })
+        .then( res => {
+            if(res.errno == undefined) {
+                let patterns = {};
+                console.log('Patterns loaded:', res);
+                res[0].forEach( row => {
+                    try {
+                        let pattern = JSON.parse(row.values);
+                        patterns[pattern[Const.ID_ID]] = pattern;
+                    }
+                    catch(err) { console.error('Error loading pattern information:', err); }
+                });
+                this.models[Const.PATTERNS_ID] = patterns;
+                $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+                return true;
+            }
+            else {
+                console.error('Error loading patterns:', res);
+                let msg_error = this.interface_ddbb.get_error_message(res);
+                this.write_status({error:'(!) Error cargando patrones: ' + msg_error, timeout: 5000});
+                return false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            return false;
+        });
+    }
+
+    event_ddbb_delete_pattern(pattern) {
+        console.log('Delete pattern:', pattern);
+        pattern.user = this.interface_ddbb.user;
+        return this.interface_ddbb.process({ user: pattern.user, query: DDBB.DELETE_PATTERN, params: pattern })
+        .then( res => {
+            if(res.errno == undefined) {
+                if(res >= 1) {
+                    console.log('Pattern deleted:', res);
+                    this.event_ddbb_load_user_patterns()
+                    .then( res => res)
+                    .catch( error => {
+                        console.error(error);
+                        this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
+                        return false;
+                    });
+                }
+                else {
+                    console.log(`Pattern do not exist in database ${pattern[Const.NAME_ID]}.`);
+                    this.write_status({info:'El patrón no existe en base de datos', timeout: 5000});
+                }
+            }
+            else {
+                console.error('Error deleting pattern:', res);
+                let msg_error = this.interface_ddbb.get_error_message(res.errno);
+                this.write_status({error:'(!) Error borrando patrón: ' + msg_error, timeout: 5000});
+                return false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            return false;
+        });
+    }
+
+    event_ddbb_save_pattern(pattern) {
+        console.log('Save pattern into DDBB.');
+        pattern.user = this.interface_ddbb.user;
+        return this.interface_ddbb.process({ user: pattern.user, query: DDBB.SAVE_PATTERN, params: JSON.stringify(pattern) })
+        .then( res => {
+            if(res == 1) {
+                console.log('Pattern saved:', res);
+                this.event_ddbb_load_user_patterns()
+                .then( res => res)
+                .catch( error => {
+                    console.error(error);
+                    this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
+                    return false;
+                });
+            }
+            else {
+                console.error('Error saving pattern:', res);
+                let msg_error = this.interface_ddbb.get_error_message(res);
+                this.write_status({error:'(!) Error guardando patrón: ' + msg_error, timeout: 5000});
+                return false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            return false;
+        });
+    }
+    
     // loopPromise(i, cb, end) {
     //     var that = this;
     //     return new Promise((resolve, reject) => {
@@ -361,10 +457,10 @@ class ChartController {
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
     }
 
-    #init_interfaces() {
+    #init_interfaces(url, user) {
         // Creates interface with TSQL scripting
-        // this.interface = new InterfaceTSQL(Const.ROOT_URL, headers);
-        this.interface = new InterfaceTSQL(Const.ROOT_URL);
+        this.interface = new InterfaceTSQL(url);
+        this.interface_ddbb = new InterfaceDDBB(url, user);
     }
 
     #init_brokers() {
@@ -379,7 +475,7 @@ class ChartController {
                 resolve(brokers);
             })
             .catch(error => {
-                this.write_status({error:'(!) Errors cargando tickers desde los brokers: ' + broker});
+                this.write_status({error:'(!) Errores cargando tickers desde los brokers: ' + broker});
                 console.error(error);
                 reject(error);
             });
@@ -389,15 +485,16 @@ class ChartController {
     //----------------------------- PUBLIC METHODS -----------------------------
 
     // init(brokers_list, headers, view) {
-    init(view) {
+    init(user, view) {
         var that = this;
+        this.user = user;
 
         try {
-            // Create objects
+            // Init interfaces to decouple data access with server
+            this.#init_interfaces(Const.ROOT_URL, user);
             
-            // this.#patterns = new PatternsModel('', this.#chart_models);
-            // new PatternsModel('', this.#chart_models);
-            new PatternsModel('', this.#models);
+            // Create patterns model
+            this.patterns_model = new PatternsModel(this.interface_ddbb, this.#models);
 
             // Creates all option menus
             this.#create_menus();
@@ -411,9 +508,6 @@ class ChartController {
 
             this.#time_frame = new TimeFrame();
 
-            // Init interfaces to decouple data access with server
-            this.#init_interfaces();
-
             // Brokers manager
             this.#init_brokers()
             .then(brokers => {
@@ -422,6 +516,12 @@ class ChartController {
                 this.#ticker_filter.brokers = brokers;
             })
             .catch(err => console.error(err));
+
+            // Load last session
+            console.log('Load last user session.');
+            this.interface_ddbb.process({ user: 'ruben', query: DDBB.LOAD_SESSION, params: 'ruben' })
+            .then( res => console.log('Last session info:', res))
+            .catch(err => console.err(err));
         
             //TODO REVISAR EVENTOS QUE DEBE GESTIONAR ESTE CONTROLADOR - SEPARAR EVENTOS DE TECLADO -> MOVER AL CONTROLADOR DE TECLADO
             // Enables events managed by chart controller
@@ -542,6 +642,7 @@ class ChartController {
 
                 let ret_plot = that.#view.format_retracements(pattern);
                 that.#view.plot_retracements(ret_plot, that.active_chart);
+                that.#view.draw_fibonacci(ret_plot, query, that.active_chart);
             });
 
             // Handles event to load candles historic
@@ -549,6 +650,15 @@ class ChartController {
 
             // Time Frame header //TODO CAMBIAR
             // this.#build_header();
+
+            $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => that.event_ddbb_load_user_patterns());
+            // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => this.patterns_model.load_patterns());
+
+            $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => that.event_ddbb_delete_pattern(pattern_name));
+            // $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => this.patterns_model.delete_pattern(pattern_name));
+
+            $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => that.event_ddbb_save_pattern(pattern));
+            // $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => this.patterns_model.save_pattern(pattern));
 
             console.log("Chart Controller Initialized OK.");
         }
@@ -974,9 +1084,9 @@ class ChartController {
         this.#view.plot_movements(rawData, chart);
     }
 
-    plot_retracements(rawData, chart){
-        this.#view.plot_movements(rawData, chart);
-    }
+    // plot_retracements(rawData, chart){
+    //     this.#view.plot_movements(rawData, chart);
+    // }
 
     //----------------------------- TIME FRAME METHODS -----------------------------
 

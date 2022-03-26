@@ -439,21 +439,26 @@ class Table {
     #table_header_name_element;
     #header;
     #rows;
+    #css;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor(data, name) {
-        this.#name = name;
-        this.init(data);
+    constructor(params) {
+        this.init(params);
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
     //----------------------------- PUBLIC METHODS -----------------------------
     
-    init(data) {
+    init(params) {
         try {
             var that = this;
+            
+            let data = params.data;
+            this.#name = params.name;
+            this.#css = params.css;
+
             let title = (data.title) ? data.title : '';
             this.#table = $('<table>', { id: this.#name + '-' + title});
             this.#header = data.header;
@@ -496,6 +501,8 @@ class Table {
                 }
                 // this.#rows[row].forEach(v => data_row.append('<td>' + v + ' (' + this.#pc[row] + '%)' + '</td>'));
             });
+
+            if(this.#css) { this.#table.css(this.#css); }
         }
         catch(error) {
             console.error("Table Controls init error: ", error);
@@ -526,6 +533,7 @@ class Table {
  * @param left Value for left initial position.
  * @param top Value for top position.
  * @param title Title for display.
+ * @param title_css Title css custom style.
  * @param show_title true for showing title in display.
  * @param draggable true for make display draggable.
  * @param close Shows handler close icon.

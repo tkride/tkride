@@ -5,12 +5,22 @@
 
     "base_path": "",
 
-    "db_host": "localhost",
+    "db_host": "127.0.0.1",
     "db_user": "root",
     "db_pass": "",
     "db_ddbb": "test",
     "db_port": "3306",
     "db_socketPath": "/tmp/mysql.sock",
+    "db_db_name": "tkrIDE",
+    "db_tables": "[\"users\", \"sessions\", \"settings\", \"patterns\", \"system\"]",
+    "db_query_use_db": "USE ",
+    "db_query_create_db": "CREATE DATABASE IF NOT EXISTS ?",
+    "db_query_get_databases": "SHOW DATABASES",
+    "db_query_get_database_like": "SHOW DATABASES LIKE ?",
+    "db_query_get_tables": "SHOW TABLES",
+    "db_query_get_table_like": "SHOW TABLES LIKE ?",
+    "db_query_like": " LIKE ? ",
+    "db_database": "Database",
     
     "ERROR_404": "404 Not found.",
 
@@ -20,7 +30,9 @@
 
     "cookie_permision": "tkride_permission",
     "cookie_remember": "cookie_remember",
+    "cookie_user": "cookie_user",
     "permission_grant": "grant",
+    "permission_denied": "denied",
     "login_user": "user",
     "login_password": "password",
     "login_remember": "remember",
@@ -61,5 +73,6 @@
 
     "db_msg_connecting": "Connecting to DDBB...",
     "db_msg_connection_success": "DDBB Connection Success.",
-    "db_msg_connection_error": "DDBB Connection Error."
+    "db_msg_connection_error": "DDBB Connection Error.",
+    "db_msg_empty_query_error": "DDBB Empty query ignored."
 }

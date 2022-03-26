@@ -736,7 +736,7 @@ class ChartView {
             let fibo = {
                 graphic: {
                     elements: [
-                        { type: 'group'}
+                        { type: 'group' }
                     ]
                 }
             }
@@ -793,8 +793,8 @@ class ChartView {
         return ret;
     }
 
-    /** @parameters:
-     * zoom: 2 types of settings. By values:
+    /** zoom_chart
+     * @param zoom: 2 types of settings. By values:
      *          {   
                     startValue: {x: dateMin, y:priceMin},
                     endValue: { x: dateMax, y:priceMax},
@@ -807,6 +807,8 @@ class ChartView {
                     margin: {x: +/- %, y: +/- %},
                 }
         onlyValid: [start value, end value] true: filter all undefined dates || false: start/end could be undefined date
+     * @param chart Chart object to zoom.
+     * @returns Zoom object with updated information if ok. Error message other case.
      */
     zoom_chart(zoom, chart) {
         let ret;
@@ -1020,5 +1022,77 @@ class ChartView {
         };
 
         return label;
+    }
+
+    draw_fibonacci(data, query, chart) {
+        let ret;
+        let fibos = [];
+        try {
+            if(data.data) {
+                data.data.map( (r, i) => {
+                    let values = r.slice(0, 3);
+                    let trend = r[3];
+                    let name = r[4];
+
+                    let xstart = chart.convertToPixel({xAxisIndex: 0}, values[1][0]);
+                    let xend = chart.convertToPixel({xAxisIndex: 0}, values[2][0]);
+                    let width = xend - xstart;
+
+                    let ystart = chart.convertToPixel({yAxisIndex: 0}, values[1][1]);
+                    let yend = chart.convertToPixel({yAxisIndex: 0}, values[2][1]);
+                    let height = yend - ystart;
+
+                    let fibo = {
+                        type: 'group',
+                        top: ystart,
+                        left: xstart,
+                        draggable: true,
+                        // ondrag: function (dx, dy) {
+                        //     onPointDragging(dataIndex, [this.x, this.y]);
+                        // },
+                        children: [
+                            {
+                                type: 'rect',
+                                z: 100,
+                                left: 'center',
+                                top: 'middle',
+                                shape: {
+                                    width: width,
+                                    height: height,
+                                },
+                                style: {
+                                    fill: 'rgba(255, 255, 255, 0.1)',
+                                    lineWidth: 1,
+                                    // fill: '#fff',
+                                    // stroke: '#555',
+                                }
+                            },
+                            {
+                                type: 'text',
+                                z: 100,
+                                left: 'center',
+                                top: 'middle',
+                                style: {
+                                    fill: '#333',
+                                    width: 220,
+                                    overflow: 'break',
+                                    // text: 'xAxis represents temperature in °C, yAxis represents altitude in km, An image watermark in the upper right, This text block can be placed in any place',
+                                    // font: '14px Microsoft YaHei'
+                                }
+                            }
+                        ]
+                    };
+                    fibos = fibos.concat(fibo);
+                });
+            }
+
+            chart.setOption({ graphic: fibos});
+        }
+        catch(error) {
+            console.error(error);
+            ret = error;
+        }
+
+        return ret;
     }
 }

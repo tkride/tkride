@@ -220,7 +220,8 @@ class Retracements {
 
                 // STATS: Group statistics results by trend
                 let stats = Retracements.#get_stats(retracements,
-                    search_source,
+                                                    nok,
+                                                    // search_source,
                                                     (search_in_data != undefined) ? search_in_model[Const.STATS_ID][level] : undefined,
                                                     trend_sign);
                 ret[Const.STATS_ID][level].push(...stats);
@@ -327,7 +328,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
     }
 
 
-    static #get_stats(rets, data_source, search_in_model, trend_sign) {
+    static #get_stats_(rets, data_source, search_in_model, trend_sign) {
         let res = [];
         Const.BOTH.forEach( s => {
             let total;
@@ -348,6 +349,33 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             stats[Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
             stats[Const.NOK_ID] = { [Const.NUM_ID]: bad, [Const.PERCENT_ID]: bad_pc};
             stats[Const.TOTAL_ID] = { [Const.NUM_ID]: total, [Const.PERCENT_ID]: total_pc };
+            res.push(stats);
+        });
+        return res;
+    }
+
+
+    static #get_stats(ok_data, nok_data, search_in_model, trend_sign) {
+        let res = [];
+        Const.BOTH.forEach( s => {
+            let total;
+            let ok = ok_data.filter( m => m[Const.TREND_ID] == (s*trend_sign)).length;
+            let bad = nok_data.filter(m => m[Const.TREND_ID] == (s*trend_sign)).length;
+            let total_current = ok + bad;
+            if(search_in_model != undefined) {
+                total = search_in_model.filter(t => t[Const.TREND_ID] == (s*trend_sign))[0][Const.OK_ID].num;
+            }
+            else {
+                total = total_current;
+            }
+            let total_pc = (total_current / total) * 100;
+            let ok_pc = (ok / total_current) * 100;
+            let bad_pc = (bad / total_current) * 100;
+            let stats = {};
+            stats[Const.TREND_ID] = s*trend_sign;
+            stats[Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
+            stats[Const.NOK_ID] = { [Const.NUM_ID]: bad, [Const.PERCENT_ID]: bad_pc};
+            stats[Const.TOTAL_ID] = { [Const.NUM_ID]: total_current, [Const.PERCENT_ID]: total_pc };
             res.push(stats);
         });
         return res;
@@ -1023,7 +1051,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
 
     static toString(m) {
-        return `${m[Const.HASH_ID]} ► ${new Date(m[Const.INIT_ID].time).toLocaleString()}(${m.init.price}) | ${new Date(m[Const.END_ID].time).toLocaleString()}(${m.end.price}) | ${new Date(m[Const.CORRECTION_ID].time).toLocaleString()}(${m.correction.price}) | ${m.retracement} | ${m.trend}`
+        return `${m[Const.HASH_ID]} ► ${new Date(m[Const.INIT_ID].time).toLocaleString()}(${m.init.price}) | ${new Date(m[Const.END_ID].time).toLocaleString()}(${m.end.price}) | ${new Date(m[Const.CORRECTION_ID].time).toLocaleString()}(${m.correction.price}) | ${m.retracement.toFixed(3)} | ${m.trend}`
     }
 }
 

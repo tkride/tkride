@@ -50,7 +50,8 @@
     margin: 1em 1em 1em 2em;
     /* display: inline-block; */
     float: left;
-    cursor: pointer;
+    /* cursor: pointer; */
+    cursor: not-allowed;
 }
 
 #patterns-menu-save {
@@ -60,7 +61,14 @@
     cursor: pointer;
 }
 
-#patterns-menu-clear {
+#patterns-menu-delete {
+    margin: 1em 1em 1em 0em;
+    /* display: inline-block; */
+    float: left;
+    cursor: pointer;
+}
+
+#patterns-menu-reset {
     margin: 1em 1em 1em 0em;
     /* display: inline-block; */
     float: left;

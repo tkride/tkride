@@ -29,7 +29,6 @@ addEventListener('message', e => {
             }
         }
     }; //on ready state change
-
     request.open("POST", data.url, true); //data.async); //Definimos la petición AJAX propiamente
     // request.setRequestHeader(Object.keys(data.headers), data.headers[Object.keys(data.headers)]);
     // request.setRequestHeader('X-CSRFToken', data.headers[Object.keys(data.headers)]);
