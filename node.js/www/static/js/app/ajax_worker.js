@@ -14,11 +14,16 @@ addEventListener('message', e => {
         if(request.readyState == XMLHttpRequest.DONE) {
             //Si el estado final de la petición es OK (==200)
             if(request.status == 200) {
-                postMessage(request.responseText);
+                postMessage({status:200, data: request.responseText});
             }
             //Si el estado final de la petición es ERROR (==400)
             else if(request.status == 400) {
                 console.error('Ajax Error :', request.responseText);
+            }
+            //Si el estado final de la petición es ERROR (==403) redirecciona
+            else if(request.status == 403) {
+                console.error('Ajax Error :', request.responseText);
+                postMessage({ status: 403, data: request.responseText});
             }
             //Si el estado final de la petición es ERROR (==404)
             else if(request.status == 404) {

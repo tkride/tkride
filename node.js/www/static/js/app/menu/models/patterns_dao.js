@@ -1,9 +1,9 @@
 /** 'patterns_model.js' */
 
-class PatternsModel {
+class PatternsDAO {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
-    
+    // TODO MODIFICAR ESTA CLASE A PatternsDAO
     static NAME = "model-patterns";
 
     static DUMMY_PATTERNS = {
@@ -150,8 +150,6 @@ class PatternsModel {
 
     //----------------------------- PROPERTIES -----------------------------
     #interface_ddbb;
-    // #patterns = {};
-    // #results = {};
     #models;
 
     //----------------------------- CONSTRUCTOR -----------------------------
@@ -165,13 +163,22 @@ class PatternsModel {
     //----------------------------- PRIVATE METHODS -----------------------------
 
     //----------------------------- PUBLIC METHODS -----------------------------
+    
+    init() {
+        this.load_patterns()
+        .then()
+        .catch(error => console.error('PatternsDAO: Error loading patterns from database: ', error));
+    }
 
     load_patterns() {
         return new Promise((resolve, reject) => {
             try {
-                this.#interface_ddbb.process({ user: this.#interface_ddbb.user, query: DDBB.LOAD_USER_PATTERNS, params: [ this.#interface_ddbb.user] })
+                this.#interface_ddbb.process({ user: this.#interface_ddbb.user,
+                                               login_timestamp: this.#interface_ddbb.login_timestamp,
+                                               query: DDBB.LOAD_USER_PATTERNS,
+                                               params: [ this.#interface_ddbb.user] })
                 .then(res => {
-                    let ddbb_res = res[1];
+                    // let ddbb_res = res[1];
                     res = res[0];
                     let patterns = {};
                     res.forEach( row => {
@@ -180,7 +187,9 @@ class PatternsModel {
                             patterns[pattern[Const.ID_ID]] = pattern;
                         }
                         catch(err) {
-                            console.error('Error loading pattern information:', err);
+                            let msg_error = 'Error: cargando patrones de base de datos:' + err;
+                            console.error(msg_error);
+                            reject(msg_error);
                         }
                     });
                     this.#models.patterns = patterns;
@@ -192,51 +201,84 @@ class PatternsModel {
                 reject(error);
             }
         });
-        // return PatternsModel.DUMMY_PATTERNS;
-    }
-    
-    init() {
-        this.load_patterns()
-        .then()
-        .catch(error => console.error('PatternsModel: Error loading patterns from database: ', error));
     }
 
-    static get_parent_patterns(name) {
-        let parents = [];
-        do {
-            if(this.#models[Const.PATTERNS_ID][name]) {
-                name = this.#models[Const.PATTERNS_ID][name][Const.SEARCH_IN_ID];
-                if(name) parents.push(name);
-            }
-            else {
-                name = undefined;
-            }
-        } while(name);
-        return parents;
+    save_pattern(pattern) {
+        return new Promise((resolve, reject) => {
+            console.log('Save pattern into DDBB.');
+            pattern.user = this.#interface_ddbb.user;
+            this.#interface_ddbb.process({ user: pattern.user,
+                                            login_timestamp: this.#interface_ddbb.login_timestamp,
+                                            query: DDBB.SAVE_PATTERN,
+                                            params: JSON.stringify(pattern) })
+            .then( res => {
+                if(res == 1) {
+                    console.log('Pattern saved:', res);
+                    this.load_patterns()
+                    .then( res => resolve(res))
+                    .catch( error => {
+                        console.error(error);
+                        // this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
+                        resolve('Error cargando patrones desde base de datos.');
+                    });
+                }
+                else {
+                    console.error('Error saving pattern:', res);
+                    let msg_error = this.#interface_ddbb.get_error_message(res);
+                    // this.write_status({error:'(!) Error guardando patrón: ' + msg_error, timeout: 5000});
+                    reject(msg_error);
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                reject(error);
+            });
+        });
+    }
+
+    delete_pattern(pattern) {
+        return new Promise((resolve, reject) => {
+            console.log('Delete pattern:', pattern);
+            pattern.user = this.#interface_ddbb.user;
+            this.#interface_ddbb.process({ user: pattern.user,
+                                            login_timestamp: this.#interface_ddbb.login_timestamp,
+                                            query: DDBB.DELETE_PATTERN,
+                                            params: JSON.stringify(pattern) })
+            .then( res => {
+                if(res.errno == undefined) {
+                    if(res >= 1) {
+                        console.log('Pattern deleted:', res);
+                        this.load_patterns()
+                        .then( res => resolve(res))
+                        .catch( error => {
+                            console.error(error);
+                            // this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
+                            reject('Error cargando patrones desde base de datos.');
+                        });
+                    }
+                    else {
+                        let msg_error = `El patrón ${pattern[Const.NAME_ID]} no existe en la base de datos.`;
+                        console.log(msg_error);
+                        reject(msg_error);
+                        // this.write_status({info:'El patrón no existe en base de datos', timeout: 5000});
+                    }
+                }
+                else {
+                    console.error(`Error eliminando el patrón ${res}.`);
+                    let msg_error = this.#interface_ddbb.get_error_message(res.errno);
+                    // this.write_status({error:'(!) Error borrando patrón: ' + msg_error, timeout: 5000});
+                    reject(msg_error);
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                reject(error);
+            });
+        });
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------
-    
-    // get patterns() { return this.#patterns; }
 
-    // get results() { return this.#results}
-    
-    // set results(value) { return this.#results = value; }
-
-    // get model() { return this.#models; }
-    
-    // set_result(id, value) {
-    //     if(this.#results) {
-    //         if(!this.#results[value.model_key]) this.#results[value.model_key] = {};
-    //         this.#results[value.model_key][id] = value;
-    //     }
-    // }
-
-    // get_result(active, id) {
-    //     if((this.#results) && (this.#results[active]))
-    //         return this.#results[active][id];
-    //     else
-    //         return null;
-    // }
+    get models() { return this.#models; }
 
 }

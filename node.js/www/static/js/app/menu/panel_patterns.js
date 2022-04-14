@@ -73,6 +73,7 @@ class PanelPatterns {
 
     //----------------------------- PROPERTIES -----------------------------
 
+    #is_initilized = false;
     #models;
     #tables = {};
     #explorer = {};
@@ -392,11 +393,15 @@ class PanelPatterns {
     }
     
     #update_current() {
+        if(this.#is_initilized == false) { return}
         try {
             let data_plot = {};
             
             // if( (this.#current_name) && (this.#current_model[this.#current_name]) ) {
-            if( (this.#current_name) && (this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][this.#current_name]) ) {
+            if( (this.#current_name)
+                && (this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][this.#current_name])
+                && (this.#results_selected.length))
+            {
                 console.time('update current');
 
                 let current_value = this.current_count + 1;
@@ -710,6 +715,7 @@ class PanelPatterns {
     }
 
     #reset_panel() {
+        this.#is_initilized = false;
         this.#model_key = null;
         this.#data_tree = [];
         this.#current_name = null;
@@ -748,6 +754,8 @@ class PanelPatterns {
                     // let name = query[Const.NAME_ID];
                     let name = query[Const.ID_ID];
                     this.#create_results_tree(name);
+                    this.#is_initilized = true;
+                    this.#update_current();
                 }
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL + ' > *').each((i, e) => $(e).show())
                 $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_PANEL).show();

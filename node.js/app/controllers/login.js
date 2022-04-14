@@ -17,32 +17,8 @@ const TSQL = require('../resources/interfaces/TSQL/TSQL');
 const bInterface = require('../resources/interfaces/broker_interface');
 bInterface.init();
 
-var authenticated = false;
-// var authenticated = true;
-
 
 // PUBLIC
-
-const check_permissions = (req, res, next) => {
-    console.log(`----------------------- check_permissions ${req.socket.remoteAddress} --------------------------`);
-
-    // Get session cookies
-    let grant = (req.cookies[conf.cookie_permision] == conf.permission_grant);
-
-    if(grant || authenticated) {
-        authenticated = true;
-        let remember = (req.cookies[conf.cookie_remember] == conf.remember_on);
-        if(remember == conf.remember_off) {
-            res.clearCookie(conf.cookie_permision);
-            res.clearCookie(conf.cookie_remember);
-        }
-        res.redirect('/main');
-    }
-    else {
-        res.clearCookie(conf.cookie_user)
-        res.redirect('/login');
-    }
-}
 
 const load_login = (req, res) => {
     console.log(`----------------------- load_login ${req.socket.remoteAddress} --------------------------`);
@@ -51,88 +27,100 @@ const load_login = (req, res) => {
     res.sendFile(filePath);
 }
 
-const load_main = (req, res) => {
+const load_main = async (req, res) => {
     console.log(` ----------------------- load_main ${req.socket.remoteAddress} --------------------------`);
-    if(!authenticated) {
-        res.redirect(conf.root_path);
+
+    // Get session cookies
+    let user_logged = req.cookies[conf.tkride_user];
+    let ip_logged = req.cookies[conf.tkride_ip];
+    let ip = req.socket.remoteAddress.split(':').slice(-1)[0];
+    let timestamp_logged = req.cookies[conf.tkride_login_timestamp] || '';
+    let logged = false;
+    if((ip_logged == ip) && (timestamp_logged.length > 0)) {
+        logged = await dal.check_user_logged(user_logged, ip_logged, timestamp_logged);
+    }
+
+    if(logged == false) {
+        res.redirect('/login');
         return;
     }
     let file = conf.main_html;
     let filePath = path.join(app_dir, conf.www_path, file);
-    if(req.cookies[conf.cookie_user]) {
-        res.cookie(conf.cookie_user, req.cookies[conf.cookie_user]);
-    }
     res.sendFile(filePath);
 }
 
 const process_query = (req, res) => {
     console.log(`----------------------- process_query ${req.socket.remoteAddress} --------------------------`);
-    if(authenticated) {
-        console.log('PROCESSING....');
-        var query = req.body.query;
-        var request = TSQL.parse(query)
-        bInterface.process(request)
-        .then(data => res.send(data))
-        .catch(err => JSON.stringify('ERROR PERRA'));
-    }
+    console.log('PROCESSING....');
+    var query = req.body.query;
+    var request = TSQL.parse(query)
+    bInterface.process(request)
+    .then(data => res.send(data))
+    .catch(err => JSON.stringify(`ERROR:${err}`));
 }
 
 const process_ddbb = async (req, res) => {
     console.log(`----------------------- process_ddbb ${req.socket.remoteAddress} --------------------------`);
-    // if(authenticated) {
-        console.log('PROCESSING....');
-        let ip = req.socket.remoteAddress.split(':').slice(-1);
-        let query = req.body.query;
-        let user = req.body.user;
-        let params = req.body.params;
-        let is_logged = await dal.check_user_logged(user, ip);
-        if(is_logged) {
-            dal.process_query({ action: query, params: params })
-            .then( data => res.send(JSON.stringify(data)) )
-            .catch( error => res.send(JSON.stringify(error)) );
-        }
-    // }
+    console.log('PROCESSING....');
+    let ip = req.socket.remoteAddress.split(':').slice(-1);
+    let query = req.body.query;
+    let user = req.body.user;
+    let login_timestamp = req.body.login_timestamp || '';
+    let params = req.body.params;
+    let is_logged = await dal.check_user_logged(user, ip, login_timestamp);
+    if(is_logged) {
+        dal.process_query({ action: query, params: params })
+        .then( data => res.send(JSON.stringify(data)) )
+        .catch( error => res.send(JSON.stringify(error)) );
+    }
+    else {
+        res.clearCookie(conf.tkride_user);
+        res.clearCookie(conf.tkride_ip);
+        res.clearCookie(conf.tkride_login_timestamp);
+        res.clearCookie(conf.tkride_remember);
+        // res.send(JSON.stringify(''));
+        res.status(403).send('login');
+        // res.redirect(conf.root_path);
+    }
 }
 
-
-const authenticate = (req, res) => {
+const login_user = (req, res) => {
     console.log(`----------------------- authenticate ${req.socket.remoteAddress} --------------------------`);
     var query = '';
 
     req.on('data', data => query += data);
     req.on('end', () => {
         var auth = new URLSearchParams(query);
-        console.log(auth);
+        // console.log(auth);
         let user = auth.get(conf.login_user);
         let pass = auth.get(conf.login_password);
-        let ip = req.socket.remoteAddress.split(':').slice(-1);
+        let login_timestamp = new Date().toLocaleString().replace(',', '');
+        let ip = req.socket.remoteAddress.split(':').slice(-1)[0];
         let remember = (auth.get(conf.login_remember) == null) ? conf.remember_off : conf.remember_on;
 
-        dal.authenticate_user(user, pass, ip)
+        dal.login_user(user, pass, ip, login_timestamp)
         .then( logged => {
-            console.log('User logged:', logged);
-            res.cookie(conf.cookie_remember, remember);
+            console.log(`User ${user} logged: ${logged} at ip: ${ip}.`);
+            res.cookie(conf.tkride_remember, remember);
             if(logged) {
                 console.log("REDIRECT.");
                 // Write cookies
-                res.cookie(conf.cookie_permision, conf.permission_grant);
-                res.cookie(conf.cookie_user, user);
+                res.cookie(conf.tkride_user, user);
+                res.cookie(conf.tkride_ip, ip);
+                res.cookie(conf.tkride_login_timestamp, login_timestamp);
                 req.body.user = user;
-                load_main(req, res);
-                // res.redirect(conf.root_path);
+                // load_main(req, res);
             }
             else {
                 console.log(`Login error for ${user} (${new Date().toLocaleString()})`);
                 // Write cookies
-                res.cookie(conf.cookie_permision, conf.permission_denied);
                 // res.writeHead(200, { 'Content-Type': 'text/html' });
                 // res.write(' Error de login');
-                res.redirect(conf.root_path);
-                // res.end();
             }
+            res.redirect(conf.root_path);
         });
     })
 }
 
-module.exports = { check_permissions, load_login, load_main, process_query, authenticate, process_ddbb }
+module.exports = { /*check_permissions,*/ load_login, load_main, process_query, login_user, process_ddbb }
 

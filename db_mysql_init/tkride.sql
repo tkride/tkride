@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Servidor: localhost
--- Tiempo de generación: 25-03-2022 a las 23:40:46
+-- Tiempo de generación: 28-03-2022 a las 13:19:39
 -- Versión del servidor: 5.5.24-log
 -- Versión de PHP: 5.4.3
 
@@ -67,18 +67,23 @@ END$$
 --
 -- Funciones
 --
-CREATE DEFINER=`root`@`localhost` FUNCTION `CHECK_USER_LOGGED`(`user_` VARCHAR(50), `ip_` VARCHAR(15)) RETURNS tinyint(1)
+CREATE DEFINER=`root`@`localhost` FUNCTION `CHECK_USER_LOGGED`(`user_` VARCHAR(50), `ip_` VARCHAR(15), `login_time_` VARCHAR(17)) RETURNS tinyint(1)
     NO SQL
 BEGIN
-	DECLARE logged_ TINYINT(1) DEFAULT 0;
-        DECLARE current_ip_ VARCHAR(15) DEFAULT NULL;
+        DECLARE priv_ TINYINT(1) DEFAULT -1;
+        DECLARE format_time_ DATETIME DEFAULT NULL;
         
-	SELECT logged, ip INTO logged_, current_ip_ FROM users WHERE user like user_;
-        IF logged_ = 1 AND STRCMP(current_ip_, ip_) = 0 THEN
-        	return 1;
-        ELSE
-        	return 0;
-        END IF;
+        SELECT STR_TO_DATE(login_time_, '%d/%m/%Y %H:%i:%s') INTO format_time_;
+        
+	SELECT priviledges
+        INTO priv_
+        FROM users
+        WHERE user = user_
+        AND logged = 1
+        AND ip = ip_
+        AND login_time = format_time_;
+        
+        RETURN priv_;
 END$$
 
 CREATE DEFINER=`root`@`localhost` FUNCTION `DELETE_PATTERN`(`user_` VARCHAR(50), `name_` VARCHAR(50)) RETURNS tinyint(1)
@@ -92,22 +97,25 @@ BEGIN
         RETURN ROW_COUNT();
 END$$
 
-CREATE DEFINER=`root`@`localhost` FUNCTION `LOG_USER`(`user_` VARCHAR(50), `pass_` VARCHAR(15), `ip_` VARCHAR(15)) RETURNS tinyint(1)
+CREATE DEFINER=`root`@`localhost` FUNCTION `LOGIN_USER`(`user_` VARCHAR(50), `pass_` VARCHAR(15), `ip_` VARCHAR(15), `login_time_` VARCHAR(17)) RETURNS tinyint(1)
     NO SQL
+    DETERMINISTIC
 BEGIN
 	DECLARE key_crypt_ VARCHAR(50) DEFAULT NULL;
+        DECLARE priv_ TINYINT(1) DEFAULT -1;
+        DECLARE format_time_ DATETIME DEFAULT NULL;
         
         SELECT value INTO key_crypt_ FROM system WHERE name LIKE 'key_crypt';
         
-        UPDATE users SET logged = 1, ip = ip_
+        SELECT STR_TO_DATE(login_time_, '%d/%m/%Y %H:%i:%s') INTO format_time_;
+        
+        UPDATE users SET logged = 1, ip = ip_, login_time = format_time_
         WHERE user LIKE user_
         AND DECODE(pass, key_crypt_) LIKE pass_;
         
-        IF ROW_COUNT() > 0 THEN	
-        	return 1;
-        ELSE
-        	return 0;
-        END IF;
+        SELECT CHECK_USER_LOGGED(user_, ip_, login_time_) INTO priv_;
+        
+        return priv_;
 END$$
 
 CREATE DEFINER=`root`@`localhost` FUNCTION `SAVE_PATTERN`(`user_` VARCHAR(50), `name_` VARCHAR(50), `values_` VARCHAR(255)) RETURNS tinyint(1)
@@ -145,7 +153,7 @@ CREATE TABLE IF NOT EXISTS `patterns` (
   `values` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK_PATTERNS` (`name`,`id_user`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=67 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=96 ;
 
 -- --------------------------------------------------------
 
@@ -188,8 +196,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(50) NOT NULL,
   `pass` varchar(15) NOT NULL,
   `logged` tinyint(4) NOT NULL DEFAULT '0',
-  `log_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `login_time` datetime NOT NULL,
   `ip` varchar(15) NOT NULL,
+  `priviledges` tinyint(1) NOT NULL DEFAULT '3',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user` (`user`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;

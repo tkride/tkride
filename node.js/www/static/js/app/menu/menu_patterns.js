@@ -148,8 +148,10 @@ class MenuPatterns {
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor(model) {
-        this.init(model);
+    constructor(models) {
+        this.#models = models;
+        if(models == undefined) { console.warn('MODELS NOT DEFINED.'); }
+        this.init();
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
@@ -549,15 +551,9 @@ class MenuPatterns {
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
-    init(models) {
+    init() {
         var that = this;
         try {
-            // Loads model data
-            if(models) {
-                this.#models = models;
-            }
-            else console.warn('Patterns Model not defined.');
-
             MenuPatterns.PATTERN_TYPE_CALLBACK = {
                 [Const.MOVIMIENTOS_ID]: this.#show_menu_movements,
                 [Const.RETROCESOS_ID]: this.#show_menu_retracements,

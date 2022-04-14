@@ -61,6 +61,7 @@ class ChartController {
     interface_ddbb;
     session_info;
     user;
+    login_timestamp;
     //Ticker filter
     #ticker_filter;
     //Time frame
@@ -195,10 +196,15 @@ class ChartController {
         };
 
         if(this.#activeChart == null) {
-            this.create_chart({ col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
+            let id_chart = this.create_chart({ col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
+            this.#chart_frames[id_chart][Const.ACTIVE_ID] = this.currActive;
         }
-        
+try{        
         this.#update_chart_header();
+}
+catch(err) {
+    console.log(err);
+}
         
         this.active_chart.showLoading(ChartView.SHOW_LOADING_OPS);
         this.plot_historical(query, this.active_chart, null, true)
@@ -230,98 +236,98 @@ class ChartController {
         // $(document).on(plot_event_id, e => { if(event_id) $(document).trigger(event_id); });
     }
 
-    event_ddbb_load_user_patterns() {
-        console.log('Load patterns.');
-        return this.interface_ddbb.process({ user: this.interface_ddbb.user, query: DDBB.LOAD_USER_PATTERNS, params: this.interface_ddbb.user })
-        .then( res => {
-            if(res.errno == undefined) {
-                let patterns = {};
-                console.log('Patterns loaded:', res);
-                res[0].forEach( row => {
-                    try {
-                        let pattern = JSON.parse(row.values);
-                        patterns[pattern[Const.ID_ID]] = pattern;
-                    }
-                    catch(err) { console.error('Error loading pattern information:', err); }
-                });
-                this.models[Const.PATTERNS_ID] = patterns;
-                $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
-                return true;
-            }
-            else {
-                console.error('Error loading patterns:', res);
-                let msg_error = this.interface_ddbb.get_error_message(res);
-                this.write_status({error:'(!) Error cargando patrones: ' + msg_error, timeout: 5000});
-                return false;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            return false;
-        });
-    }
+    // event_ddbb_load_user_patterns() {
+    //     console.log('Load patterns.');
+    //     return this.interface_ddbb.process({ user: this.interface_ddbb.user, query: DDBB.LOAD_USER_PATTERNS, params: this.interface_ddbb.user })
+    //     .then( res => {
+    //         if(res.errno == undefined) {
+    //             let patterns = {};
+    //             console.log('Patterns loaded:', res);
+    //             res[0].forEach( row => {
+    //                 try {
+    //                     let pattern = JSON.parse(row.values);
+    //                     patterns[pattern[Const.ID_ID]] = pattern;
+    //                 }
+    //                 catch(err) { console.error('Error loading pattern information:', err); }
+    //             });
+    //             this.models[Const.PATTERNS_ID] = patterns;
+    //             $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+    //             return true;
+    //         }
+    //         else {
+    //             console.error('Error loading patterns:', res);
+    //             let msg_error = this.interface_ddbb.get_error_message(res);
+    //             this.write_status({error:'(!) Error cargando patrones: ' + msg_error, timeout: 5000});
+    //             return false;
+    //         }
+    //     })
+    //     .catch(err => {
+    //         console.error(err);
+    //         return false;
+    //     });
+    // }
 
-    event_ddbb_delete_pattern(pattern) {
-        console.log('Delete pattern:', pattern);
-        pattern.user = this.interface_ddbb.user;
-        return this.interface_ddbb.process({ user: pattern.user, query: DDBB.DELETE_PATTERN, params: pattern })
-        .then( res => {
-            if(res.errno == undefined) {
-                if(res >= 1) {
-                    console.log('Pattern deleted:', res);
-                    this.event_ddbb_load_user_patterns()
-                    .then( res => res)
-                    .catch( error => {
-                        console.error(error);
-                        this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
-                        return false;
-                    });
-                }
-                else {
-                    console.log(`Pattern do not exist in database ${pattern[Const.NAME_ID]}.`);
-                    this.write_status({info:'El patrón no existe en base de datos', timeout: 5000});
-                }
-            }
-            else {
-                console.error('Error deleting pattern:', res);
-                let msg_error = this.interface_ddbb.get_error_message(res.errno);
-                this.write_status({error:'(!) Error borrando patrón: ' + msg_error, timeout: 5000});
-                return false;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            return false;
-        });
-    }
+    // event_ddbb_delete_pattern(pattern) {
+    //     console.log('Delete pattern:', pattern);
+    //     pattern.user = this.interface_ddbb.user;
+    //     return this.interface_ddbb.process({ user: pattern.user, query: DDBB.DELETE_PATTERN, params: pattern })
+    //     .then( res => {
+    //         if(res.errno == undefined) {
+    //             if(res >= 1) {
+    //                 console.log('Pattern deleted:', res);
+    //                 this.event_ddbb_load_user_patterns()
+    //                 .then( res => res)
+    //                 .catch( error => {
+    //                     console.error(error);
+    //                     this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
+    //                     return false;
+    //                 });
+    //             }
+    //             else {
+    //                 console.log(`Pattern do not exist in database ${pattern[Const.NAME_ID]}.`);
+    //                 this.write_status({info:'El patrón no existe en base de datos', timeout: 5000});
+    //             }
+    //         }
+    //         else {
+    //             console.error('Error deleting pattern:', res);
+    //             let msg_error = this.interface_ddbb.get_error_message(res.errno);
+    //             this.write_status({error:'(!) Error borrando patrón: ' + msg_error, timeout: 5000});
+    //             return false;
+    //         }
+    //     })
+    //     .catch(err => {
+    //         console.error(err);
+    //         return false;
+    //     });
+    // }
 
-    event_ddbb_save_pattern(pattern) {
-        console.log('Save pattern into DDBB.');
-        pattern.user = this.interface_ddbb.user;
-        return this.interface_ddbb.process({ user: pattern.user, query: DDBB.SAVE_PATTERN, params: JSON.stringify(pattern) })
-        .then( res => {
-            if(res == 1) {
-                console.log('Pattern saved:', res);
-                this.event_ddbb_load_user_patterns()
-                .then( res => res)
-                .catch( error => {
-                    console.error(error);
-                    this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
-                    return false;
-                });
-            }
-            else {
-                console.error('Error saving pattern:', res);
-                let msg_error = this.interface_ddbb.get_error_message(res);
-                this.write_status({error:'(!) Error guardando patrón: ' + msg_error, timeout: 5000});
-                return false;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            return false;
-        });
-    }
+    // event_ddbb_save_pattern(pattern) {
+    //     console.log('Save pattern into DDBB.');
+    //     pattern.user = this.interface_ddbb.user;
+    //     return this.interface_ddbb.process({ user: pattern.user, query: DDBB.SAVE_PATTERN, params: JSON.stringify(pattern) })
+    //     .then( res => {
+    //         if(res == 1) {
+    //             console.log('Pattern saved:', res);
+    //             this.event_ddbb_load_user_patterns()
+    //             .then( res => res)
+    //             .catch( error => {
+    //                 console.error(error);
+    //                 this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
+    //                 return false;
+    //             });
+    //         }
+    //         else {
+    //             console.error('Error saving pattern:', res);
+    //             let msg_error = this.interface_ddbb.get_error_message(res);
+    //             this.write_status({error:'(!) Error guardando patrón: ' + msg_error, timeout: 5000});
+    //             return false;
+    //         }
+    //     })
+    //     .catch(err => {
+    //         console.error(err);
+    //         return false;
+    //     });
+    // }
     
     // loopPromise(i, cb, end) {
     //     var that = this;
@@ -418,7 +424,7 @@ class ChartController {
                 let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
                 let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
                 that.active_chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
-                that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER, ChartView.DATA_ZOOM_X_SLIDER ] }, { replaceMerge: ['dataZoom']} );
+                that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER/*, ChartView.DATA_ZOOM_X_SLIDER*/ ] }, { replaceMerge: ['dataZoom']} );
                 console.log(that.get_chart_option('yAxis'));
                 console.log(that.get_chart_option('dataZoom'));
             });
@@ -449,7 +455,7 @@ class ChartController {
         if(!this.#menus[MenuMovs.NAME]) { this.#menus[MenuMovs.NAME] = new MenuMovs(); }
         // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#patterns); }
         // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#chart_models); }
-        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#models); }
+        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.patterns_dao.models); }
         if(!this.#menus[MenuSettings.NAME]) { this.#menus[MenuSettings.NAME] = new MenuSettings(this); }
         // if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#chart_models); }
         if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
@@ -457,10 +463,10 @@ class ChartController {
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
     }
 
-    #init_interfaces(url, user) {
+    #init_interfaces() {
         // Creates interface with TSQL scripting
-        this.interface = new InterfaceTSQL(url);
-        this.interface_ddbb = new InterfaceDDBB(url, user);
+        this.interface = new InterfaceTSQL(Const.ROOT_URL);
+        this.interface_ddbb = new InterfaceDDBB(Const.ROOT_URL, this.user, this.login_timestamp);
     }
 
     #init_brokers() {
@@ -485,16 +491,17 @@ class ChartController {
     //----------------------------- PUBLIC METHODS -----------------------------
 
     // init(brokers_list, headers, view) {
-    init(user, view) {
+    init(user, login_timestamp, view) {
         var that = this;
         this.user = user;
+        this.login_timestamp =login_timestamp;
 
         try {
             // Init interfaces to decouple data access with server
-            this.#init_interfaces(Const.ROOT_URL, user);
+            this.#init_interfaces();
             
             // Create patterns model
-            this.patterns_model = new PatternsModel(this.interface_ddbb, this.#models);
+            this.patterns_dao = new PatternsDAO(this.interface_ddbb, this.#models);
 
             // Creates all option menus
             this.#create_menus();
@@ -519,10 +526,17 @@ class ChartController {
 
             // Load last session
             console.log('Load last user session.');
-            this.interface_ddbb.process({ user: 'ruben', query: DDBB.LOAD_SESSION, params: 'ruben' })
+            this.interface_ddbb.process({ user: this.interface_ddbb.user,
+                                          login_timestamp: this.interface_ddbb.login_timestamp,
+                                          query: DDBB.LOAD_SESSION,
+                                          params: this.interface_ddbb.user })
             .then( res => console.log('Last session info:', res))
             .catch(err => console.err(err));
-        
+
+            // Set autosave last session timer
+            setInterval(this.save_session, Const.AUTOSAVE_SESSION_TIME, this);
+            
+            
             //TODO REVISAR EVENTOS QUE DEBE GESTIONAR ESTE CONTROLADOR - SEPARAR EVENTOS DE TECLADO -> MOVER AL CONTROLADOR DE TECLADO
             // Enables events managed by chart controller
             this.enable_events();
@@ -642,7 +656,17 @@ class ChartController {
 
                 let ret_plot = that.#view.format_retracements(pattern);
                 that.#view.plot_retracements(ret_plot, that.active_chart);
-                that.#view.draw_fibonacci(ret_plot, query, that.active_chart);
+                let fibo_ret = that.#view.format_fibo_retracement_data(pattern);
+                // that.#view.draw_fibonacci(ret_plot, fibo_ret, query, that.active_chart);
+                let fibos = [];
+                Object.values(pattern).forEach(p => {
+                    if(Object.keys(p[Const.DATA_ID]).length) {
+                        Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach(r => {
+                            fibos.push(new Fibonacci(r, { name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }) );
+                        });
+                    }
+                });
+                that.#view.draw_fibonacci(fibos, that.active_chart);
             });
 
             // Handles event to load candles historic
@@ -651,14 +675,32 @@ class ChartController {
             // Time Frame header //TODO CAMBIAR
             // this.#build_header();
 
-            $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => that.event_ddbb_load_user_patterns());
-            // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => this.patterns_model.load_patterns());
+            // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => that.event_ddbb_load_user_patterns());
+            // $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => that.event_ddbb_delete_pattern(pattern_name));
+            // $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => that.event_ddbb_save_pattern(pattern));
+            $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => {
+                this.patterns_dao.load_patterns()
+                .then(res => $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL))
+                .catch(error => this.write_status( { error: error, timeout: 5000 }));
+            });
 
-            $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => that.event_ddbb_delete_pattern(pattern_name));
-            // $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => this.patterns_model.delete_pattern(pattern_name));
+            $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => {
+                this.patterns_dao.delete_pattern(pattern_name)
+                .then(res => {
+                    this.write_status({info: `Patrón ${pattern_name[Const.NAME_ID]} eliminado.`, timeout: 5000});
+                    $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+                })
+                .catch(error => this.write_status({error: error, timeout: 5000}));
+            });
 
-            $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => that.event_ddbb_save_pattern(pattern));
-            // $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => this.patterns_model.save_pattern(pattern));
+            $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => {
+                this.patterns_dao.save_pattern(pattern)
+                .then(res => {
+                    this.write_status({info: `Patrón ${pattern[Const.ID_ID]} guardado.`, timeout: 5000});
+                    $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+                })
+                .catch(error => this.write_status({error: error, timeout: 5000}));
+            });
 
             console.log("Chart Controller Initialized OK.");
         }
@@ -782,13 +824,12 @@ class ChartController {
         try {
             let id = this.#n_frames + '_' + Date.now();
             let frame = this.generate_layout(place, id);
-            let chart = this.#view.create_chart(frame[0])
-            let chart_info = { chart:chart, id: id, num:this.#n_frames, frame: frame }
-            this.#chart_frames[id] = chart_info;
+            // TODO GUARDAR EL ARBOL EN LA VISTA?
+            this.#chart_frames[id] = this.#view.create_chart({ id: id, num: this.#n_frames, frame: frame })
             this.#n_frames++;
-            this.#activeChart = chart_info;
+            this.#activeChart = this.#chart_frames[id];
             this.#create_header();
-            return this.#activeChart;
+            return id; //this.#activeChart;
         }
         catch(error) {
             console.error('Error creating chart:', error);
@@ -946,6 +987,24 @@ class ChartController {
         
     }
 
+    save_session(that) {
+        // Save current session
+        let session = {};
+        let resource = {};
+        Object.keys(that.#chart_frames).forEach( ch => {
+            // console.log(that.#chart_frames[ch]);
+            session[ch] = {};
+            session[ch] = that.#chart_frames[ch][Const.ACTIVE_ID];
+            resource[ch] = '';
+        });
+        
+        that.interface_ddbb.process({ user: that.interface_ddbb.user,
+                                        login_timestamp: that.interface_ddbb.login_timestamp,
+                                        query: DDBB.SAVE_SESSION,
+                                        params: JSON.stringify({ user: that.interface_ddbb.user, resources: JSON.stringify(resource), sessions: JSON.stringify(session) }) })
+        // .then( res => console.log(`Save session ${new Date().toLocaleString()} done.`))
+        .catch(err => console.err(err));
+    }
     // INTERFACE METHODS
     // Load data from server
 
@@ -1016,38 +1075,6 @@ class ChartController {
             .catch( error => console.error('Error loading max:', error));
         });
     }
-
-    // load_movements(model_key, level, level_max) {
-    //     return new Promise( (resolve, reject) => {
-    //         let movs = $.Deferred();
-    //         // if(!model_key) model_key = this.generate_model_key(request, this.#activeChart.id);
-    //         if(!model_key) model_key = this.current_model_key;
-
-    //         if( (!this.#chart_models[model_key].movs) || (!Object.keys(this.#chart_models[model_key].movs).includes(String(level))) ) {
-    //         // if( (!this.#chart_models[model_key].movs) || (!Object.keys(this.#chart_models[model_key].movs).includes(parseInt(level))) ) {
-    //             this.select_data(this.currActive)
-    //             .then( () => this.select_maximum(model_key, level, level_max))
-    //             .then( () => this.interface.load_movements(model_key, level))
-    //             .then( rawData => {
-    //                 let ret = this.#chart_models[model_key].split_movements_data(rawData);
-    //                 if(ret === 'string' ) reject(ret);
-    //                 console.log(ret[level]);
-    //                 movs.resolve(ret);
-    //             })
-    //             .catch( error => {
-    //                 console.log('Error loading movements:', error);
-    //                 movs.reject(error);
-    //             });
-    //         }
-    //         else {
-    //             movs.resolve(this.#chart_models[model_key].movs[level]);
-    //         }
-
-    //         $.when(movs)
-    //         .done( data => resolve(data))
-    //         .catch( error => reject(error));
-    //     });
-    // }
 
     load_retracements(request, model_key) {
         return new Promise( (resolve, reject) => {

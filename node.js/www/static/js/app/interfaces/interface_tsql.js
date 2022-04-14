@@ -41,7 +41,17 @@ class InterfaceTSQL {
         console.log(query);
         let worker = new Worker('/static/js/app/ajax_worker.js');
         worker.onmessage = e => {
-            successCb(JSON.parse(e.data));
+            let data = e.data;
+            if(data.status == 200) {
+                if(successCb) {
+                    successCb(JSON.parse(data.data));
+                }
+            }
+            else if(data.status == 403) {
+                if(errorCb) {
+                    errorCb(data);
+                }
+            }
             worker.terminate();
         }
         // worker.postMessage({ query:JSON.stringify(query), headers:this.#headers, url, timeout });

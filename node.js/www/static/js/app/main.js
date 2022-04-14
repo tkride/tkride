@@ -10,11 +10,15 @@ $(document).ready(function() {
     let cookies = {};
     raw_cookies.forEach(c => {
         let kv = c.split('=');
-        cookies[kv[0]] = kv[1];
+        cookies[kv[0].trim(' ')] = kv[1];
     });
     let user;
-    if(cookies.cookie_user) {
-        user = cookies.cookie_user;
+    if(cookies.tkride_user) {
+        user = cookies.tkride_user;
+    }
+    let login_timestamp;
+    if(cookies.tkride_login_timestamp) {
+        login_timestamp = cookies.tkride_login_timestamp;
     }
 
     // ---------------------------------------- CREATES CHART ----------------------------------------
@@ -27,7 +31,7 @@ $(document).ready(function() {
     // const init_controller = (ctrl, brokers, headers) => new Promise((resolve, reject) => {
     const init_controller = (ctrl) => new Promise((resolve, reject) => {
         if(ctrl) {
-            ctrl.init(user);
+            ctrl.init(user,login_timestamp);
             resolve(ctrl);
         }
         else reject(null);

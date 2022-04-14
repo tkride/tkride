@@ -650,7 +650,7 @@ class Display {
         if(this.#css) this.#element.css(this.#css);
 
         if(this.#tooltip) {
-            this.#element.attr('title', this.#tooltip);
+            this.#element.prop('title', this.#tooltip);
         }
 
         // Append content div

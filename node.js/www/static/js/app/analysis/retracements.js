@@ -170,6 +170,9 @@ class Retracements {
                         }
                     }
                     
+                    // Append retracement levels item list
+                    m[Const.RET_LEVELS_ID] = {};
+
                     ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
                     if(ok) retracements.push(m);
                     else nok.push(m);
@@ -207,9 +210,8 @@ class Retracements {
                 }
 
                 // Append calculated retracement level price data
-                ret[Const.RET_LEVELS_ID].forEach( l => {
-                    retracements.map( (v, i) => v[l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l) );
-                });
+
+                retracements.map( v => ret[Const.RET_LEVELS_ID].forEach( l => v[Const.RET_LEVELS_ID][l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l)) );
                 
                 // Sort results by timestamp
                 retracements.sort();

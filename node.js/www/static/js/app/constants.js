@@ -296,6 +296,9 @@ class Const {
     static ONLY_MAX_MOVEMENT = 1;
     static ONLY_MAX_RETRACEMENT = -1;
 
+    // NAMES
+    static FIBO_RET_ID = 'FIBO_RET';
+
     // CANDLES INDEX
     static IDX_CANDLE_TIME = 0;
     static IDX_CANDLE_OPEN = Const.IDX_CANDLE_TIME + 1;
@@ -330,6 +333,14 @@ class Const {
     static IDX_RET_LEVELS = 8;
 
     static DEFAULT_LOAD_HISTORIC_TIMEOUT = 20 * 1000;
+
+    // SESSION
+    static AUTOSAVE_SESSION_TIME = (1 * 60 * 1000); //1 minute
+    static ACTIVE_ID = 'active';
+
+    static CHART_ID = 'chart';
+    static CHART_INFO_ID = 'chart_info';
+    static GRAPHICS_ID = 'graphic';
 }
     
 
@@ -529,6 +540,7 @@ class Time {
 
 class DDBB {
     static LOAD_SESSION = 'load_session';
+    static SAVE_SESSION = 'save_session';
     static CHECK_USER_LOGGED = 'check_user_logged';
     static AUTHENTICATE_USER = 'authenticate_user';
     static DELETE_PATTERN = 'delete_pattern';

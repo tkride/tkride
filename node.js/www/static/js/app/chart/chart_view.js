@@ -1,6 +1,5 @@
 /**file: chart_view.js */
 
-
 class ChartView {
 
     // ----------------------------- STATIC, CONSTANTS -----------------------------
@@ -40,6 +39,10 @@ class ChartView {
                             // realtime: true,
                             zoomOnMouseWheel: true,
                             moveOnMouseWheel: 'ctrl',
+                            // animation: {
+                            //    duration: 0,
+                            //    easing: 'linear',
+                            // }
                             // start: 30,
                             // end: 70,
                             // start: 99,
@@ -80,10 +83,18 @@ class ChartView {
                             filterMode: 'none',
                         };
 
+    static CHART_ZOOM_DISABLED = [{ dataZoom: [/*ChartView.DATA_ZOOM_X_SLIDER*/] }, {replaceMerge: ['dataZoom']}];
+
+    static prev_tooltip_info = '';
+
     // ----------------------------- PROPERTIES -----------------------------
     cnf = new ChartSettings();
-    #chart_view;
+    #chart_view; // TODO SOLO GUARDA OPTION DEL ULTIMO CHART, BORRAR?
     timeFrame = '';
+    static chart_tree = {};
+    selected = [];
+    clicked = false;
+    prev_zoom;// = { xdelta: 1, ydelta: 1 };
     
     //----------------------------- CONSTRUCTOR -----------------------------
     constructor(chartSettings) {
@@ -117,18 +128,13 @@ class ChartView {
 
             // Iterates over all retracement patterns names
             Object.keys(data_source).forEach(n => {
-                // if ((data_source[n] instanceof Retracement) == false) {
-                    // console.error('Retracement data type expected, received ' + typeof data_source + ' instead.');
-                // }
-                // else {
-                    // Iterates over all levels available in each retracement pattern
+                // Iterates over all levels available in each retracement pattern
                 Object.keys(data_source[n][Const.DATA_ID]).forEach(l => {
                     let dl = data_source[n][Const.DATA_ID][l];
                     data_ret.push(...dl.map(r => [[r[Const.END_ID].time, r[Const.END_ID].price], r[Const.RET_ID], Const.TREND_STR[r[Const.TREND_ID]], n] ));
-                    data.push(...dl.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID], Const.TREND_STR[d[Const.TREND_ID]], n ]
+                    data.push(...dl.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID], Const.TREND_STR[d[Const.TREND_ID]], d[Const.RET_LEVELS_ID], n ]
                                         .map(dd => dd.time ? [dd.time, dd.price] : dd) ));
                 });
-                // }
             });
 
             // data_ret = data_source.data[level].map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
@@ -161,6 +167,7 @@ class ChartView {
                 data: data,
                 data_ret: data_ret,
                 trend: trend,
+                levels: [0],
                 // dataType: data_source.dataType,
                 // stats: stats,
                 // data_ret_levels: data_ret_levels,
@@ -183,14 +190,77 @@ class ChartView {
         return res;
     }
 
+    format_fibo_retracement_data(data_source) {
+        // Iterates over all retracement patterns names
+        let res = [];
+        try {
+            Object.keys(data_source).forEach(n => {
+                // Iterates over all levels available in each retracement pattern
+                Object.keys(data_source[n][Const.DATA_ID]).forEach(l => {
+                    let data_level = data_source[n][Const.DATA_ID][l];
+                    res.push(...data_level.map((r, i) => {
+                        let name = `${Const.FIBO_RET_ID}_${n}_${l}_${i}`;
+                        let trend = Const.TREND_STR[r[Const.TREND_ID]];
+                        let ret_levels = r[Const.RET_LEVELS_ID];
+                        let levels = Object.keys(ret_levels);
+                        let values = Object.values(ret_levels);
+                        // Y values (price
+                        let ymin = Math.min(...levels);
+                        let ymax = Math.max(...levels);
+                        let ystart, yend;
+                        [ystart, yend] = [r[Const.INIT_ID].price, r[Const.END_ID].price];
+                        if(ystart > yend) { [ystart, yend] = [yend, ystart]; }
+                        let height = yend - ystart;
+                        // X values (time)
+                        let xstart, xend;
+                        [xstart, xend] = [r[Const.END_ID].time, r[Const.CORRECTION_ID].time];
+                        let width = xend - xstart;
+                        return {
+                            name: name,
+                            trend: trend,
+                            levels: levels,
+                            values: values,
+                            xstart: xstart,
+                            xend: xend,
+                            width: width,
+                            ystart: ystart,
+                            yend: yend,
+                            height: height,
+                            ymin: ymin,
+                            ymax: ymax,
+                        }
+                    }));
+                });
+            });
+        }
+        catch(error) {
+            console.error(error);
+            res = error;
+        }
+        return res;
+    }
+
 
     //----------------------------- PUBLIC METHODS -----------------------------
-    create_chart(frame) {
+    create_chart(params) {
+        let id = params.id;
+        let frame = params.frame[0];
         let chart = echarts.init(frame);
+        // chart.setOption({animatoinEasing: 'linear'});
+        // chart.setOption({animationEasingUpdate: 'linear'});
+        // chart.setOption({animationDuration: 0});
+        // chart.setOption({animationDurationUpdate: 0});
+        chart[Const.ID_ID] = id;
         // let timeFrame = this.create_time_frame(name);
         // $(frame).append(timeFrame);
         $(window).resize(function() { chart.resize(); });
-        return chart;
+        this.update_zoom(chart);
+        this.zoomAxis(chart, id);
+        ChartView.chart_tree[id] = {};
+        ChartView.chart_tree[id][Const.CHART_ID] = chart;
+        ChartView.chart_tree[id][Const.GRAPHICS_ID] = {};
+        let chart_info = { chart: chart, id: id, num: params.num, frame: params.frame }
+        return chart_info;
     }
 
     // create_time_frame(name='') {
@@ -271,10 +341,17 @@ class ChartView {
                         // left: 65,//'5%', //'-100%',
                         // right: '0%', //'-100%',
                         // top: '0%', //'-200%',
-                        left: 65,
-                        bottom: '8%',
-                        height: '91.8%',
-                        width: '96.6%',
+                        // left: 65,
+                        left: '1%',
+                        // bottom: '8%',
+                        bottom: '10px',
+                        // height: '91.8%',
+                        height: '95%',
+                        // width: '96.6%',
+                        width: '98.5%',
+                        containLabel: true,
+                        // z: 99,
+                        // zlevel: 1,
                     },
                     // {
                     //     left: '5%',
@@ -290,6 +367,8 @@ class ChartView {
                         // type: 'category',
                         // type: 'datetime',
                         type: 'time',
+                        triggerEvent: true,
+                        silent: false,
                         // data: data.data_x,
                         backgroundColor: ChartView.BACKGROUND_COLOR,
                         position: 'bottom',
@@ -301,6 +380,7 @@ class ChartView {
                         axisLabel: { show: true },
                         min: null, //'1970-01-01 00:00:00',//'dataMin',
                         max: null, //'2022-11-01 00:00:00', //Time.add_value(Time.now(Time.FORMAT_STR), '1M').format(Time.FORMAT_STR),//'dataMax',
+                        // boundaryGap: true,
                         axisLabel: {
                             formatter: axisValue => {
                               return moment(axisValue).format("MM-DD HH:mm");
@@ -312,14 +392,22 @@ class ChartView {
                 yAxis:[
                     {
                         scale: true,
+                        triggerEvent: true,
+                        silent: false,
                         gridIndex: 0,
                         splitNumber: 10,
-                        axisLine: { show: true },
+                        axisLine: { show: true, lineStyle: { color: this.cnf.colorTextAxis } },
                         axisTick: { show: false },
                         splitLine: { show: false },
                         axisLabel: { show: true, color: this.cnf.colorTextAxis },
                         min: min_y,
                         max: max_y,
+                        boundaryGap: true,
+                        axisLabel: {
+                            formatter: price => {
+                                return price;
+                            }
+                        }
                     },
                     // {
                     //     scale: true,
@@ -351,7 +439,7 @@ class ChartView {
                 // ],
                 dataZoom: [
                     ChartView.DATA_ZOOM_X_INSIDE,
-                    ChartView.DATA_ZOOM_X_SLIDER,
+                    // ChartView.DATA_ZOOM_X_SLIDER,
                     ChartView.DATA_ZOOM_Y_INSIDE,
                 ],
 
@@ -361,8 +449,8 @@ class ChartView {
                         name: data.name,
                         type: 'candlestick',
                         clip: true,
-                        // clip: false,
                         data: data.data_y,
+                        // connectNulls: true,
                         itemStyle: {
                             color: this.cnf.colorUp,
                             color0: this.cnf.colorDown,
@@ -594,7 +682,7 @@ class ChartView {
                 let ret_series_trend = data.data.map( (r, i) => {
                     let values = r.slice(0, 3);
                     let trend = r[3];
-                    let name = r[4];
+                    let name = r[5];
                     return {
                         id: name + ChartView.TREND_TEXT_ID[trend] + i,
                         name: name,
@@ -763,26 +851,46 @@ class ChartView {
             if(series && (series.length == 0)) { return series; }
             if(curr_option) {
                 if(series) {
-                    let series_filt = curr_option.series;
+                    let chart_series = curr_option.series;
+                    let graphics = (curr_option.graphic && (curr_option.graphic.length)) ? curr_option.graphic[0].elements : [];
                     for(let i=0; i<series.length; i++) {
-                        for(let j=0; j<series_filt.length;) {
-                            if((series_filt[j] != undefined) && (series_filt[j].id.includes(series[i]))) series_filt.splice(j,1);
-                            else j++;
-                        }
+                        graphics = [].concat(...graphics.filter( g => (g != undefined) && g.id.includes(series[i]) == false));
+                        Object.keys(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach(g => {
+                            if(g.includes(series[i])) {
+                                if(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g].remove) {
+                                    ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g].remove(chart);
+                                }
+                                delete ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g];
+                            }
+                        });
+                        chart_series = [].concat(...chart_series.filter( s => (s != undefined) && s.id.includes(series[i]) == false));
                     }
-                    curr_option.series = [...new Set(series_filt)];
-                    // let series_filt = [];
-                    // series.forEach(se => {
-                    //     // series_filt = series_filt.concat(curr_option.series.filter( s => (s!=null) && ((s.name.includes(se) == false) )) );
-                    //     series_filt = series_filt.concat(curr_option.series.filter( s => (s!=null) && ((s.id.includes(se) == false) )) );
-                    // });
-                    // curr_option.series = [...new Set(series_filt)];
-                    //// curr_option.series = curr_option.series.filter(s => (series.indexOf(s.name) < 0));
+                    curr_option.series = [...new Set(chart_series)];
+                    curr_option.graphic = [...new Set(graphics)];
                 }
                 else {
                     if(curr_option.series) { curr_option.series = []; }
+                    if(curr_option.graphic) { curr_option.graphic = []; }
                 }
-                chart.setOption( { series:curr_option.series }, {replaceMerge: ['series']} );
+
+                // Updates chart
+                chart.setOption( { series: [] }, {replaceMerge: ['series']} );
+                chart.setOption( { series: curr_option.series }, {replaceMerge: ['series']} );
+                chart.setOption( { graphic: [] }, {replaceMerge: ['graphic']} );
+                chart.setOption( { graphic: curr_option.graphic }, {replaceMerge: ['graphic']} );
+
+                // Updates chart tree with deleted objects
+                // series.forEach(s => {
+                //     let gs = Object.values(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).filter(sg => sg[Const.NAME_ID].includes(s));
+                //     for(let ig=0; ig < gs.length; ig++) {
+                //         if(gs[ig].remove()) {
+                //             gs[ig].remove();
+                //         }
+                //         delete gs[ig];
+                //     }
+                // });
+                // ChartView.chart_tree = ChartView.chart_tree.filter(o => series.includes(o.name) == false);
+
                 ret = series;
             }
         }
@@ -806,7 +914,7 @@ class ChartView {
                     end: { x: %, y: %},
                     margin: {x: +/- %, y: +/- %},
                 }
-        onlyValid: [start value, end value] true: filter all undefined dates || false: start/end could be undefined date
+        onlyValid: [startValue, endValue] true: filter all undefined dates || false: start/end could be undefined date
      * @param chart Chart object to zoom.
      * @returns Zoom object with updated information if ok. Error message other case.
      */
@@ -831,41 +939,56 @@ class ChartView {
             // });
 
             let data = chart.getModel().option.series[0].data.filter(v=>v[1]).map(v => v[0]);
-            let x_start_idx = data.indexOf(zoom.startValue.x);
-            let x_end_idx = data.indexOf(zoom.endValue.x);
-            if(!x_start_idx) {
-                x_start_idx = 0;
-            }
-
-            let filtered = chart.getModel().option.series[0].data.filter(v=>v[1]).slice(x_start_idx, x_end_idx);
-            let maxValue = Math.max(...filtered.map(v => v[3]));
-            let minValue = Math.min(...filtered.map(v => v[4]));
-
+            
             let margin = {
-                x: (zoom.margin.x != null) ? zoom.margin.x : 0,
-                y: (zoom.margin.y != null) ? zoom.margin.y : 0,
+                x: ( (zoom.margin != undefined) && (zoom.margin.x != null) ) ? zoom.margin.x : 0,
+                y: ( (zoom.margin != undefined) && (zoom.margin.y != null) ) ? zoom.margin.y : 0,
+            }
+            let minValue = 0;
+            let maxValue = 0;
+
+            let tf = data[1] - data[0];
+            let remainder = (zoom.startValue.x) ? (zoom.startValue.x % tf)  : 0;
+            zoom.startValue.x = zoom.startValue.x - remainder;
+
+            if(margin.x && margin.y) {
+                let x_start_idx = (zoom.startValue != undefined) ? data.indexOf(Math.floor(zoom.startValue.x)) : 0;
+                let x_end_idx = (zoom.endValue != undefined) ? data.indexOf(zoom.endValue.x) : 0;
+                if(x_start_idx < 0) {
+                    x_start_idx = 0;
+                }
+                if(x_end_idx < 0) {
+                    x_end_idx = data.length-1;
+                }
+
+                let filtered = chart.getModel().option.series[0].data.filter(v=>v[1]).slice(x_start_idx, x_end_idx);
+                maxValue = Math.max(...filtered.map(v => v[3]));
+                minValue = Math.min(...filtered.map(v => v[4]));
             }
 
             // Zoom from values
             if(zoom.startValue) {
                 let marginValue = {
-                    x: parseInt(margin.x), //data.length),
-                    y: parseInt((margin.y/100) * (maxValue - minValue))
+                    x: parseInt(margin.x)*tf,
+                    y: ( parseInt(margin.y) / 100 ) * (maxValue - minValue)
                 }
 
                 let startValue = {
-                    x: data[data.indexOf(zoom.startValue.x) - marginValue.x],
+                    x: zoom.startValue.x - marginValue.x,
                     y: zoom.startValue.y - marginValue.y,
-                }
-                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[0] == true) ) && (startValue.x == undefined))
+                };
+
+                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[0] == true) ) && (startValue.x == undefined)) {
                     startValue.x = data[0];
+                }
 
                 let endValue = {
-                    x: data[data.indexOf(zoom.endValue.x) + marginValue.x],
+                    x: zoom.endValue.x + marginValue.x,
                     y: zoom.endValue.y + marginValue.y,
                 }
-                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[1] == true) ) && (endValue.x == undefined))
+                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[1] == true) ) && (endValue.x == undefined)) {
                     endValue.x = data[data.length - 1];
+                }
                 
                 chart.dispatchAction({
                     type: 'dataZoom',
@@ -900,33 +1023,41 @@ class ChartView {
     }
 
     format_chart_tooltip(data, params) {
+        if((!params) || (params[0].componentSubType != 'candlestick')) {
+            return ChartView.prev_tooltip_info;
+        }
+
         //Get max length of all values
         let len_max = 4;
         let open = '';
         let high = '';
         let low = '';
         let close = '';
+        let delta = '';
+        let delta_pc = '';
         let width_values = 'width:' + len_max * 0.6 + 'em;';
         let color_values = 'color:rgba(0, 0, 0, 0);';
         let value;
         let color;
+        let idx_time;
         try {
             if((params != undefined) && (params[0].value != undefined)) {
                 if(params[0].value.includes(undefined)) {
                     if(params[0].axisValue > data.max_x) {
-                        let idx_time = data.data_y.map(v=>v[Const.IDX_CANDLE_TIME]).indexOf(data.max_x);
+                        idx_time = data.data_y.map(v=>v[Const.IDX_CANDLE_TIME]).indexOf(data.max_x);
                         // value = [params[0].value[0], ...data.data_y[data.data_x.indexOf(data.max_x)]];
                         value = [params[0].value[0], ...data.data_y[idx_time].slice(1, 5)];
                         color = (value[Const.IDX_CANDLE_OPEN] < value[Const.IDX_CANDLE_CLOSE]) ? this.cnf.colorUp : this.cnf.colorDown;
                     }
                     else {
-                        let idx_time = data.data_y.map(v=>v[Const.IDX_CANDLE_TIME]).indexOf(data.max_x);
+                        idx_time = data.data_y.map(v=>v[Const.IDX_CANDLE_TIME]).indexOf(data.min_x);
                         // value = [params[0].value[0], ...data.data_y[data.data_x.indexOf(data.min_x)]];
                         value = [params[0].value[0], ...data.data_y[idx_time].slice(1, 5)];
                         color = (value[Const.IDX_CANDLE_OPEN] < value[Const.IDX_CANDLE_CLOSE]) ? this.cnf.colorUp : this.cnf.colorDown;
                     }
                 }
                 else {
+                    idx_time = params[0].dataIndex;
                     value = params[0].value;
                     color = params[0].color;
                 }
@@ -952,12 +1083,19 @@ class ChartView {
                     close = value[Const.IDX_CANDLE_CLOSE];
                     diff_dec = (len_max - close.toString().length) - 1;
                     close = (diff_dec > 0) ? close.toFixed(diff_dec) : close;
+                    if(idx_time != undefined) {
+                        let prev_close = data.data_y[idx_time-1][Const.IDX_CANDLE_CLOSE];
+                        delta = (close - prev_close);
+                        delta_pc = (delta/close) * 100;
+                        delta = delta.toFixed((diff_dec > 0) ? diff_dec : 2);
+                        delta_pc = delta_pc.toFixed(2);
+                    }
                 }
             }
         }
         catch(error) {
-            console.error(error);
-            // alert(error);
+            // console.error(`value: ${value}.`);
+            // console.error(error);
         }
         let info = '<div class="class-tooltip">' +
                         ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.name + ChartView.P_CLOSE +
@@ -972,7 +1110,10 @@ class ChartView {
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + ChartView.VALUES_CLOSE + low + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_TEXT + 'C' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + ChartView.VALUES_CLOSE + close + ChartView.P_CLOSE +
+                        ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + 'font-size: 0.9em;' + ChartView.VALUES_CLOSE + `${delta} (${delta_pc}%)` + ChartView.P_CLOSE +
                     '</div>';
+
+        ChartView.prev_tooltip_info = info;
         return info;
     }
 
@@ -1023,76 +1164,148 @@ class ChartView {
 
         return label;
     }
-
-    draw_fibonacci(data, query, chart) {
-        let ret;
-        let fibos = [];
+    
+    draw_fibonacci(data, chart) {
         try {
-            if(data.data) {
-                data.data.map( (r, i) => {
-                    let values = r.slice(0, 3);
-                    let trend = r[3];
-                    let name = r[4];
-
-                    let xstart = chart.convertToPixel({xAxisIndex: 0}, values[1][0]);
-                    let xend = chart.convertToPixel({xAxisIndex: 0}, values[2][0]);
-                    let width = xend - xstart;
-
-                    let ystart = chart.convertToPixel({yAxisIndex: 0}, values[1][1]);
-                    let yend = chart.convertToPixel({yAxisIndex: 0}, values[2][1]);
-                    let height = yend - ystart;
-
-                    let fibo = {
-                        type: 'group',
-                        top: ystart,
-                        left: xstart,
-                        draggable: true,
-                        // ondrag: function (dx, dy) {
-                        //     onPointDragging(dataIndex, [this.x, this.y]);
-                        // },
-                        children: [
-                            {
-                                type: 'rect',
-                                z: 100,
-                                left: 'center',
-                                top: 'middle',
-                                shape: {
-                                    width: width,
-                                    height: height,
-                                },
-                                style: {
-                                    fill: 'rgba(255, 255, 255, 0.1)',
-                                    lineWidth: 1,
-                                    // fill: '#fff',
-                                    // stroke: '#555',
-                                }
-                            },
-                            {
-                                type: 'text',
-                                z: 100,
-                                left: 'center',
-                                top: 'middle',
-                                style: {
-                                    fill: '#333',
-                                    width: 220,
-                                    overflow: 'break',
-                                    // text: 'xAxis represents temperature in °C, yAxis represents altitude in km, An image watermark in the upper right, This text block can be placed in any place',
-                                    // font: '14px Microsoft YaHei'
-                                }
-                            }
-                        ]
-                    };
-                    fibos = fibos.concat(fibo);
-                });
-            }
-
-            chart.setOption({ graphic: fibos});
+            data.forEach(f => {
+                try {
+                    f.plot(chart);
+                    // ChartView.#chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID].push(f);
+                    ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][f[Const.NAME_ID]] = f;
+                }
+                catch(error) {
+                    console.error(`EXCEPTION draw_fibonacci:${error}.`);
+                }
+            });
         }
         catch(error) {
             console.error(error);
-            ret = error;
+        }
+    }
+
+    update_zoom(chart) {
+        // var zoom_enabled = true;
+        // window.addEventListener('resize', updatePosition);
+        // chart.on('dataZoom', updatePosition);
+        // function updatePosition(z) {
+        //     // if(zoom_enabled) {
+        //     //     Object.values(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach(f => {
+        //     //         f.plot(chart);
+        //     //     });
+        //     //     zoom_enabled = false;
+        //     //     setTimeout(e => zoom_enabled = true, 100);
+        //     // }
+        // }
+    }
+
+    update(chart) {
+        try {
+            chart.resize();
+            if(Object.keys(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).length > 0) {
+                let graphics = [];
+                Object.values(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach( g => {
+                    graphics.push(g.get_plot(chart));
+                });
+                chart.setOption( {graphic: []}, {replaceMerge: ['graphic']});
+                chart.setOption( {graphic: graphics}, {replaceMerge: ['graphic']});
+            }
+        }
+        catch(error) {
+            console.error(error);
+        }
+    }
+
+    zoomAxis(chart, id) {
+        var x1 = 0, y1 = 0;
+        var x2 = 0, y2 = 0;
+        var that = this;
+        chart.getZr().on('mousedown', (e) => {
+            let [x, y] = chart.convertFromPixel({ xAxisIndex:0, yAxisIndex:0}, [e.offsetX, e.offsetY]);
+            let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
+            let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+            if( (x < xzoom.startValue) && (y < yzoom.startValue)) {
+            }
+            else if(x < xzoom.startValue) {
+                [x1, y1] = [undefined, y];
+                chart.getZr().on('mousemove', dragAxisZoom);
+                // console.log('y start:', yzoom.startValue);
+                // console.log(`y1:${y1}`);
+            }
+            else if(y < yzoom.startValue) {
+                [x1, y1] = [x, undefined];
+                chart.getZr().on('mousemove', dragAxisZoom);
+                // console.log('x start:', xzoom.startValue);
+                // console.log(`x1:${x1}`);
+            }
+        });
+
+        function dragAxisZoom(e) {
+            if(x1) {
+                x2 = chart.convertFromPixel({ xAxisIndex:0 }, e.offsetX);
+                let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
+                let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+                let delta = (x2 - x1)/25;
+                // Zoom over sign, stops zoom
+                // console.log(delta);
+                that.zoom_chart({ startValue: { x: xzoom.startValue - delta, y: yzoom.startValue },
+                                    endValue: { x: xzoom.endValue + delta, y: yzoom.endValue },
+                                    onlyValid: [false, false],
+                                }, chart);
+            }
+            else if(y1) {
+                y2 = chart.convertFromPixel({ yAxisIndex:0 }, e.offsetY);
+                let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
+                let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+                let delta = (y2 - y1)/25;
+                // Zoom over sign, stops zoom
+                // console.log(delta);
+                that.zoom_chart({ startValue: { x: xzoom.startValue, y: yzoom.startValue - delta },
+                                    endValue: { x: xzoom.endValue, y: yzoom.endValue + delta },
+                                    onlyValid: [false, false],
+                                }, chart);
+            }
         }
 
-        return ret;
+        chart.getZr().on('mouseup', (e) => {
+            x1 = 0;
+            y1 = 0;
+            chart.getZr().off('mousemove', dragAxisZoom);
+        });
+
+        // chart.getZr().on('mousedown', (e) => {
+        //     let graphics = chart.getOption().graphic;
+        //     if(graphics && (graphics.length > 0)) {
+        //         graphics = chart.getOption().graphic[0].elements;
+        //         // Blank chart clicked
+        //         if(e.target == undefined) {
+        //             graphics.forEach( g => {
+        //                 if((g.id.includes('CONTROL_START')) || (g.id.includes('CONTROL_END'))) {
+        //                     let parent = chart.getOption().graphic[0].elements.filter(p => p.id == g.parentId)[0];
+        //                     parent.onclick(false);
+        //                 }
+        //             });
+        //             that.selected = [];
+        //         }
+        //         else if(e.target != undefined) {
+        //             let fibos = graphics.filter( f => (f.id != e.target.parent.id) && (f.type == 'group') && (f.id.includes('FIBO')));
+        //             that.selected = [e.target.parent.id];
+        //             fibos.forEach( f=> f.onclick(false));
+        //         }
+        //     }
+        // });
+
+        // chart.on('mousedown', (params) => {
+        //     console.log(params)
+        // });
+
+        // chart.on('click', (params) => {
+        //     that.clicked = true;
+        //     if(params.componentType == 'graphic') {
+        //         let sel = params.event.target.parent.id;
+        //         if(that.selected.includes(params.event.target.parent.id) == false) {
+        //             that.selected = [sel];
+        //         }
+        //     }
+        // });
     }
 }
