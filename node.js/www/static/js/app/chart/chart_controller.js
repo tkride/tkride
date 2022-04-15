@@ -656,7 +656,7 @@ catch(err) {
 
                 let ret_plot = that.#view.format_retracements(pattern);
                 that.#view.plot_retracements(ret_plot, that.active_chart);
-                let fibo_ret = that.#view.format_fibo_retracement_data(pattern);
+                // let fibo_ret = that.#view.format_fibo_retracement_data(pattern);
                 // that.#view.draw_fibonacci(ret_plot, fibo_ret, query, that.active_chart);
                 let fibos = [];
                 Object.values(pattern).forEach(p => {

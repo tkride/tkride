@@ -39,25 +39,23 @@ class Fibonacci extends ChartGraphic {
 
     constructor(retracement, params) {
         if(!params) { params = {}; }
-        
-        let ret_levels = retracement[Const.RET_LEVELS_ID];
-        let levels_tmp = Object.keys(ret_levels);
-        let yvalues_tmp = Object.values(ret_levels);
+
+        let datasource = (retracement[Const.RET_DATA_SOURCE_ID]) ? retracement[Const.RET_DATA_SOURCE_ID] : undefined;
 
         super({ name: `${Const.FIBO_RET_ID}${(params.name) ? '_'+params.name:''}_${retracement[Const.HASH_ID]}`,
-                 xstart: retracement[Const.END_ID].time,
+                 xstart: (datasource) ? datasource[Const.INIT_ID].time : retracement[Const.INIT_ID].time,
                  xend: retracement[Const.CORRECTION_ID].time,
-                //  ystart: Math.min(...yvalues_tmp),
-                // yend: Math.max(...yvalues_tmp),
-                 ystart: retracement[Const.INIT_ID].price,
-                 yend: retracement[Const.END_ID].price,
+                 ystart: (datasource) ? datasource[Const.INIT_ID].price : retracement[Const.INIT_ID].price,
+                 yend: (datasource) ? datasource[Const.END_ID].price : retracement[Const.END_ID].price,
                  draggable: params.draggable,
                  resizable: params.resizable,
                 });
 
+        let ret_levels = (retracement[Const.RET_LEVELS_DATA_SOURCE_ID]) ? retracement[Const.RET_LEVELS_DATA_SOURCE_ID] : retracement[Const.RET_LEVELS_ID];
+        // this.levels = Object.keys(ret_levels);
+        this.levels = Object.keys(retracement[Const.RET_LEVELS_ID]);
+        this.yvalues = Object.values(ret_levels).filter(l => l);
         this.trend = Const.TREND_STR[retracement[Const.TREND_ID]];
-        this.levels = levels_tmp;
-        this.yvalues = yvalues_tmp;
         this.ydelta = {
             [Const.DELTA_INIT_ID]: retracement[Const.DELTA_INIT_ID],
             [Const.DELTA_END_ID]: retracement[Const.DELTA_END_ID]
@@ -104,9 +102,8 @@ class Fibonacci extends ChartGraphic {
         // Width is fixed, so it's appended first once
         this.data = [];
         let ymin = Math.min(...this.yvalues);
-        // let change_start_controls = ((this.ystart > this.yend) && (this.trend == Const.BULL_ID)) ? true : false;
         let text = this.get_text();
-        this.data = [this.selected, /*change_start_controls*/this.show_controls, ymin, this.xstart, this.xend, this.ystart, this.yend, this.yvalues.length];
+        this.data = [this.selected, this.show_controls, ymin, this.xstart, this.xend, this.ystart, this.yend, this.yvalues.length];
         for(let i=0; i<this.yvalues.length; i++) {
             this.data.push(...[this.yvalues[i], text[i], this.lineColor[i], this.fillColor[i]]);
         }
@@ -142,45 +139,45 @@ class Fibonacci extends ChartGraphic {
         for(let j=0; j<len; j++) {
             let idx = Fibonacci.YVALUES + (j*4);
             yvalue = api.coord([0, api.value(Fibonacci.YVALUE + idx)])[1];
-            text = api.value(Fibonacci.TEXT + idx);
-            [stroke, fill] = [api.value(Fibonacci.STROKE + idx), api.value(Fibonacci.FILL + idx)];
+            if((Math.abs(yvalue) != Infinity) && !isNaN(yvalue)) {
+                text = api.value(Fibonacci.TEXT + idx);
+                [stroke, fill] = [api.value(Fibonacci.STROKE + idx), api.value(Fibonacci.FILL + idx)];
 
-            height = Math.abs(yvalue - ymin);
-            children.push([
-                {
-                    type: 'rect',
-                    id: `${name}_LEVEL_${text}`,
-                    name: `${name}_LEVEL_${text}`,
-                    x: xstart,
-                    y: yvalue,
-                    z: 100,
-                    shape: {
-                        x: 0,
-                        y: 0,
-                        width: width,
-                        height: height,
+                height = Math.abs(yvalue - ymin);
+                children.push([
+                    {
+                        type: 'rect',
+                        id: `${name}_LEVEL_${text}`,
+                        name: `${name}_LEVEL_${text}`,
+                        x: xstart,
+                        y: yvalue,
+                        shape: {
+                            x: 0,
+                            y: 0,
+                            width: width,
+                            height: height,
+                        },
+                        style: {
+                            fill: fill,
+                            stroke: stroke,
+                            lineWidth: 1,
+                            lineDash: [width, (width) + 2*height],
+                        },
                     },
-                    style: {
-                        fill: fill,
-                        stroke: stroke,
-                        lineWidth: 1,
-                        lineDash: [width, (width) + 2*height],
+                    {
+                        type: 'text',
+                        id: `${name}_TEXT_${text}`,
+                        name: `${name}_TEXT_${text}`,
+                        x: xend + 5,
+                        y: yvalue - 5,
+                        style: {
+                            fill: stroke,
+                            width: width,
+                            text: text,
+                        }
                     },
-                },
-                {
-                    type: 'text',
-                    id: `${name}_TEXT_${text}`,
-                    name: `${name}_TEXT_${text}`,
-                    z: 101,
-                    x: xend + 5,
-                    y: yvalue - 5,
-                    style: {
-                        fill: stroke,
-                        width: width,
-                        text: text,
-                    }
-                },
-            ]);
+                ]);
+            }
         }
 
         children.push(...super.get_control_handler({ id: name,
@@ -194,43 +191,6 @@ class Fibonacci extends ChartGraphic {
                                                      lineWidth: (selected) ? ChartGraphic.CIRCLE_WIDTH_SELECTED : ChartGraphic.CIRCLE_WIDTH_HOVER,
                                                     })
         );
-        //     [{
-        //         type: 'circle',
-        //         id: `${name}_CONTROL_START`,
-        //         name: `${name}_CONTROL_START`,
-        //         z: 102,
-        //         invisible: (show_controls) ? false : true,
-        //         draggable: true,
-        //         shape: {
-        //             cx: xstart,
-        //             cy: ystart,
-        //             r: 6, 
-        //         },
-        //         style: {
-        //             stroke: ChartGraphic.CIRCLE_COLOR,
-        //             lineWidth: (selected) ? ChartGraphic.CIRCLE_WIDTH_SELECTED : ChartGraphic.CIRCLE_WIDTH_HOVER,
-        //         },
-        //     },
-        //     {
-        //         type: 'circle',
-        //         z: 102,
-        //         id: `${name}_CONTROL_END`,
-        //         name: `${name}_CONTROL_END`,
-        //         invisible: (show_controls) ? false : true,
-        //         draggable: true,
-        //         shape: {
-        //             cx: xend,
-        //             cy: yend,
-        //             r: 6, 
-        //         },
-        //         style: {
-        //             stroke: ChartGraphic.CIRCLE_COLOR,
-        //             lineWidth: (selected) ? ChartGraphic.CIRCLE_WIDTH_SELECTED : ChartGraphic.CIRCLE_WIDTH_HOVER,
-        //         },
-        // }]
-        // );
-
-        //
 
         let fibo = {
             type: 'group',
@@ -245,7 +205,7 @@ class Fibonacci extends ChartGraphic {
     
     set_option(chart) {
         let yenc = [Fibonacci.YSTART, Fibonacci.YEND].concat(...this.yvalues.map( (el, i) => Fibonacci.YVALUES + (i*4)));
-        chart.setOption({ /*graphic: controls,*/
+        chart.setOption({ 
                           series: [{
                                 id: this.name,
                                 name: this.name,
@@ -256,6 +216,8 @@ class Fibonacci extends ChartGraphic {
                                     y: yenc,
                                 },
                                 data: this.data,
+                                clip: true,
+                                z: this.z_level,
                             }],
         },
         );
@@ -265,28 +227,10 @@ class Fibonacci extends ChartGraphic {
         this.chart = chart;
 
         this.set_option(chart);
-        this.bind_handler_events();
-
-        // chart.on('dataZoom', { seriesName: this.name } , (c) => {
-        //     // console.log(c);
-        //     super.get_controls(chart);
-        //     super.plot_controls(chart);
-        // });
-        
-        // chart.on('mousedown', { seriesName: this.name }, c => {
-        //     let func = this.MOUSEDOWN_CONTROL[c.event.target.name] || this.MOUSEDOWN_DEFAULT;
-        //     if(typeof func == 'function') {
-        //         func.call(this, c);
-        //     }
-        // });
-        
-        // chart.on('click', { element: `${this.name}_CONTROL_START` }, c => {
-        //     console.log(this.name);
-        // });
-
-        // chart.on('click', { element: `${this.name}_CONTROL_END` }, c => {
-        //     console.log(this.name);
-        // });
+        this.bind_handler_events({ mousedown: this.mousedown_control_management,
+                                   mouseover: this.mouseover,
+                                   mouseout: this.mouseout,
+                                });
 
         return this.controls;
     }
@@ -296,175 +240,9 @@ class Fibonacci extends ChartGraphic {
         this.chart.setOption({ series: [{
                 id: this.name,
                 data: this.data,
+                z: this.z_level,
             }] },
         );
-    }
-
-    get_plot(chart) {
-        var that = this;
-        let children = [];
-        this.chart = chart;
-        
-        [this.xstart_chart, this.ystart_chart] = chart.convertToPixel({xAxisIndex: 0, yAxisIndex: 0}, [this.xstart, this.ystart]);
-        [this.xend_chart, this.yend_chart] = chart.convertToPixel({xAxisIndex: 0, yAxisIndex: 0}, [this.xend, this.yend]);
-        let text = this.get_text();
-
-        // Draws Fibonacci levels
-        for(let i = 0; i < this.length; i++) {
-            this.yvalues_chart[i] = chart.convertToPixel({yAxisIndex:0}, this.yvalues[i]);
-            this.width = this.xend_chart - this.xstart_chart;
-            this.height = Math.abs(this.yvalues_chart[i] - this.ystart_chart);
-            children.push([
-                {
-                    type: 'rect',
-                    id: `${this.name}_LEVEL_${this.yvalues[i]}`,
-                    x: this.xstart_chart,
-                    y: this.yvalues_chart[i],
-                    z: 100,
-                    // renderItem: this.renderItem,
-                    shape: {
-                        x: 0,
-                        y: 0,
-                        width: this.width,
-                        height: this.height,
-                    },
-                    style: {
-                        fill: this.fillColor[i],
-                        stroke: this.lineColor[i],
-                        lineWidth: 1,
-                        lineDash: [this.width, (this.width) + 2*(this.height)],
-                    },
-                },
-                {
-                    type: 'text',
-                    id: `${this.name}_TEXT_${this.yvalues[i]}`,
-                    z: 101,
-                    left: this.xend_chart + 5,
-                    top: this.yvalues_chart[i] - 5,
-                    style: {
-                        fill: this.lineColor[i],
-                        width: this.width,
-                        // overflow: 'break',
-                        text: text[i],
-                    }
-                },
-            ]);
-        }
-
-        children.push(
-            [{
-                type: 'circle',
-                id: `${this.name}_START`,
-                z: 102,
-                invisible: (this.selected) ? false : true,
-                draggable: true,
-                shape: {
-                    cx: this.xstart_chart,
-                    cy: this.ystart_chart,
-                    r: 6, 
-                },
-                style: {
-                    stroke: ChartGraphic.CIRCLE_COLOR,
-                    lineWidth: (this.selected) ? ChartGraphic.CIRCLE_WIDTH_SELECTED : ChartGraphic.CIRCLE_WIDTH_HOVER,
-                },
-                ondrag(c) {
-                    [that.xstart, that.ystart] = that.chart.convertFromPixel({xAxisIndex:0, yAxisIndex:0}, [that.xstart_chart + this.x, that.ystart_chart + this.y]);
-                    for(let i = 0; i < that.length; i++) {
-                        that.yvalues[i] = that.chart.convertFromPixel({yAxisIndex:0}, (that.yvalues_chart[i] + this.y));
-                    }
-                    // that.plot(that.chart);
-                    // let ctrl = that.get_plot(that.chart);
-                    // that.chart.setOption({graphic: ctrl}, {replaceMerge: ['graphic']});
-                }
-            },
-            {
-                type: 'circle',
-                id: `${this.name}_END`,
-                z: 102,
-                invisible: (this.selected) ? false : true,
-                draggable: true,
-                shape: {
-                    cx: this.xend_chart,
-                    cy: this.yend_chart,
-                    r: 6, 
-                },
-                style: {
-                    stroke: ChartGraphic.CIRCLE_COLOR,
-                    lineWidth: (this.selected) ? ChartGraphic.CIRCLE_WIDTH_SELECTED : ChartGraphic.CIRCLE_WIDTH_HOVER,
-                },
-                // ondrag(c) {
-                //     [that.xend, that.yend] = that.chart.convertFromPixel({xAxisIndex:0, yAxisIndex:0}, [that.xend_chart + this.x, that.yend_chart + this.y]);
-                //     for(let i = 0; i < that.length; i++) {
-                //         that.yvalues[i] = that.chart.convertFromPixel({yAxisIndex:0}, (that.yvalues_chart[i] + this.y));
-                //     }
-                // }
-            }]
-        )
-        
-        let fibo = {
-            type: 'group',
-            id: this.name,
-            children: [].concat(...children),
-            draggable: this.draggable,
-            // renderItem: this.renderItem,
-            // ondragstart: (d) => {
-            //     that.selected = true;
-            //     that.show_controls();
-
-            //     if(that.dragging == false) {
-            //         let dz = chart.getOption().dataZoom;
-            //         let xi = dz.filter(z => z.id == 'x_inside')[0];
-            //         let yi = dz.filter(z => z.id == 'y_inside')[0];
-            //         chart.setOption(...ChartView.CHART_ZOOM_DISABLED);
-            //         if(xi) {
-            //             ChartView.DATA_ZOOM_X_INSIDE.start = xi.start;
-            //             ChartView.DATA_ZOOM_X_INSIDE.end = xi.end;
-            //         }
-            //         if(yi) {
-            //             ChartView.DATA_ZOOM_Y_INSIDE.start = yi.start;
-            //             ChartView.DATA_ZOOM_Y_INSIDE.end = yi.end;
-            //         }
-            //         that.dragging = true;
-            //     }
-            // },
-            // ondrag(d) {
-            //     [that.xstart, that.ystart] = that.chart.convertFromPixel({xAxisIndex:0, yAxisIndex:0}, [that.xstart_chart + this.x, that.ystart_chart + this.y]);
-            //     [that.xend, that.yend] = that.chart.convertFromPixel({xAxisIndex:0, yAxisIndex:0}, [that.xend_chart + this.x, that.yend_chart + this.y]);
-            //     for(let i = 0; i < that.length; i++) {
-            //         that.yvalues[i] = that.chart.convertFromPixel({yAxisIndex:0}, (that.yvalues_chart[i] + this.y));
-            //     }
-            // },
-            // ondragend: (d, b) => {
-            //     that.dragging = false;
-            //     chart.setOption( { dataZoom: [
-            //         ChartView.DATA_ZOOM_X_INSIDE,
-            //         // ChartView.DATA_ZOOM_X_SLIDER,
-            //         ChartView.DATA_ZOOM_Y_INSIDE,
-            //     ] });
-            // },
-            // onmouseover(m) {
-            //     if(that.selected == false) {
-            //         that.show_controls();
-            //     }
-            // },
-            // onmouseout(m) {
-            //     if(that.selected == false) {
-            //         that.hide_controls();
-            //     }
-            // },
-            // onclick(c) {
-            //     if(c == false) {
-            //         that.selected = false;
-            //         that.hide_controls();
-            //     }
-            //     else {
-            //         that.selected = true;
-            //         that.show_controls();
-            //     }
-            // }
-        }
-
-        return fibo;
     }
 
     remove(chart) {
@@ -479,10 +257,10 @@ class Fibonacci extends ChartGraphic {
 
     get_text() {
         if(this.textInfo == '%') {
-            return this.levels;
+            return [...this.levels.map(v => parseFloat(v).toFixed(3))];
         }
         else if(this.textInfo == 'value') {
-            return [...this.yvalues.toFixed(3)];
+            return [...this.yvalues.map(v => parseFloat(v).toFixed(3))];
         }
         else {
             let text = [];
@@ -495,19 +273,19 @@ class Fibonacci extends ChartGraphic {
 
     //CONTROL HANDLERS EVENTS ---------------------------------------------------------
     
-    bind_handler_events()
-    {
-        this.chart.on('mousedown', { seriesName: this.name }, Fibonacci.mousedown_control_management.bind(this));
-        this.chart.on('mouseover', { seriesName: this.name }, Fibonacci.mouseover.bind(this));
-        this.chart.on('mouseout', { seriesName: this.name }, Fibonacci.mouseout.bind(this));
-    }
+    // bind_handler_events()
+    // {
+    //     this.chart.on('mousedown', { seriesName: this.name }, this.mousedown_control_management.bind(this));
+    //     this.chart.on('mouseover', { seriesName: this.name }, this.mouseover.bind(this));
+    //     this.chart.on('mouseout', { seriesName: this.name }, this.mouseout.bind(this));
+    // }
 
-    unbind_handler_events()
-    {
-        this.chart.off('mousedown');//, this.mousedown_control_management.bind(this));
-        this.chart.off('mouseover');//, this.mouseover.bind(this));
-        this.chart.off('mouseout');//, this.mouseout.bind(this));
-    }
+    // unbind_handler_events()
+    // {
+    //     this.chart.off('mousedown');//, this.mousedown_control_management.bind(this));
+    //     this.chart.off('mouseover');//, this.mouseover.bind(this));
+    //     this.chart.off('mouseout');//, this.mouseout.bind(this));
+    // }
 
     disable_chart_move() {
         let dz = this.chart.getOption().dataZoom;
@@ -521,8 +299,22 @@ class Fibonacci extends ChartGraphic {
         this.chart.setOption({dataZoom: dz});
     }
 
+    select() {
+        if(this.selected == false) {
+            super.select();
+            this.update_option();
+        }
+    }
+
+    unselect() {
+        if(this.selected == true) {
+            super.unselect();
+            this.update_option();
+        }
+    }
+
     // Functions managers
-    static mousedown_control_management(c) {
+    mousedown_control_management(c) {
         if(c.event.target.parent.name == this.name) {
             [this.xdrag, this.ydrag] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
             let func = this.MOUSEDOWN_CONTROL[c.event.target.name] || this.MOUSEDOWN_DEFAULT;
@@ -532,7 +324,7 @@ class Fibonacci extends ChartGraphic {
         }
     }
 
-    static mouseover(c) {
+    mouseover(c) {
         if(c.event.target.parent.name == this.name) {
             if(this.selected == false) {
                 this.show_controls = true;
@@ -541,7 +333,7 @@ class Fibonacci extends ChartGraphic {
         }
     }
 
-    static mouseout(c) {
+    mouseout(c) {
         if(c.event.target.parent.name == this.name) {
             if(this.selected == false) {
                 this.show_controls = false;
@@ -553,8 +345,7 @@ class Fibonacci extends ChartGraphic {
     // Control Area
     mousedown_control(c) {
         if(this.selected == false) {
-            this.selected = true;
-            this.update_option();
+            this.select();
         }
         console.log(this.name, ': control');
         this.disable_chart_move();

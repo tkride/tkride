@@ -9,6 +9,8 @@ class ChartGraphic {
     static CIRCLE_RADIUS = 6;
     static CONTROL_START = '_CONTROL_START';
     static CONTROL_END = '_CONTROL_END';
+    static Z_LEVEL_SELECTED = 110;
+    static Z_LEVEL_UNSELECTED = 103;
 
     // PROPERTIES
     name;
@@ -30,6 +32,10 @@ class ChartGraphic {
     controls;
     show_controls = false;
     data = [];
+    mousedown_cb;
+    mouseover_cb;
+    mouseout_cb;
+    z_level = ChartGraphic.Z_LEVEL_UNSELECTED;
 
     constructor(data) {
         this.name = data.name;
@@ -44,137 +50,24 @@ class ChartGraphic {
         this.that = this;
     }
 
-    plot(chart) {
-        return false;
-    }
-
-    remove(chart) {
-        return false;
-    }
-
-    // get_controls(chart) {
-    //     var that = this;
-    //     this.chart = chart;
-
-    //     [this.xstart_chart, this.ystart_chart] = chart.convertToPixel({xAxisIndex: 0, yAxisIndex: 0}, [this.xstart, this.ystart]);
-    //     [this.xend_chart, this.yend_chart] = chart.convertToPixel({xAxisIndex: 0, yAxisIndex: 0}, [this.xend, this.yend]);
-    //     this.controls = {
-    //         type: 'group',
-    //         id: `${this.name}_CONTROLS`,
-    //         // onclick(c) {
-    //         //     that.selected = true;
-    //         //     console.log(that.name);
-    //         //     that.get_controls(chart);
-    //         //     that.plot_controls(chart);
-    //         // },
-    //         children: [
-    //             {
-    //                 type: 'rect',
-    //                 id: `${this.name}_CONTROL_AREA`,
-    //                 z: 102,
-    //                 invisible: true,
-    //                 shape: {
-    //                     x: this.xstart_chart,
-    //                     y: this.ystart_chart,
-    //                     width: this.xend_chart - this.xstart_chart,
-    //                     height: this.yend_chart - this.ystart_chart,
-    //                 },
-    //                 // onclick(c) {
-    //                 //     that.selected = true;
-    //                 //     console.log(that.name);
-    //                 //     that.get_controls(chart);
-    //                 //     that.plot_controls(chart);
-    //                 // },
-    //                 // onmouseover(m) {
-    //                 //     console.log(m);
-    //                 //     let parent = m.target.parent;
-    //                 //     let cs = parent.children().filter(c => c.id.includes('_CONTROL_AREA') == false);
-    //                 //     cs.forEach(c => c.invisible = false);
-    //                 //     chart.setOption({ graphic: cs});
-    //                 // },
-    //                 // onmouseout(m) {
-    //                 //     console.log(m);
-    //                 //     let parent = m.target.parent;
-    //                 //     let cs = parent.children().filter(c => c.id.includes('_CONTROL_AREA') == false);
-    //                 //     cs.forEach(c => c.invisible = true);
-    //                 //     chart.setOption({ graphic: cs});
-    //                 // },
-    //                 // ondrag(d) {
-    //                 //     console.log(d);
-    //                 //     that.get_controls(chart);
-    //                 //     that.plot_controls(chart);
-    //                 // }
-    //             },
-    //             {
-    //             type: 'circle',
-    //             id: `${this.name}_CONTROL_START`,
-    //             z: 102,
-    //             invisible: (this.selected) ? false : true,
-    //             draggable: true,
-    //             shape: {
-    //                 cx: this.xstart_chart,
-    //                 cy: this.ystart_chart,
-    //                 r: 6, 
-    //             },
-    //             style: {
-    //                 stroke: ChartGraphic.CIRCLE_COLOR,
-    //                 lineWidth: (this.selected) ? Fibonacci.CIRCLE_WIDTH_SELECTED : Fibonacci.CIRCLE_WIDTH_HOVER,
-    //             },
-    //             // ondrag(c) {
-    //                 // [that.xstart, that.ystart] = that.chart.convertFromPixel({xAxisIndex:0, yAxisIndex:0}, [that.xstart_chart + this.x, that.ystart_chart + this.y]);
-    //                 // that.get_controls(chart);
-    //                 // that.plot_controls(chart);
-    //                 // for(let i = 0; i < that.length; i++) {
-    //                     // that.yvalues[i] = that.chart.convertFromPixel({yAxisIndex:0}, (that.yvalues_chart[i] + this.y));
-    //                 // }
-    //                 // that.plot(that.chart);
-    //                 // let ctrl = that.get_plot(that.chart);
-    //                 // that.chart.setOption({graphic: ctrl}, {replaceMerge: ['graphic']});
-    //             // }
-    //         },
-    //         {
-    //             type: 'circle',
-    //             id: `${this.name}_CONTROL_END`,
-    //             z: 102,
-    //             invisible: (this.selected) ? false : true,
-    //             draggable: true,
-    //             shape: {
-    //                 cx: this.xend_chart,
-    //                 cy: this.yend_chart,
-    //                 r: 6, 
-    //             },
-    //             style: {
-    //                 stroke: Fibonacci.CIRCLE_COLOR_SELECTED,
-    //                 lineWidth: (this.selected) ? Fibonacci.CIRCLE_WIDTH_SELECTED : Fibonacci.CIRCLE_WIDTH_HOVER,
-    //             },
-    //             // ondrag(c) {
-    //             //     [that.xend, that.yend] = that.chart.convertFromPixel({xAxisIndex:0, yAxisIndex:0}, [that.xend_chart + this.x, that.yend_chart + this.y]);
-    //             //     for(let i = 0; i < that.length; i++) {
-    //             //         that.yvalues[i] = that.chart.convertFromPixel({yAxisIndex:0}, (that.yvalues_chart[i] + this.y));
-    //             //     }
-    //             // }
-    //         }],
-    //     };
-    //     return this.controls;
-    // }
-
-    plot_controls(chart) {
-        this.chart = chart;
-        chart.setOption({ graphic: this.controls }); //, { replaceMerge: ['graphic'] });
-    }
-
-    unselect() {
-        if(this.chart) {
-            this.selected = false;
-            this.get_controls(this.chart);
-            this.plot_controls(this.chart);
-        }
-    }
-
     clone() { return Object.assign({}, this); }
+
     data() { JSON.parse(JSON.stringify(this)); }
 
-    get_control_handler({ id, name, xstart, ystart, xend, yend, radius, stroke, lineWidth, fill = 'rgba(0, 0, 0, 0)', z = 103, invisible = true, draggable = true }) {
+    update_data() {
+    }
+
+    update_option() {
+        this.update_data();
+        this.chart.setOption({ series: [{
+                id: this.name,
+                data: this.data,
+                z: this.z_level,
+            }] },
+        );
+    }
+
+    get_control_handler({ id, name, xstart, ystart, xend, yend, radius, stroke, lineWidth, fill = 'rgba(0, 0, 0, 0)', z = ChartGraphic.Z_LEVEL_UNSELECTED, invisible = true, draggable = true }) {
         if(name == undefined) { name = id; }
         
         return [{
@@ -191,6 +84,7 @@ class ChartGraphic {
             },
             style: {
                 stroke: stroke,
+                fill: fill,
                 lineWidth: lineWidth,
             },
         },
@@ -208,32 +102,41 @@ class ChartGraphic {
             },
             style: {
                 stroke: stroke,
+                fill: fill,
                 lineWidth: lineWidth,
             },
         }];
     } //get_control_handler
 
-    // bind_handler_events({   chart,
-    //                         mouseover,
-    //                         mouseout,
-    //                         mousedown,
-    //                     })
-    // {
-    //     if(chart) { this.chart = chart; }
+    unselect() {
+        this.selected = false;
+        this.show_controls = false;
+        this.z_level = ChartGraphic.Z_LEVEL_UNSELECTED
+    }
 
-    //     // this.chart.on('mouseover', { seriesId: this.name }, this.mouse_cb.bind(this, { func:mouseover, show_controls: true }) );
-    //     this.chart.on('mousedown', { seriesId: this.name }, mousedown.bind(this));
-    //     this.chart.on('mouseover', { seriesId: this.name }, mouseover.bind(this));
-    //     this.chart.on('mouseout', { seriesId: this.name }, mouseout.bind(this));
-    // } //on_handler_events
+    select() {
+        this.selected = true;
+        this.show_controls = true;
+        this.z_level = ChartGraphic.Z_LEVEL_SELECTED
+    }
 
-    // unbind_handler_events({ mousedown,
-    //                         mouseover,
-    //                         mouseout,
-    //                     })
-    // {
-    //     this.chart.off('mousedown', mousedown.bind(this));
-    //     this.chart.off('mouseover', mouseover.bind(this));
-    //     this.chart.off('mouseout', mouseout.bind(this));
-    // }
+    bind_handler_events({ mousedown,
+                          mouseover,
+                          mouseout,
+                        })
+    {
+        this.mousedown_cb = mousedown.bind(this);
+        this.mouseover_cb = mouseover.bind(this);
+        this.mouseout_cb = mouseout.bind(this);
+        this.chart.on('mousedown', { seriesName: this.name }, this.mousedown_cb);
+        this.chart.on('mouseover', { seriesName: this.name }, this.mouseover_cb);
+        this.chart.on('mouseout', { seriesName: this.name }, this.mouseout_cb);
+    }
+
+    unbind_handler_events()
+    {
+        this.chart.off('mousedown', this.mousedown_cb);//, this.mousedown_control_management.bind(this));
+        this.chart.off('mouseover'), this.mouseover_cb;//, this.mouseover.bind(this));
+        this.chart.off('mouseout', this.mouseout_cb);//, this.mouseout.bind(this));
+    }
 }

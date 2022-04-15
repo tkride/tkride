@@ -145,7 +145,6 @@ class Retracements {
                     // Appends new familiy results hash identification;
                     Retracements.append_hash(m);
 
-                    //TODO CAMBIAR NOMBRE DEL CAMPO ret_min POR retmin PARA UTILIZAR LA DEFINICION Const.RET_MIN_ID
                     let ret_max = ret[Const.RET_MAX_ID];
                     let ret_min = ret[Const.RET_MIN_ID];
                     // If checks levels in external data
@@ -164,6 +163,10 @@ class Retracements {
                                                                                  levels_from: levels_from } );
                                 ret_max = new_ret.ret_max;
                                 ret_min = new_ret.ret_min;
+                                m[Const.RET_LEVELS_DATA_SOURCE_ID] = { [new_ret.ret_max]: new_ret.value_max,
+                                                                       [new_ret.ret_min]: new_ret.value_min };
+                                m[Const.RET_DATA_SOURCE_ID] = {   [Const.INIT_ID]: new_ret[Const.INIT_ID],
+                                                                       [Const.END_ID]: new_ret[Const.END_ID] };
                         }
                         else {
                             console.warn(`No match level source for: ${level_source[i]}`);
@@ -371,8 +374,11 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                 total = total_current;
             }
             let total_pc = (total_current / total) * 100;
+            total_pc = (isNaN(total_pc)) ? 0 : total_pc;
             let ok_pc = (ok / total_current) * 100;
+            ok_pc = (isNaN(ok_pc)) ? 0 : ok_pc;
             let bad_pc = (bad / total_current) * 100;
+            bad_pc = (isNaN(bad_pc)) ? 0 : bad_pc;
             let stats = {};
             stats[Const.TREND_ID] = s*trend_sign;
             stats[Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
@@ -689,7 +695,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
 
     /**
-     * get_parent_retracement_limits: Get retracement limits projected from another movement
+     * get_projected_retracement_limits: Get retracement limits projected from another movement
      * @param {*} params { parent, movement, retmax, retmin, trend_sign, levels_from }
      * @param parent Parent movement information.
      * @param movement Current analized movement information.
@@ -697,11 +703,15 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
      * @param retmin Current min retracement value for parent movement.
      * @param trend_sign Stored equivalent trend sign, based on first pattern.
      * @param levels_from Point from movement, where retracement starts: [ init | end | correction ].
-     * @returns Object with { ret_max, ret_min } values.
+     * @returns Object with { ret_max, value_max, ret_min, value_min, (TimePrice)init, (TimePrice)end } values.
      */
     static get_projected_retracement_limits(params) {
         let ret_max;
         let ret_min;
+        let value_max;
+        let value_min;
+        let init;
+        let end;
         try {
             let parent = params.parent;
             let mov = params.movement;
@@ -711,14 +721,14 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             let levels_from = params.levels_from;
             
             if(Math.abs(ret_max) != Infinity) {
-                let new_max = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_max);
-                let new_delta_end_max = (new_max - mov[Const.END_ID].price);
+                value_max = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_max);
+                let new_delta_end_max = (value_max - mov[Const.END_ID].price);
                 ret_max = ((new_delta_end_max * mov[Const.TREND_ID]) < 0) ?
                                     Math.abs(new_delta_end_max / mov[Const.DELTA_INIT_ID]) : 0;
             }
             if(Math.abs(ret_min) != Infinity) {
-                let new_min = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_min);
-                let new_delta_end_min = (new_min - mov[Const.END_ID].price);
+                value_min = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_min);
+                let new_delta_end_min = (value_min - mov[Const.END_ID].price);
                 ret_min = ((new_delta_end_min * mov[Const.TREND_ID] * trend_sign) < 0) ?
                                     Math.abs(new_delta_end_min / mov[Const.DELTA_INIT_ID]) : 0;
             }
@@ -728,6 +738,9 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                 ret_max = (Math.abs(ret_min) == Infinity) ? 0 : ret_min;
                 ret_min = ret_min_tmp;
             }
+
+            init = parent[Const.INIT_ID];
+            end = parent[Const.END_ID];
         }
         catch(error) {
             let msg = `ERROR: @Retracements::get_parent_retracement_limits: ${error}.`;
@@ -735,7 +748,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             throw(msg);
         }
 
-        return { ret_max, ret_min };
+        return { ret_max, value_max, ret_min, value_min, init, end };
     }
 
 

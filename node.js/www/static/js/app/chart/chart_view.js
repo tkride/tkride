@@ -91,7 +91,7 @@ class ChartView {
     cnf = new ChartSettings();
     #chart_view; // TODO SOLO GUARDA OPTION DEL ULTIMO CHART, BORRAR?
     timeFrame = '';
-    static chart_tree = {};
+    chart_tree = {};
     selected = [];
     clicked = false;
     prev_zoom;// = { xdelta: 1, ydelta: 1 };
@@ -137,30 +137,6 @@ class ChartView {
                 });
             });
 
-            // data_ret = data_source.data[level].map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
-            // data = data_source.data[level].map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
-            // trend = data_source.data[level].map(d => d[Const.TREND_ID]);
-
-            // level_ = query[Const.LEVEL_ID];
-            // model_key = query.model_key;
-            // stats = data_source.stats;
-
-            // let bull = data_source.data[level].filter(d => d[Const.TREND_ID] == Const.BULL);
-            // let bear = data_source.data[level].filter(d => d[Const.TREND_ID] == Const.BEAR);
-            // data_ret[Const.BULL_ID] = bull.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
-            // data_ret[Const.BEAR_ID] = bear.map( d => [[d[Const.END_ID].time, d[Const.END_ID].price], d[Const.RET_ID]] );
-            // data_ret_levels = data_source[Const.RET_LEVELS_ID];
-            // data_ret_values[Const.BULL_ID] = bull.map( d => [].concat(data_ret_levels.map(l => d[l])) );
-            // data_ret_values[Const.BEAR_ID] = bear.map( d => [].concat(data_ret_levels.map(l => d[l])) );
-            
-            // data_delta_ini[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
-            // data_delta_fin[Const.BULL_ID] = bull.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
-            // data_delta_ini[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_INIT_ID]] );
-            // data_delta_fin[Const.BEAR_ID] = bear.map( d => [d[Const.TIMESTAMP_ID],d[Const.DELTA_END_ID]] );
-
-            // data[Const.BULL_ID] = bull.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
-            // data[Const.BEAR_ID] = bear.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID] ].map(dd => [dd.time, dd.price]) );
-
             res = {
                 // id: query[Const.ID_ID],
                 // name: data_source[Const.NAME_ID],
@@ -201,9 +177,8 @@ class ChartView {
                     res.push(...data_level.map((r, i) => {
                         let name = `${Const.FIBO_RET_ID}_${n}_${l}_${i}`;
                         let trend = Const.TREND_STR[r[Const.TREND_ID]];
-                        let ret_levels = r[Const.RET_LEVELS_ID];
-                        let levels = Object.keys(ret_levels);
-                        let values = Object.values(ret_levels);
+                        let levels = Object.keys(r[Const.RET_LEVELS_ID]);
+                        let values = Object.values(r[Const.RET_LEVELS_ID]);
                         // Y values (price
                         let ymin = Math.min(...levels);
                         let ymax = Math.max(...levels);
@@ -215,6 +190,11 @@ class ChartView {
                         let xstart, xend;
                         [xstart, xend] = [r[Const.END_ID].time, r[Const.CORRECTION_ID].time];
                         let width = xend - xstart;
+                        // let datasource_name = r[Const.RET_LEVELS_DATA_SOURCE_ID];
+                        // let data_source_object = (datasource_name) ? data_source[datasource_name][l] : undefined;
+                        // let levels_datasource = (data_source_object) ? Object.keys(data_source_object[Const.RET_LEVELS_ID]) : undefined;
+                        // let values_datasource = (data_source_object) ? Object.values(data_source_object[Const.RET_LEVELS_ID]) : undefined;
+                        
                         return {
                             name: name,
                             trend: trend,
@@ -228,6 +208,8 @@ class ChartView {
                             height: height,
                             ymin: ymin,
                             ymax: ymax,
+                            // levelsdatasource: levels_datasource,
+                            // valuesdatasource: values_datasource,
                         }
                     }));
                 });
@@ -254,11 +236,10 @@ class ChartView {
         // let timeFrame = this.create_time_frame(name);
         // $(frame).append(timeFrame);
         $(window).resize(function() { chart.resize(); });
-        this.update_zoom(chart);
         this.zoomAxis(chart, id);
-        ChartView.chart_tree[id] = {};
-        ChartView.chart_tree[id][Const.CHART_ID] = chart;
-        ChartView.chart_tree[id][Const.GRAPHICS_ID] = {};
+        this.chart_tree[id] = {};
+        this.chart_tree[id][Const.CHART_ID] = chart;
+        this.chart_tree[id][Const.GRAPHICS_ID] = {};
         let chart_info = { chart: chart, id: id, num: params.num, frame: params.frame }
         return chart_info;
     }
@@ -458,6 +439,7 @@ class ChartView {
                             borderColor0: this.cnf.colorBorderDownd,
                         },
                         barWidth: '75%',
+                        z: 100,
                     },
                     // {
                     //     name: 'Volume',
@@ -626,7 +608,8 @@ class ChartView {
                 type: 'line', color: "rgba(255, 255, 255, 0.8)",
                 lineStyle: { width: 1, opacity: 0.8, },
                 showSymbol: false,
-                markPoint: ret_markpoints_bull
+                markPoint: ret_markpoints_bull,
+                z: 100,
             };
 
             let move_series_bear = {
@@ -635,7 +618,8 @@ class ChartView {
                 type: 'line', color: "rgba(255, 255, 255, 0.8)",
                 lineStyle: { width: 1, opacity: 0.8, },
                 showSymbol: false,
-                markPoint: ret_markpoints_bear
+                markPoint: ret_markpoints_bear,
+                z: 100,
             };
 
             // let ret_labels = ret_labels_bull.concat(ret_labels_bear);
@@ -662,18 +646,9 @@ class ChartView {
         let ret;
         console.time('plot_retracements');
         try {
-            // let data = this.format_retracements(data_source, query);
-
             // Labels for markpoint bull
             let ret_labels;
             let ret_markpoints;
-            // let ret_labels_bull;
-            // let ret_markpoints_bull;
-            // let ret_series_bull = [];
-
-            // let ret_labels_bear;
-            // let ret_markpoints_bear;
-            // let ret_series_bear = [];
 
             let ret_series = [];
 
@@ -696,39 +671,6 @@ class ChartView {
 
                 ret_series = ret_series.concat(ret_series_trend);
             }
-            // ChartView.TRENDS.forEach( t => {
-                // // Marks
-                // if(data.data_ret[t]) {
-                //     ret_labels = data.data_ret[t].map( (r, i) => {
-                //         return this.generate_label(r[0], r[1], data[Const.NAME_ID] + ChartView.MARK_TEXT_ID[t] + i,
-                //                             ChartView.MARK_OFFSET[t], ChartView.MARK_COLOR[t]);
-                //     });
-    
-                //     // Markpoint label
-                //     ret_markpoints = {
-                //         label: { formatter: r => (r.value != null) ? parseFloat(r.value).toFixed(3) + '' : '', },
-                //         data: ret_labels,
-                //     };
-                // }
-
-                // Lines
-                // if(data.data[t]) {
-                //     let ret_series_trend = data.data[t].map( (r, i) => {
-                //         return {
-                //             id: data[Const.NAME_ID] + ChartView.TREND_TEXT_ID[t] + i, name: data[Const.NAME_ID],
-                //             type: 'line', color: ChartView.LINE_COLOR[t],
-                //             lineStyle: { width: 3, opacity: 0.6, },
-                //             showSymbol: false,
-                //             data: r,
-                //             markPoint: ret_markpoints
-                //         }
-                //     });
-
-                //     ret_series = ret_series.concat(ret_series_trend);
-                // }
-            // });
-
-            // ret_series = ret_series_bull.concat(ret_series_bear);
 
             // Fibonacci retracement graphic
             let fibo = {
@@ -855,12 +797,12 @@ class ChartView {
                     let graphics = (curr_option.graphic && (curr_option.graphic.length)) ? curr_option.graphic[0].elements : [];
                     for(let i=0; i<series.length; i++) {
                         graphics = [].concat(...graphics.filter( g => (g != undefined) && g.id.includes(series[i]) == false));
-                        Object.keys(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach(g => {
+                        Object.keys(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach(g => {
                             if(g.includes(series[i])) {
-                                if(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g].remove) {
-                                    ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g].remove(chart);
+                                if(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g].remove) {
+                                    this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g].remove(chart);
                                 }
-                                delete ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g];
+                                delete this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][g];
                             }
                         });
                         chart_series = [].concat(...chart_series.filter( s => (s != undefined) && s.id.includes(series[i]) == false));
@@ -881,7 +823,7 @@ class ChartView {
 
                 // Updates chart tree with deleted objects
                 // series.forEach(s => {
-                //     let gs = Object.values(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).filter(sg => sg[Const.NAME_ID].includes(s));
+                //     let gs = Object.values(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).filter(sg => sg[Const.NAME_ID].includes(s));
                 //     for(let ig=0; ig < gs.length; ig++) {
                 //         if(gs[ig].remove()) {
                 //             gs[ig].remove();
@@ -889,7 +831,7 @@ class ChartView {
                 //         delete gs[ig];
                 //     }
                 // });
-                // ChartView.chart_tree = ChartView.chart_tree.filter(o => series.includes(o.name) == false);
+                // this.chart_tree = this.chart_tree.filter(o => series.includes(o.name) == false);
 
                 ret = series;
             }
@@ -1160,6 +1102,7 @@ class ChartView {
                     showSymbol: showSymbol,
                     label: { offset: offset, color: textColor, },
                     itemStyle: { color: symbolColor, itemSize: symbolSize, },
+                    z: 99,
         };
 
         return label;
@@ -1171,7 +1114,7 @@ class ChartView {
                 try {
                     f.plot(chart);
                     // ChartView.#chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID].push(f);
-                    ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][f[Const.NAME_ID]] = f;
+                    this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][f[Const.NAME_ID]] = f;
                 }
                 catch(error) {
                     console.error(`EXCEPTION draw_fibonacci:${error}.`);
@@ -1183,37 +1126,8 @@ class ChartView {
         }
     }
 
-    update_zoom(chart) {
-        // var zoom_enabled = true;
-        // window.addEventListener('resize', updatePosition);
-        // chart.on('dataZoom', updatePosition);
-        // function updatePosition(z) {
-        //     // if(zoom_enabled) {
-        //     //     Object.values(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach(f => {
-        //     //         f.plot(chart);
-        //     //     });
-        //     //     zoom_enabled = false;
-        //     //     setTimeout(e => zoom_enabled = true, 100);
-        //     // }
-        // }
-    }
 
-    update(chart) {
-        try {
-            chart.resize();
-            if(Object.keys(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).length > 0) {
-                let graphics = [];
-                Object.values(ChartView.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach( g => {
-                    graphics.push(g.get_plot(chart));
-                });
-                chart.setOption( {graphic: []}, {replaceMerge: ['graphic']});
-                chart.setOption( {graphic: graphics}, {replaceMerge: ['graphic']});
-            }
-        }
-        catch(error) {
-            console.error(error);
-        }
-    }
+    // ZOOM AXIS DRAGGING --------------------------------------------------------------------------------------------
 
     zoomAxis(chart, id) {
         var x1 = 0, y1 = 0;
@@ -1228,14 +1142,21 @@ class ChartView {
             else if(x < xzoom.startValue) {
                 [x1, y1] = [undefined, y];
                 chart.getZr().on('mousemove', dragAxisZoom);
-                // console.log('y start:', yzoom.startValue);
-                // console.log(`y1:${y1}`);
             }
             else if(y < yzoom.startValue) {
                 [x1, y1] = [x, undefined];
                 chart.getZr().on('mousemove', dragAxisZoom);
-                // console.log('x start:', xzoom.startValue);
-                // console.log(`x1:${x1}`);
+            }
+            // Unselect all graphic's controls
+            else {
+                Object.values(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach( g => {
+                    let target_name = (e.target) ? e.target.parent.name : '';
+                    if(g[Const.NAME_ID] != target_name) {
+                        if(typeof g.unselect == "function") {
+                            g.unselect();
+                        }
+                    }
+                });
             }
         });
 
@@ -1244,25 +1165,25 @@ class ChartView {
                 x2 = chart.convertFromPixel({ xAxisIndex:0 }, e.offsetX);
                 let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
                 let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
-                let delta = (x2 - x1)/25;
+                let delta = (x2 - x1)/2;
                 // Zoom over sign, stops zoom
-                // console.log(delta);
                 that.zoom_chart({ startValue: { x: xzoom.startValue - delta, y: yzoom.startValue },
                                     endValue: { x: xzoom.endValue + delta, y: yzoom.endValue },
                                     onlyValid: [false, false],
                                 }, chart);
+                x1 = x2;
             }
             else if(y1) {
                 y2 = chart.convertFromPixel({ yAxisIndex:0 }, e.offsetY);
                 let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
                 let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
-                let delta = (y2 - y1)/25;
+                let delta = (y2 - y1)/2;
                 // Zoom over sign, stops zoom
-                // console.log(delta);
                 that.zoom_chart({ startValue: { x: xzoom.startValue, y: yzoom.startValue - delta },
                                     endValue: { x: xzoom.endValue, y: yzoom.endValue + delta },
                                     onlyValid: [false, false],
                                 }, chart);
+                y1 = y2;
             }
         }
 
@@ -1271,41 +1192,5 @@ class ChartView {
             y1 = 0;
             chart.getZr().off('mousemove', dragAxisZoom);
         });
-
-        // chart.getZr().on('mousedown', (e) => {
-        //     let graphics = chart.getOption().graphic;
-        //     if(graphics && (graphics.length > 0)) {
-        //         graphics = chart.getOption().graphic[0].elements;
-        //         // Blank chart clicked
-        //         if(e.target == undefined) {
-        //             graphics.forEach( g => {
-        //                 if((g.id.includes('CONTROL_START')) || (g.id.includes('CONTROL_END'))) {
-        //                     let parent = chart.getOption().graphic[0].elements.filter(p => p.id == g.parentId)[0];
-        //                     parent.onclick(false);
-        //                 }
-        //             });
-        //             that.selected = [];
-        //         }
-        //         else if(e.target != undefined) {
-        //             let fibos = graphics.filter( f => (f.id != e.target.parent.id) && (f.type == 'group') && (f.id.includes('FIBO')));
-        //             that.selected = [e.target.parent.id];
-        //             fibos.forEach( f=> f.onclick(false));
-        //         }
-        //     }
-        // });
-
-        // chart.on('mousedown', (params) => {
-        //     console.log(params)
-        // });
-
-        // chart.on('click', (params) => {
-        //     that.clicked = true;
-        //     if(params.componentType == 'graphic') {
-        //         let sel = params.event.target.parent.id;
-        //         if(that.selected.includes(params.event.target.parent.id) == false) {
-        //             that.selected = [sel];
-        //         }
-        //     }
-        // });
     }
 }

@@ -554,6 +554,8 @@ class MenuPatterns {
     init() {
         var that = this;
         try {
+            $(MenuPatterns.ELEMENT_ID_MENU_ICON).prop('title', MenuPatterns.TITLE);
+
             MenuPatterns.PATTERN_TYPE_CALLBACK = {
                 [Const.MOVIMIENTOS_ID]: this.#show_menu_movements,
                 [Const.RETROCESOS_ID]: this.#show_menu_retracements,

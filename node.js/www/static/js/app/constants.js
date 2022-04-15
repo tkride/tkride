@@ -283,9 +283,11 @@ class Const {
     static ONLY_MAX_ID = 'onlymax';
     static PATTERN_RESULTS_ID = 'patternresults';
     static PATTERNS_ID = 'patterns';
-    static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource'
-    static RET_LEVELS_FROM_ID = 'levelsfrom'
+    static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource';
+    static RET_LEVELS_FROM_ID = 'levelsfrom';
     
+    static RET_DATA_SOURCE_ID = 'datasource';
+
     static LOGICAL_ID = 'logical';
     static RET_MIN_ID = 'ret_min';
     static RET_MAX_ID = 'ret_max';
