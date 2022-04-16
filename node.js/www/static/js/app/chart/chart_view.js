@@ -324,15 +324,10 @@ class ChartView {
                         // top: '0%', //'-200%',
                         // left: 65,
                         left: '1%',
-                        // bottom: '8%',
                         bottom: '10px',
-                        // height: '91.8%',
                         height: '95%',
-                        // width: '96.6%',
-                        width: '98.5%',
+                        width: '100%', //'98.5%',
                         containLabel: true,
-                        // z: 99,
-                        // zlevel: 1,
                     },
                     // {
                     //     left: '5%',
@@ -344,51 +339,44 @@ class ChartView {
                 
                 xAxis: [
                     {
-                        // scale: true,
-                        // type: 'category',
-                        // type: 'datetime',
                         type: 'time',
-                        triggerEvent: true,
-                        silent: false,
-                        // data: data.data_x,
                         backgroundColor: ChartView.BACKGROUND_COLOR,
                         position: 'bottom',
+                        splitNumber: 6,
                         // offset:x_axis_vert_offset,
-                        // offset: -150,
-                        axisLine: { show: true, lineStyle: { color: this.cnf.colorTextAxis } },
+                        axisLine: { show: true, lineStyle: { color: this.cnf.colorLineAxis } },
                         axisTick: { show: false },
                         splitLine: { show: false },
-                        axisLabel: { show: true },
-                        min: null, //'1970-01-01 00:00:00',//'dataMin',
-                        max: null, //'2022-11-01 00:00:00', //Time.add_value(Time.now(Time.FORMAT_STR), '1M').format(Time.FORMAT_STR),//'dataMax',
-                        // boundaryGap: true,
                         axisLabel: {
-                            formatter: axisValue => {
-                              return moment(axisValue).format("MM-DD HH:mm");
-                            }
+                            show: true,
+                            formatter: axisValue => { return moment(axisValue).format("MM-DD HH:mm"); },
+                            color: this.cnf.colorTextAxis,
+                            fontSize: 15,
                         },
+                        min: null,
+                        max: null,
+                        clip: true,
                     },
                 ],
 
                 yAxis:[
                     {
                         scale: true,
-                        triggerEvent: true,
-                        silent: false,
                         gridIndex: 0,
-                        splitNumber: 10,
-                        axisLine: { show: true, lineStyle: { color: this.cnf.colorTextAxis } },
+                        splitNumber: 11,
+                        offset: -8,
+                        // axisLine: { show: true, lineStyle: { color: this.cnf.colorTextAxis } },
+                        axisLine: { show: true, lineStyle: { color: this.cnf.colorLineAxis } },
                         axisTick: { show: false },
                         splitLine: { show: false },
-                        axisLabel: { show: true, color: this.cnf.colorTextAxis },
+                        axisLabel: {
+                            show: true,
+                            color: this.cnf.colorTextAxis,
+                            fontSize: 15,
+                            formatter: price => { return price; },
+                        },
                         min: min_y,
                         max: max_y,
-                        boundaryGap: true,
-                        axisLabel: {
-                            formatter: price => {
-                                return price;
-                            }
-                        }
                     },
                     // {
                     //     scale: true,
@@ -651,6 +639,12 @@ class ChartView {
             let ret_markpoints;
 
             let ret_series = [];
+            let real_trend = data.data.map(d => {
+                let rt = (d[0][1] > d[1][1]) ? Const.BEAR_ID : Const.BULL_ID;
+                return [d[5], rt];
+            });
+            
+            data.data_ret.map( dr => dr.push( real_trend.filter(rt => rt[0]==dr[3])[0][1] ) );
 
             ret_markpoints = this.generate_markpoints(data.data_ret);
             if(data.data) {
@@ -788,13 +782,17 @@ class ChartView {
     /*** If series == null, clears all chart series. */
     clear_chart(chart, series=null) {
         let ret;
+        let num_series = 1;
+        let num_graphics = 0;
         try {
             let curr_option = chart.getOption();
             if(series && (series.length == 0)) { return series; }
             if(curr_option) {
                 if(series) {
                     let chart_series = curr_option.series;
+                    num_series = chart_series.length;
                     let graphics = (curr_option.graphic && (curr_option.graphic.length)) ? curr_option.graphic[0].elements : [];
+                    num_graphics = graphics.length;
                     for(let i=0; i<series.length; i++) {
                         graphics = [].concat(...graphics.filter( g => (g != undefined) && g.id.includes(series[i]) == false));
                         Object.keys(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach(g => {
@@ -816,10 +814,14 @@ class ChartView {
                 }
 
                 // Updates chart
-                chart.setOption( { series: [] }, {replaceMerge: ['series']} );
-                chart.setOption( { series: curr_option.series }, {replaceMerge: ['series']} );
-                chart.setOption( { graphic: [] }, {replaceMerge: ['graphic']} );
-                chart.setOption( { graphic: curr_option.graphic }, {replaceMerge: ['graphic']} );
+                if(num_series > 1) {
+                    chart.setOption( { series: [] }, {replaceMerge: ['series']} );
+                    chart.setOption( { series: curr_option.series }, {replaceMerge: ['series']} );
+                }
+                if(num_graphics) {
+                    chart.setOption( { graphic: [] }, {replaceMerge: ['graphic']} );
+                    chart.setOption( { graphic: curr_option.graphic }, {replaceMerge: ['graphic']} );
+                }
 
                 // Updates chart tree with deleted objects
                 // series.forEach(s => {
@@ -1042,7 +1044,8 @@ class ChartView {
         let info = '<div class="class-tooltip">' +
                         ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.name + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.marco + ChartView.P_CLOSE +
-                        ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.broker + '__' + ChartView.P_CLOSE +
+                        ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.broker + ChartView.P_CLOSE +
+                        ChartView.CHART_TOOLTIP_HEADER_DUMMY + '..___' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_TEXT + '' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_TEXT + 'O' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + ChartView.VALUES_CLOSE + open + ChartView.P_CLOSE +
@@ -1073,8 +1076,9 @@ class ChartView {
                     let value = r[1];
                     let trend = r[2];
                     let name = r[3];
+                    let real_trend = r[4];
                     return this.generate_label(coord, value, name + ChartView.MARK_TEXT_ID[trend] + i,
-                                        ChartView.MARK_OFFSET[trend], ChartView.MARK_COLOR[trend]);
+                                        ChartView.MARK_OFFSET[real_trend], ChartView.MARK_COLOR[trend]);
                 });
 
                 // Markpoint label
@@ -1110,6 +1114,10 @@ class ChartView {
     
     draw_fibonacci(data, chart) {
         try {
+            if((data instanceof Array) == false) {
+                data = [data];
+            }
+            
             data.forEach(f => {
                 try {
                     f.plot(chart);
@@ -1135,6 +1143,9 @@ class ChartView {
         var that = this;
         chart.getZr().on('mousedown', (e) => {
             let [x, y] = chart.convertFromPixel({ xAxisIndex:0, yAxisIndex:0}, [e.offsetX, e.offsetY]);
+            // let zoom = chart.getOption().dataZoom;
+            // let xzoom = zoom.filter(dz => dz.id.includes('x_inside'))[0];
+            // let yzoom = zoom.filter(dz => dz.id.includes('y_inside'))[0];
             let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
             let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
             if( (x < xzoom.startValue) && (y < yzoom.startValue)) {
@@ -1165,7 +1176,7 @@ class ChartView {
                 x2 = chart.convertFromPixel({ xAxisIndex:0 }, e.offsetX);
                 let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
                 let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
-                let delta = (x2 - x1)/2;
+                let delta = (x2 - x1);
                 // Zoom over sign, stops zoom
                 that.zoom_chart({ startValue: { x: xzoom.startValue - delta, y: yzoom.startValue },
                                     endValue: { x: xzoom.endValue + delta, y: yzoom.endValue },
@@ -1177,7 +1188,7 @@ class ChartView {
                 y2 = chart.convertFromPixel({ yAxisIndex:0 }, e.offsetY);
                 let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
                 let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
-                let delta = (y2 - y1)/2;
+                let delta = -(y2 - y1);
                 // Zoom over sign, stops zoom
                 that.zoom_chart({ startValue: { x: xzoom.startValue, y: yzoom.startValue - delta },
                                     endValue: { x: xzoom.endValue, y: yzoom.endValue + delta },

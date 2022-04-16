@@ -195,12 +195,29 @@ class Const {
     static CLASS_MENU_OPTIONS_RADIO = 'menu-options-radio';
     static CLASS_DROPDOWN_ARROW = 'dropdown-arrow';
     static CLASS_SCROLL_CUSTOM = 'scroll-custom';
+    static CLASS_SCROLL_NONE = 'scroll-none';
     // CLASS ICONS
     static CLASS_ICON_ARROW_DOWN = 'lni lni-chevron-down';
     static CLASS_ICON_ADD = 'lni lni-circle-plus';
     static CLASS_ICON_DELETE = 'lni lni-cross-circle';
     static CLASS_ICON_SAVE = 'lni lni-save';
     static CLASS_ICON_CLEAR = 'lni lni-eraser';
+    static CLASS_ICON_SETTINGS = 'lni lni-cog';
+    static CLASS_ICON_MENU = 'lni lni-menu';
+    static CLASS_ICON_HAND = 'lni lni-hand';
+    static CLASS_ICON_FILTER = 'lni lni-funnel';
+    static CLASS_ICON_EYE = 'lni lni-eye';
+    static CLASS_ICON_REMOVE = 'lni lni-trash-can';
+    static CLASS_ICON_LIST = 'lni lni-list';
+    static CLASS_ICON_FIBO = 'lni lni-list';
+    static CLASS_ICON_TELEGRAM = 'lni lni-telegram-original';
+    static CLASS_ICON_WHATSAPP = 'lni lni-whatsapp';
+    static CLASS_ICON_EMAIL = 'lni lni-envelope';
+    static CLASS_ICON_ALARM = 'lni lni-alarm';
+    static CLASS_ICON_LOCK = 'lni lni-lock';
+    static CLASS_ICON_UNLOCK = 'lni lni-unlock';
+
+    static CLASS_BACK_POINTS = 'points';
 
     // LABEL POSITION
     static LABEL_POSITION_INSIDE = 'inside';

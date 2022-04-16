@@ -45,32 +45,27 @@
     border-top: 2px solid var(--border-color);
     border-bottom: 2px solid var(--border-color);
 }
-
+/* 
 #patterns-menu-add {
     margin: 1em 1em 1em 2em;
-    /* display: inline-block; */
     float: left;
-    /* cursor: pointer; */
     cursor: not-allowed;
 }
 
 #patterns-menu-save {
     margin: 1em 1em 1em 0em;
-    /* display: inline-block; */
     float: left;
     cursor: pointer;
 }
 
-#patterns-menu-delete {
+#patterns-menu-remove {
     margin: 1em 1em 1em 0em;
-    /* display: inline-block; */
     float: left;
     cursor: pointer;
 }
 
 #patterns-menu-reset {
     margin: 1em 1em 1em 0em;
-    /* display: inline-block; */
     float: left;
     cursor: pointer;
 }
@@ -78,9 +73,8 @@
 #patterns-menu-submit {
     margin: 1em;
     float: right;
-    /* display: inline-block; */
     cursor: pointer;
-}
+} */
 
 .stored-rets > * {
     font-family: var(--font);

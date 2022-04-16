@@ -27,12 +27,15 @@ class Retracements {
     //----------------------------- PUBLIC METHODS -----------------------------
 
     static process(request) {
+        var ret = {};
         try {
             console.time(`Retracements ${request[Const.ID_ID]}`);
-            var ret = Retracements.#process(request);
+            ret = Retracements.#process(request);
         }
         catch(error) {
-            console.error(`Retracements process ERROR: ${error}.`);
+            // ret.error = `Retracements process ERROR: ${error}.`;
+            ret.error = `${error}.`;
+            console.error(ret.error);
         }
         console.timeEnd(`Retracements ${request[Const.ID_ID]}`);
         return ret;
@@ -240,7 +243,8 @@ class Retracements {
 
         }
         catch(error) {
-            let msg = `Retracements process ERROR: ${error}.`;
+            // let msg = `Retracements process ERROR: ${error}.`;
+            let msg = `${error}.`;
             console.error(msg);
             throw(msg);
         }
@@ -625,7 +629,8 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             }
         }
         catch(error) {
-            let msg = `ERROR @retracements::get_parent_data: ${error}`;
+            // let msg = `ERROR @retracements::get_parent_data: ${error}`;
+            let msg = `${error}`;
             console.error(msg);
             throw(msg);
         }

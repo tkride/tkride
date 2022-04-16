@@ -11,9 +11,11 @@
  * @param header.label { text: label text shown in control header | position: { before | after | inside } | class: specific class applied to label | css: custom style applied to label }
  * @param header.label.position { 'before': Shows label before control.  |  'after': shows label after control.  |  'inside': shows label in control header. }
  * @param header.arrow { true: show down arrow in control header | false(default): don't show }
- * @param event_name Event/Callback callback name when clicking a list item. If no one provided,
+ * @param event Event/Callback callback name when clicking a list item. If no one provided,
  *                   check for HTML micro-data 'data-event'. If function provided, then
  *                   callback is called when clicking items, instead of triggering event.
+ * @param css Aplies CSS properties to each element: css: { container: {..}, items: {..}, label: {..} }
+ * @param select_unknown Let select items not available in list.
  * @note Event is triggered to 'document'.
  */
 class Dropdown {
@@ -36,6 +38,7 @@ class Dropdown {
     #header = { label: { enabled: false }, selected: { enabled: false }, arrow: { enabed: false} };
     #items_cont;
     #class;
+    #select_unknown = false
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -51,6 +54,11 @@ class Dropdown {
     init(params) {
         let dd;
         let items;
+
+        params = params || {};
+
+        // Let force select unknown items
+        if(params.select_unknown) { this.#select_unknown = (params.select_unknown == true) ? true : false; }
 
         // If DOM element passed
         if(params.element != undefined) {
@@ -105,6 +113,7 @@ class Dropdown {
                 this.#header.label.enabled = true;
                 let label_class = (this.#header.label.class) ? this.#header.label.class : '';
                 this.#header.label.control = $(`<span id='${this.#container_id}-label' class='${label_class}'></span>`);
+                if(params.css.label) { this.#header.label.css = params.css.label; }
                 if(this.#header.label.css) {
                     this.#header.label.control.css(this.#header.label.css);
                 }
@@ -247,7 +256,12 @@ class Dropdown {
     get selected() { return this.#header.selected.text; }
     set selected(selected) {
         this.#header.selected.text = selected;
-        this.#header.selected.control.text(this.#header.selected.text);
+        if(this.#header.selected.control) {
+            this.#header.selected.control.text(this.#header.selected.text);
+        }
+        else {
+            console.log(`WARNING: No existe el elemento ${selected} en la lista.`);
+        }
     }
 
     select(item, e) {
@@ -257,7 +271,8 @@ class Dropdown {
             else if(this.#callback) this.#callback(item, e);
         }
         else {
-            this.selected = '';
+            if(this.#select_unknown) { this.selected = item; }
+            else { this.selected = ''; }
         }
     }
 
@@ -535,6 +550,7 @@ class Table {
  * @param title Title for display.
  * @param title_css Title css custom style.
  * @param show_title true for showing title in display.
+ * @param no_title true do not create title in display.
  * @param draggable true for make display draggable.
  * @param close Shows handler close icon.
  * @param close_cb Custom callback when clicking close icon.
@@ -544,6 +560,7 @@ class Table {
  * @param class Toggles default control class.
  * @param new_classes Appends new control classes.
  * @param show Shows display control on create (true by default).
+ * @param overflow false: disables overflow. Any other case, applies default configuration.
  * @returns Custom properties can be accesed from DOM using data('Display) method.
  */
 
@@ -556,12 +573,17 @@ class Display {
     static TEXT_MINIMIZE = '__';
     static TEXT_MAXIMIZE = '▭';
     
+    // Classes
+    static CLASS_ICONS = 'display-control-icons';
+    static CLASS_ICONS_FLOAT = 'display-control-icons-float';
     static CLASS_DISPLAY = 'display-control';
     static CLASS_TITLE = 'display-control-TITLE';
     static CLASS_CONTENT = 'display-control-content';
     static CLASS_SEPARATOR = 'display-control-separator';
+    static CLASS_SEPARATOR_VERT = 'display-control-separator-vert';
     static CLASS_HANDLE_MIN = 'display-control-handle-min';
     static CLASS_HANDLE_CLOSE = 'display-control-handle-close';
+
     static ELEMENT_HANDLE = '<div class="display-control-handle"><div>';
     static ELEMENT_HANDLE_MIN = '<div class="display-control-handle-min hoverable-icon">' + Display.TEXT_MINIMIZE + '<div>';
     static ELEMENT_HANDLE_CLOSE = '<div class="display-control-handle-close hoverable-close lni lni-close"><div>';
@@ -571,22 +593,25 @@ class Display {
     static DEFAULT_WIDTH_UNITS = 'vw'
     static DEFAULT_HEIGHT = 60;
     static DEFAULT_HEIGHT_UNITS = 'vh';
-    static DEFAULT_CONTENT = `<div class='${Display.CLASS_CONTENT} ${Const.CLASS_SCROLL_CUSTOM}'></div>`;
+    // static DEFAULT_CONTENT = `<div class='${Display.CLASS_CONTENT} ${Const.CLASS_SCROLL_CUSTOM}'></div>`;
+    static DEFAULT_CONTENT = `<div class='${Display.CLASS_CONTENT}'></div>`;
+    static CSS_OVERFLOW_NONE = { 'overflow': 'none' };
     
     static SEPARATOR = `<div class='${Display.CLASS_SEPARATOR}'></div>`
+    static SEPARATOR_VERT = `<div class='${Display.CLASS_SEPARATOR_VERT}'></div>`
 
     //----------------------------- PROPERTIES -----------------------------
     #element;
     #element_handle;
     #close_show = true;
     #element_handle_close;
-    #close_cb = this.#hide;
+    #close_cb = this.hide;
     #min_show = false;
     #element_handle_min;
     #min_cb = this.#minimize;
     #element_title;
     #id;
-    #center = true;
+    #center = false;
     #width;// = Display.DEFAULT_WIDTH;
     #width_units;// = Display.DEFAULT_WIDTH_UNITS;
     #height;// = Display.DEFAULT_HEIGHT;
@@ -599,6 +624,7 @@ class Display {
     #title_css = '';
     #tooltip = '';
     #show_title = true;
+    #no_title = false;
     #draggable = true;
     #content = $(Display.DEFAULT_CONTENT);
     #insert = true;
@@ -606,6 +632,7 @@ class Display {
     #new_classes = '';
     #css = '';
     #show = true;
+    #overflow = true;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -619,24 +646,33 @@ class Display {
     #create_display() {
         // Create main div with css classes
         this.#element = $(`<div id='${this.#id}' class='${this.#class} ${this.#new_classes}'></div>`);
+        if(this.#overflow == false) {
+            this.#element.addClass(Const.CLASS_SCROLL_NONE);
+        }
 
         // Handle controls
-        this.#element_handle = $(Display.ELEMENT_HANDLE);
-        this.#element_handle_close = $(Display.ELEMENT_HANDLE_CLOSE);
-        this.#element_handle_min = $(Display.ELEMENT_HANDLE_MIN);
-        this.#element.append(this.#element_handle);
-        if(this.#close_show == true) {
-            this.#element_handle.append(this.#element_handle_close);
-        }
-        if(this.#min_show == true) {
-            this.#element_handle.append(this.#element_handle_min);
+        if(this.#close_show || this.#min_show) {
+            this.#element_handle = $(Display.ELEMENT_HANDLE);
+            this.#element_handle_close = $(Display.ELEMENT_HANDLE_CLOSE);
+            this.#element_handle_min = $(Display.ELEMENT_HANDLE_MIN);
+            if(this.#close_show == true) {
+                this.#element_handle.append(this.#element_handle_close);
+                this.#element_handle_close.on('click', e => this.#close_cb.call(this));
+            }
+            if(this.#min_show == true) {
+                this.#element_handle.append(this.#element_handle_min);
+                this.#element_handle_min.on('click', e => this.#min_cb());
+            }
+            this.#element.append(this.#element_handle);
         }
 
         // Title configuration
-        this.#element_title = $(Display.ELEMENT_TITLE);
-        this.#element_title.text(this.#title);
-        this.#element_title.css(this.#title_css);
-        this.#element.append(this.#element_title);
+        if(this.#no_title == false) {
+            this.#element_title = $(Display.ELEMENT_TITLE);
+            if(this.#show_title) { this.#element_title.text(this.#title); }
+            if(this.#title_css) { this.#element_title.css(this.#title_css); }
+            this.#element.append(this.#element_title);
+        }
 
         // Dimensions
         this.#element.css({
@@ -654,6 +690,8 @@ class Display {
         }
 
         // Append content div
+        if(this.#overflow == false) { this.#content.addClass(Const.CLASS_SCROLL_NONE) }
+        else { this.#content = this.#content.addClass(Const.CLASS_SCROLL_CUSTOM); }
         this.#element.append(this.#content);
 
         // Check insert into DOM when creating
@@ -678,10 +716,6 @@ class Display {
         this.#element.data('Display', this);
     }
 
-    #hide() {
-        this.#element.hide();
-    }
-
     #minimize() {
     }
 
@@ -695,6 +729,10 @@ class Display {
         // Set tooltip 
         if(params.tooltip) {
             this.#tooltip = params.tooltip;
+        }
+
+        if(params.overflow != undefined) {
+            this.#overflow = params.overflow;
         }
         
         // Set display name
@@ -721,13 +759,23 @@ class Display {
             if(params.height) this.#height = params.height.replace(/[a-zA-Z]+/g, '');
             if(params.height) this.#height_units = params.height.replace(/[0-9.]+/g, '');
 
+            if(this.#width_units == undefined) { this.#width_units = 'px'; }
+            if(this.#height_units == undefined) { this.#height_units = 'px'; }
+
             let wref = '100';
             let href = '100';
-            if(this.#width_units == 'px') wref = window.screen.width;
-            if(this.#height_units == 'px') wref = window.screen.height;
-            this.#left = (wref - parseFloat(this.#width)) / 2;
+            if(this.#width_units == 'px') { wref = window.screen.width; }
+            else if(this.#width_units == 'em') { wref = $(window).width() / parseFloat($("body").css("font-size"));}
+
+            if(this.#height_units == 'px') { href = window.screen.height; }
+            else if(this.#height_units == 'em') { href = $(window).height() / parseFloat($("body").css("font-size"));}
+
+            if(this.#width == undefined) {  this.#left = wref/2; }
+            else { this.#left = (wref - parseFloat(this.#width)) / 2; }
             this.#left_units = this.#width_units;
-            this.#top = (href - parseFloat(this.#height)) / 2;
+
+            if(this.#height == undefined) { this.#top = href/2; }
+            else { this.#top = (href - parseFloat(this.#height)) / 2; }
             this.#top_units = this.#height_units;
         }
         else {
@@ -743,6 +791,7 @@ class Display {
         if(params.title) this.#title = params.title;
         if(params.title_css) this.#title_css = params.title_css;
         if(params.show_title != undefined) this.#show_title = params.show_title;
+        if(params.no_title != undefined) this.#no_title = params.no_title;
 
         // Set contents
         if(params.content != undefined) this.#content = params.content;
@@ -769,10 +818,6 @@ class Display {
 
         // Creates control and append to DOM
         this.#create_display();
-
-        // Initialize default events
-        this.#element_handle_close.on('click', e => this.#close_cb());
-        this.#element_handle_close.on('click', e => this.#min_cb());
     }
 
     //----------------------------- GETTERS & SETTERS -----------------------------
@@ -928,7 +973,9 @@ class Display {
     static build_separator(params) {
         params = params || {};
         let class_ = params.class || '';
-        let sep = $(Display.SEPARATOR, { class: class_ });
+        let vert = params.vert || false;
+        let sep = (vert) ? $(Display.SEPARATOR_VERT, { class: class_ }) :
+                           $(Display.SEPARATOR, { class: class_ });
         if(params.id) sep.attr('id', params.id);
         if(params.css) sep.css(params.css);
         return sep;
@@ -942,6 +989,14 @@ class Display {
                 $(el).remove();
             }
         }
+    }
+
+    show() {
+        this.#element.show();
+    }
+    
+    hide() {
+        this.#element.hide();
     }
 } // Display
 

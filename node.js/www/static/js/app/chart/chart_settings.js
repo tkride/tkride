@@ -12,6 +12,7 @@ class ChartSettings {
     static COLOR_TIP_TEXT_DEFAULT ="#f8f8fa";
     static COLOR_SELECTED_BACK ="#2862fe";
     static COLOR_TEXT_AXIS_DEFAULT = 'rgba(173,175,185,255)';
+    static COLOR_LINE_AXIS_DEFAULT = '#393d4b';
 
 
     //----------------------------- PROPERTIES -----------------------------
@@ -24,6 +25,7 @@ class ChartSettings {
     colorCross = ChartSettings.COLOR_CROSS_DEFAULT;
     colorTipText = ChartSettings.COLOR_TIP_TEXT_DEFAULT;
     colorTextAxis = ChartSettings.COLOR_TEXT_AXIS_DEFAULT;
+    colorLineAxis = ChartSettings.COLOR_LINE_AXIS_DEFAULT;
 
     //----------------------------- CONSTRUCTOR -----------------------------
         
@@ -38,6 +40,7 @@ class ChartSettings {
             this.colorCross = chartSettings.colorCross;
             this.colorTipText = chartSettings.colorTipText;
             this.colorTextAxis = chartSettings.colorTextAxis;
+            this.colorLineAxis = chartSettings.colorLineAxis;
         }
     }
 

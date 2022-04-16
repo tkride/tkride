@@ -34,11 +34,14 @@ class ChartController {
     static CHART_NEW_ROW = '<div class="chart-new-row"></div>';
     static CHART_NEW_COL = '<div class="chart-new-col"></div>';
 
+    static TRASH_MAX_SIZE = 100;
+
     //----------------------------- PROPERTIES -----------------------------
 
     // Models
     #models = {};
     #chart_models = {};
+    #trash = [];
     // #patterns = {};
     // View
     #view;
@@ -133,11 +136,13 @@ class ChartController {
                     // that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
                     // Store retracements results
                     // ops[Const.DATA_ID] = ret;
-                    if(ret) resolve(ret);
-                    else reject(`ERROR processing retracements. Data returned: ${ret}`);
+                    if(!ret.error) resolve(ret);
+                    // else reject(`ERROR processing retracements. Data returned: ${ret.error}`);
+                    else reject(`${ret.error}`);
                 }
                 catch(err) {
-                    reject(`ERROR processing retracements: ${err}`);
+                    // reject(`ERROR processing retracements: ${err}`);
+                    reject(`${err}`);
                 }
                 // that.load_movements(model_key, ops[Const.NIVEL_ID], that.#menus[MenuMovs.NAME].level_max)
                 // .then( () => that.interface.select_movements(model_key, ops[Const.NIVEL_ID]))
@@ -453,14 +458,39 @@ catch(err) {
     #create_menus() {
         if(!this.#menus[MenuStatus.NAME]) { this.#menus[MenuStatus.NAME] = new MenuStatus(this); }
         if(!this.#menus[MenuMovs.NAME]) { this.#menus[MenuMovs.NAME] = new MenuMovs(); }
-        // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#patterns); }
-        // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#chart_models); }
         if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.patterns_dao.models); }
         if(!this.#menus[MenuSettings.NAME]) { this.#menus[MenuSettings.NAME] = new MenuSettings(this); }
-        // if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#chart_models); }
         if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
         if(!this.#key_config) { this.#key_config = new KeyConfig(); }
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
+        if(!this.#menus[MenuFibonacci.NAME]) { this.#menus[MenuFibonacci.NAME] = new MenuFibonacci(this); }
+
+        $(document).on(Fibonacci.EVENT_SELECTED, (e, params) => {
+            this.#menus[MenuFibonacci.NAME].show_float(params);
+        });
+
+        $(document).on(Fibonacci.EVENT_UNSELECTED, (e, params) => {
+            this.#menus[MenuFibonacci.NAME].hide_float();
+            this.#menus[MenuFibonacci.NAME].hide();
+        });
+
+        $(document).on(Fibonacci.EVENT_CREATE, (e, params) => {
+            let conf = this.#menus[MenuFibonacci.NAME].prev_config;
+            Fibonacci.build_fibonacci({ chart: this.active_chart, template: conf });
+        });
+
+        $(document).on(Fibonacci.EVENT_PLOT, (e, fibos) => {
+            this.#view.draw_fibonacci(fibos, this.active_chart);
+        });
+
+        $(document).on(MenuFibonacci.EVENT_OPEN_SETTINGS, (e, params) => {
+            this.#menus[MenuFibonacci.NAME].show(params);
+        });
+
+        $(document).on(MenuFibonacci.EVENT_REMOVE, (e, fibo) => {
+            this.throw_trash(fibo, MenuFibonacci.EVENT_REMOVE);
+            this.#view.clear_chart(this.active_chart, [fibo.name]);
+        });
     }
 
     #init_interfaces() {
@@ -490,7 +520,6 @@ catch(err) {
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
-    // init(brokers_list, headers, view) {
     init(user, login_timestamp, view) {
         var that = this;
         this.user = user;
@@ -624,8 +653,10 @@ catch(err) {
                         $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, query);
                     })
                     .catch( err => {
-                        console.error('Error procesando patrones: ', err);
-                        that.write_status({error:['Error procesando patrones:', err], timeout:5000});
+                        // console.error('Error procesando patrones: ', err);
+                        // that.write_status({error:['Error procesando patrones:', err], timeout:5000});
+                        console.error(err);
+                        that.write_status({error:[err], timeout:5000});
                     });
                 }
                 else {
@@ -662,7 +693,7 @@ catch(err) {
                 Object.values(pattern).forEach(p => {
                     if(Object.keys(p[Const.DATA_ID]).length) {
                         Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach(r => {
-                            fibos.push(new Fibonacci(r, { name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }) );
+                            fibos.push(new Fibonacci({ retracement:r, params:{ name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }}) );
                         });
                     }
                 });
@@ -709,6 +740,27 @@ catch(err) {
         }
     }
     
+
+    // TRASH MANAGEMENT
+    // TODO TRASH GUARDAR EN BBDD PARA RECUPERAR HISTORIAL
+    throw_trash(item, op) {
+        if(this.#trash.length > ChartController.TRASH_MAX_SIZE) {
+            this.#trash.shift();
+        }
+        let garbage = {
+            timestamp: new Date().valueOf(),
+            item: item,
+            operation: op
+        };
+        this.#trash.push(garbage);
+    }
+
+    backup_trash() {
+        let backup = this.#trash.pop();
+        // TODO TRASH TRATAR CADA ELEMENTO PARA APLICAR LA OPERACION INVERSA
+        return backup;
+    }
+
     //----------------------------- GETTERS SETTERS -----------------------------
 
     get models() { return this.#models; }
@@ -961,7 +1013,13 @@ catch(err) {
             else status.hide_loading();
 
             // if(content.timeout) setTimeout(() => { status.info = status.content; status.hide_loading() }, content.timeout);
-            if(content.timeout) setTimeout(() => { status.content = ''; status.hide_loading() }, content.timeout);
+            if(content.timeout) {
+                setTimeout(() => {
+                    status.content = '';
+                    status.hide_loading()
+                },
+                content.timeout);
+            }
 
             if(content.clear) { status.content = ''; }
 

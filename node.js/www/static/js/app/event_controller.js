@@ -118,14 +118,22 @@ class EventController {
                 $(document).trigger(ControlSettings.EVENT_MOVS_MENU, [main.ctrl.current_active, main.ctrl.current_model_key]);
             });
 
+            // Show Patterns Menu
             $(document).on('click', MenuPatterns.ELEMENT_ID_MENU_ICON, e => {
                 that.#manage_patterns_menu();
             });
 
+            // Show Patterns Results Menu
             $(document).on('click', PanelPatterns.MENU_ICON, e => {
                 $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE);
             });
 
+            // Show Fibonacci Retracement Menu
+            $(document).on('click', MenuFibonacci.MENU_ICON, e => {
+                $(document).trigger(Fibonacci.EVENT_CREATE);
+            });
+
+            // Load historic event
             $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => {
                 $(document).trigger(MenuMovs.EVENT_CLOSE_MENU);
             });

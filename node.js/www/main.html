@@ -63,6 +63,7 @@
                     <div id="patterns" class="disabled hoverable-icon lni lni-pencil-alt"></div>
                     <div id="patterns-results" class="disabled hoverable-icon lni lni-keyword-research"></div>
                     <div id="user-settings" class="disabled hoverable-icon lni lni-cog"></div>
+                    <div id="fibonacci-retracement" class="disabled hoverable-icon lni lni-list"></div>
                 </div>
                 <div id="footer-menu-options"></div>
                 <div id="footer-status">
@@ -79,91 +80,11 @@
             <div id="show-movs-menu-level-selected"></div>
             <div id="show-movs-menu-level-selector"></div>
             <input id="show-movs-menu-level-max">
-            <!-- <input id="show-movs-menu-show-ret" class="foot-menu-options"> -->
-            <!-- <div id="show-movs-menu-line-color" class="foot-menu-options"></div> -->
-            <!-- <div id="show-movs-menu-line-width" class="foot-menu-options"></div> -->
-            <!-- <div id="show-movs-menu-line-type" class="foot-menu-options"></div> -->
         </div>
     
-        <!-- Patterns Menu -->
-        <!-- <div id='patterns-menu' class='menu-body scroll-custom'>
-            <div id='patterns-menu-close' class="hoverable-close lni lni-close"></div>
-            <div id='patterns-menu-title' class="menu-title">Patrones</div>
-            <p></p>
-            <div id='patterns-menu-ret-type' class='menu-field'>
-                <p>Tipo</p>
-                <div id='patterns-menu-ret-type-combo'></div>
-            </div>
-            <div id='patterns-menu-content'></div>
-            <div id='patterns-menu-add' class='button-general lni lni-circle-plus' title='Agregar patrón al proceso'></div>
-            <div id='patterns-menu-save' class='button-general lni lni-save' title='Guardar patrón'></div>
-            <div id='patterns-menu-clear' class='button-general lni lni-eraser' title='Limpiar formulario'></div>
-            <div id='patterns-menu-submit' class='button-general' title='Procesar patrones definidos'><p>Aplicar</p></div>
-        </div> -->
-
-        <!-- Patterns Retracements Menu -->
-        <!-- <div id='patterns-menu-ret' class='menu-options'>
-            <div id='patterns-menu-ret-search-in'  name='ret-search-in' class='menu-field'>
-                <p>Buscar en</p>
-                <div id='patterns-menu-ret-search-in-combo'></div>
-                <div id='patterns-menu-ret-search-in-menu'></div>
-            </div>
-            <div id='patterns-menu-ret-name' class='menu-field'>
-                <p>Nombre</p>
-                <input id='patterns-menu-ret-name-input' name='ID' class='text-input'></input>
-                <div id='patterns-menu-stored-rets' class='dropdown stored-rets hoverable-icon button-general lni lni-chevron-down' data-source='Object.keys(that.#models.patterns)' data-event='event-patterns-ret-selected'></div>
-            </div>
-            <div id='patterns-menu-ret-level' class='menu-field'>
-                <p>Nivel movimientos</p>
-                <input id='patterns-menu-ret-level' name='level' class='short-num-input' autocomplete='off'></input>
-            </div>
-            <div id='patterns-menu-ret-values' class='menu-field'><p>Valores</p><input id='patterns-menu-ret-values-input' name='levels' class='text-input'></input></div> -->
-            <!-- <div id='patterns-menu-ret-sense' class='menu-field menu-options-radio'>
-                <p class='menu-field-label'>Sentido</p>
-                    <input type='radio' name='trend' id='patterns-menu-ret-sense-radio-bull' class='button-general' value='bull' checked>
-                    <label for='patterns-menu-ret-sense-radio-bull'>Alcista</label>
-                    <input type='radio' name='trend' id='patterns-menu-ret-sense-radio-bear' class='button-general' value='bear'>
-                    <label for='patterns-menu-ret-sense-radio-bear'>Bajista</label>
-                    <input type='radio' name='trend' id='patterns-menu-ret-sense-radio-both' class='button-general' value='both'>
-                    <label for='patterns-menu-ret-sense-radio-both'>Ambos</label>
-            </div> -->
-            <!-- <div id='patterns-menu-ret-from' class='menu-field menu-options-radio'>
-                <p class='menu-field-label'>Desde</p>
-                    <input type='radio' name='from' id='patterns-menu-ret-from-radio-init' class='button-general' value='init' checked>
-                    <label for='patterns-menu-ret-from-radio-init' >Inicio</label>
-                    <input type='radio' name='from' id='patterns-menu-ret-from-radio-end' class='button-general' value='end'>
-                    <label for='patterns-menu-ret-from-radio-end' >Fin</label>
-                    <input type='radio' name='from' id='patterns-menu-ret-from-radio-correction' class='button-general' value='correction'>
-                    <label for='patterns-menu-ret-from-radio-correction' >Corrección</label>
-            </div>
-            <div id='patterns-menu-ret-iterate' class='menu-field'>
-                <p class='menu-field-label'>Itera búsqueda</p>
-                <input id='patterns-menu-ret-iterate-input' name='iterate' class='short-num-input' autocomplete="off"></input>
-            </div>
-            <div id='patterns-menu-ret-only-max' class='menu-field menu-options-radio'>
-                <p class='menu-field-label'>Filtrar máximo</p>
-                    <input type='radio' name='onylmax' id='patterns-menu-ret-radio-only-max-none' class='button-general' value='0' checked>
-                    <label for='patterns-menu-ret-radio-only-max-none' >No</label>
-                    <input type='radio' name='onylmax' id='patterns-menu-ret-radio-only-max-movs' class='button-general' value='1'>
-                    <label for='patterns-menu-ret-radio-only-max-movs' >Movimiento</label>
-                    <input type='radio' name='onylmax' id='patterns-menu-ret-radio-only-max-ret' class='button-general' value='-1'>
-                    <label for='patterns-menu-ret-radio-only-max-ret' >Retroceso</label>
-            </div>
-        </div> -->
-
-        <!-- <div id='search-in-retracements'>
-            <input id='search-in-ret-name' name='searchin' title="Nombre del retroceso" class='.text-input' autocomplete='off'></input>
-        </div>
-        <div id='search-in-ret-stored-rets' data-source='Object.keys(that.#models.patterns)' data-event='event-search-in-ret-selected' class='dropdown stored-rets hoverable-icon button-general lni lni-chevron-down'></div>
-        <div id='search-in-trends'><span>Tendencia</span><input id='search-in-trend-name' autocomplete='off'></input></div>
-        <div id='search-in-movements'></div>
-        <div id='search-in-next'><span>Siguiente</span><div class='search-in-next-combo'></div></div> -->
-        <!-- <label for='search-in-level'>Nivel</label><input id='search-in-level' name='NIVEL' class='short-num-input' autocomplete='off'></input></div> -->
-
         <!-- Patterns Results -->
         <div id='patterns-results-panel' class='menu-body scroll-custom'>
             <!-- Panel Handler -->
-            <!-- <div id='patterns-results-panel-handler-results' data-source='Object.keys(this.#models[this.#model_key].pattern_result[this.level])' data-event='event-patterns-results-selected' class='dropdown stored-rets hoverable-icon button-general lni lni-chevron-down'></div> -->
             <div id="patterns-results-panel-handler">
                 <span id='patterns-results-panel-handler-close' class='patterns-results-handler-close hoverable-close lni lni-close'></span>
                 <span id='patterns-results-panel-handler-min' class='patterns-results-handler-min hoverable-icon'>__</span>
@@ -171,12 +92,6 @@
 
             <!-- Table Section -->
             <div id='patterns-results-panel-tables'></div>
-
-            <!-- <div id='patterns-results-section-handler-visualization-title' class='patterns-results-section-handler'>
-                Visualización
-                <span id='patterns-results-section-handler-visualization' class='patterns-results-section-handler-icon hoverable-icon lni lni-chevron-up'></span>
-                <span id='patterns-results-section-handler-visualization-close' class='patterns-results-section-handler-close hoverable-close lni lni-close'></span>
-            </div> -->
 
             <!-- Visualization Settings Section -->
             <div id='patterns-results-section-visualization'>
@@ -244,6 +159,7 @@
         <script src="/static/js/app/brokers.js"></script>
 
         <script src="/static/js/app/menu/panel_patterns.js"></script>
+        <script src="/static/js/app/menu/menu_fibonacci.js"></script>
         <script src="/static/js/app/menu/menu_patterns.js"></script>
         <script src="/static/js/app/menu/models/patterns_dao.js"></script>
         

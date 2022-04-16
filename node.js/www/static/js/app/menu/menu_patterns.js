@@ -19,7 +19,7 @@ class MenuPatterns {
         static ELEMENT_ID_BUTTON_ADD = '#patterns-menu-add';
     static ID_BUTTON_SAVE = 'patterns-menu-save';
         static ELEMENT_ID_BUTTON_SAVE = '#patterns-menu-save';
-    static ID_BUTTON_DELETE = 'patterns-menu-delete';
+    static ID_BUTTON_REMOVE = 'patterns-menu-remove';
         static ELEMENT_ID_BUTTON_DELETE = '#patterns-menu-delete';
     static ID_BUTTON_RESET = 'patterns-menu-reset';
         static ELEMENT_ID_BUTTON_RESET = '#patterns-menu-reset';
@@ -67,7 +67,7 @@ class MenuPatterns {
     // Retracement filter max (movement or retracement)
     static ID_PATTERNS_MENU_RET_FILTER_MAX = 'patterns-menu-ret-filter-max';
     static ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX = '#patterns-menu-ret-filter-max';
-        
+
     // Filter only max
     static ID_FILTER_MAX = 'patterns-menu-ret-filter-max';
     static NAME_FILTER_MAX = 'filtermax'
@@ -260,10 +260,12 @@ class MenuPatterns {
         // Creates main menu container
         this.#display = new Display({ id: MenuPatterns.ID_MENU_PATTERNS,
                                       title: 'Patrones',
-                                      title_css: { 'font-size': '1.75em' },
-                                      center:true,
+                                      title_css: { 'font-size': '1.25em' },
+                                      top:'15%',
+                                      left:'30%',
                                       draggable: true,
                                       new_classes: 'scroll-custom',
+                                      overflow: false,
                                     //   width: '300px',
                                      });
         this.#display.element_handle_close.on('click', e =>  $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE) );
@@ -468,12 +470,17 @@ class MenuPatterns {
     }
 
     #create_menu_buttons() {
-        let menu_footer = $('<div>', { id: MenuPatterns.ID_PATTERNS_MENU_FOOTER });
+        let menu_footer = $('<div>', {
+            id: MenuPatterns.ID_PATTERNS_MENU_FOOTER,
+            css: {
+                'margin': '0 0 4em 1em',
+            },
+        });
 
         // Add button add pattern
         let button_add = $('<div>', {
             id: MenuPatterns.ID_BUTTON_ADD,
-            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_ADD}`,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_ADD}`,
             title: 'Agregar patrón al proceso'
         });
         menu_footer.append(button_add);
@@ -481,7 +488,7 @@ class MenuPatterns {
         // Add button save pattern
         let button_save = $('<div>', {
             id: MenuPatterns.ID_BUTTON_SAVE,
-            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_SAVE}`,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_SAVE}`,
             title: 'Guardar patrón'
         });
         menu_footer.append(button_save);
@@ -489,8 +496,8 @@ class MenuPatterns {
 
         // Add button delete pattern
         let button_delete = $('<div>', {
-            id: MenuPatterns.ID_BUTTON_DELETE,
-            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_DELETE}`,
+            id: MenuPatterns.ID_BUTTON_REMOVE,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_REMOVE}`,
             title: 'Eliminar patrón'
         });
         menu_footer.append(button_delete);
@@ -499,7 +506,7 @@ class MenuPatterns {
         // Add button reset form
         let button_reset = $('<div>', {
             id: MenuPatterns.ID_BUTTON_RESET,
-            class: `${Const.CLASS_BUTTON_GENERAL} ${Const.CLASS_ICON_CLEAR}`,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_CLEAR}`,
             title: 'Limpiar formulario'
         });
         menu_footer.append(button_reset);
@@ -508,7 +515,7 @@ class MenuPatterns {
         // Add button submit form to process pattern
         let button_submit = $('<div>', {
             id: MenuPatterns.ID_BUTTON_SUBMIT,
-            class: `${Const.CLASS_BUTTON_GENERAL}`,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS}`,
             text: 'Aplicar',
             title: 'Procesar patrones definidos'
         });

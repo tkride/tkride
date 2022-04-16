@@ -10,10 +10,11 @@ class MenuStatus {
     static CLASS_PROGRESS_BAR = 'ui-progressbar';
     static CLASS_PROGRESS_BAR_COMPLETE = 'ui-progressbar-complete';
     static CLASS_PROGRESS_BAR_VALUE = 'ui-progressbar-value';
-    static FOOTER_STATUS = '#footer-status';
-    static CONTENT = '#footer-status-content';
-    static PROGRESS_BAR = '#footer-status-progress';
-    static CLASS_ERROR = 'footer-status-error';
+    static ELEMENT_ID_FOOTER_STATUS = '#footer-status';
+    static ELEMENT_ID_CONTENT = '#footer-status-content';
+    static ELEMENT_ID_PROGRESS_BAR = '#footer-status-progress';
+    static ELEMENT_ID_CLASS_INFO = 'footer-status-info';
+    static ELEMENT_ID_CLASS_ERROR = 'footer-status-error';
 
     static PROGRESS_VALUE = 'value';
     static PROGRESS_DISABLE = 'disable';
@@ -38,7 +39,7 @@ class MenuStatus {
     //----------------------------- PUBLIC METHODS -----------------------------
 
     init() {
-        $(MenuStatus.PROGRESS_BAR).progressbar({
+        $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar({
             classes: {
                 [MenuStatus.CLASS_PROGRESS_BAR]: "highlight",
             },
@@ -57,7 +58,7 @@ class MenuStatus {
     //----------------------------- GETTERS & SETTERS -----------------------------
 
     get content() {
-        let content = $(MenuStatus.CONTENT).text();
+        let content = $(MenuStatus.ELEMENT_ID_CONTENT).text();
         if(!content) {
             content = '';
         }
@@ -65,34 +66,59 @@ class MenuStatus {
     }
     
     set content(value) { 
-        $(MenuStatus.CONTENT).removeClass(MenuStatus.CLASS_ERROR)
-        $(MenuStatus.CONTENT).text(value);
+        if(!value) {
+            this.back_hide();
+        }
+        else {
+            this.back_show();
+            $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).removeClass(MenuStatus.ELEMENT_ID_CLASS_ERROR);
+            $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).addClass(MenuStatus.ELEMENT_ID_CLASS_INFO);
+        }
+        $(MenuStatus.ELEMENT_ID_CONTENT).text(value);
     }
 
     set info(value) {
-        $(MenuStatus.CONTENT).removeClass(MenuStatus.CLASS_ERROR);
-        this.content = value;
+        if(!value) {
+            this.back_hide();
+        }
+        else {
+            this.back_show();
+            $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).removeClass(MenuStatus.ELEMENT_ID_CLASS_ERROR);
+            $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).addClass(MenuStatus.ELEMENT_ID_CLASS_INFO);
+        }
+        $(MenuStatus.ELEMENT_ID_CONTENT).text(value);
     }
 
     set error(value) {
-        this.content = value;
-        $(MenuStatus.CONTENT).addClass(MenuStatus.CLASS_ERROR);
+        if(!value) {
+            this.back_hide();
+        }
+        else {
+            this.back_show();
+            $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).addClass(MenuStatus.ELEMENT_ID_CLASS_ERROR);
+            $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).removeClass(MenuStatus.ELEMENT_ID_CLASS_INFO);
+        }
+        $(MenuStatus.ELEMENT_ID_CONTENT).text(value);
     }
     
-    get progress_max() { return $(MenuStatus.PROGRESS_BAR).progressbar(...MenuStatus.PROGRESS_MAX); }
+    get progress_max() { return $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar(...MenuStatus.PROGRESS_MAX); }
     
-    set progress_max(value) { $(MenuStatus.PROGRESS_BAR).progressbar(...MenuStatus.PROGRESS_MAX, value); }
+    set progress_max(value) { $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar(...MenuStatus.PROGRESS_MAX, value); }
 
-    get progress_value() { return $(MenuStatus.PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_VALUE); }
+    get progress_value() { return $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_VALUE); }
     
-    set progress_value(value) { $(MenuStatus.PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_VALUE, value); }
+    set progress_value(value) { $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_VALUE, value); }
 
-    progress_disable() { $(MenuStatus.PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_DISABLE); }
+    progress_disable() { $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_DISABLE); }
 
-    progress_enable() { $(MenuStatus.PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_ENABLE); }
+    progress_enable() { $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).progressbar(MenuStatus.PROGRESS_ENABLE); }
     
-    progress_hide() { $(MenuStatus.PROGRESS_BAR).hide(); }
+    progress_hide() { $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).hide(); }
 
-    progress_show() { $(MenuStatus.PROGRESS_BAR).show(); }
+    progress_show() { $(MenuStatus.ELEMENT_ID_PROGRESS_BAR).show(); }
+
+    back_hide() { $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).hide(); }
+
+    back_show() { $(MenuStatus.ELEMENT_ID_FOOTER_STATUS).show(); }
 
 }

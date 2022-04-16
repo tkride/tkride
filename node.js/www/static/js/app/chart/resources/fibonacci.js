@@ -17,6 +17,11 @@ class Fibonacci extends ChartGraphic {
     static TEXT = 1;
     static STROKE = 2;
     static FILL = 3;
+
+    static EVENT_SELECTED = 'event-fibonacci-control-selected';
+    static EVENT_UNSELECTED = 'event-fibonacci-control-unselected';
+    static EVENT_CREATE = 'event-fibonacci-control-create';
+    static EVENT_PLOT = 'event-fibonacci-control-plot';
     
     // PROPERTIES
     trend;
@@ -37,19 +42,27 @@ class Fibonacci extends ChartGraphic {
     textInfo = '%';
     that = this;
 
-    constructor(retracement, params) {
-        if(!params) { params = {}; }
+    constructor({retracement, params, template}) {
+        params = params || {};
+        retracement = retracement || {};
+        
+        // If contructor called with template, will create Fibonacci Retracement, interactively
+        if(template != undefined) {
+            Fibonacci.#load_template({retracement, params, template});
+        }
 
         let datasource = (retracement[Const.RET_DATA_SOURCE_ID]) ? retracement[Const.RET_DATA_SOURCE_ID] : undefined;
 
-        super({ name: `${Const.FIBO_RET_ID}${(params.name) ? '_'+params.name:''}_${retracement[Const.HASH_ID]}`,
-                 xstart: (datasource) ? datasource[Const.INIT_ID].time : retracement[Const.INIT_ID].time,
-                 xend: retracement[Const.CORRECTION_ID].time,
-                 ystart: (datasource) ? datasource[Const.INIT_ID].price : retracement[Const.INIT_ID].price,
-                 yend: (datasource) ? datasource[Const.END_ID].price : retracement[Const.END_ID].price,
-                 draggable: params.draggable,
-                 resizable: params.resizable,
-                });
+        super({ name: `${Const.FIBO_RET_ID}${(params.name) ? '_' + params.name:''}_${retracement[Const.HASH_ID]}`,
+                template_name: (params.template_name != undefined) ?
+                                    params.template_name :
+                                    `${Const.FIBO_RET_ID}${(params.name) ? '_' + params.name:''}_${retracement[Const.HASH_ID]}`,
+                xstart: (datasource) ? datasource[Const.INIT_ID].time : retracement[Const.INIT_ID].time,
+                xend: retracement[Const.CORRECTION_ID].time,
+                ystart: (datasource) ? datasource[Const.INIT_ID].price : retracement[Const.INIT_ID].price,
+                yend: (datasource) ? datasource[Const.END_ID].price : retracement[Const.END_ID].price,
+                draggable: params.draggable,
+            });
 
         let ret_levels = (retracement[Const.RET_LEVELS_DATA_SOURCE_ID]) ? retracement[Const.RET_LEVELS_DATA_SOURCE_ID] : retracement[Const.RET_LEVELS_ID];
         // this.levels = Object.keys(ret_levels);
@@ -144,6 +157,7 @@ class Fibonacci extends ChartGraphic {
                 [stroke, fill] = [api.value(Fibonacci.STROKE + idx), api.value(Fibonacci.FILL + idx)];
 
                 height = Math.abs(yvalue - ymin);
+                height = (height) ? height : 1;
                 children.push([
                     {
                         type: 'rect',
@@ -168,7 +182,7 @@ class Fibonacci extends ChartGraphic {
                         type: 'text',
                         id: `${name}_TEXT_${text}`,
                         name: `${name}_TEXT_${text}`,
-                        x: xend + 5,
+                        x: (xstart > xend) ? (xstart+5) : (xend+5),
                         y: yvalue - 5,
                         style: {
                             fill: stroke,
@@ -247,12 +261,12 @@ class Fibonacci extends ChartGraphic {
 
     remove(chart) {
         let gElements = chart.getOption().graphic;
+        this.unbind_handler_events();
         if(gElements && gElements[0].length) {
             let idx = gElements.findIndex(g => g.id == this.name);
             gElements.splice(idx, 1);
             chart.setOption({graphic: gElements});
         }
-        this.unbind_handler_events();
     }
 
     get_text() {
@@ -273,20 +287,6 @@ class Fibonacci extends ChartGraphic {
 
     //CONTROL HANDLERS EVENTS ---------------------------------------------------------
     
-    // bind_handler_events()
-    // {
-    //     this.chart.on('mousedown', { seriesName: this.name }, this.mousedown_control_management.bind(this));
-    //     this.chart.on('mouseover', { seriesName: this.name }, this.mouseover.bind(this));
-    //     this.chart.on('mouseout', { seriesName: this.name }, this.mouseout.bind(this));
-    // }
-
-    // unbind_handler_events()
-    // {
-    //     this.chart.off('mousedown');//, this.mousedown_control_management.bind(this));
-    //     this.chart.off('mouseover');//, this.mouseover.bind(this));
-    //     this.chart.off('mouseout');//, this.mouseout.bind(this));
-    // }
-
     disable_chart_move() {
         let dz = this.chart.getOption().dataZoom;
         dz.forEach(z => z.moveOnMouseMove = false);
@@ -310,13 +310,13 @@ class Fibonacci extends ChartGraphic {
         if(this.selected == true) {
             super.unselect();
             this.update_option();
+            $(document).trigger(Fibonacci.EVENT_UNSELECTED, this);
         }
     }
 
     // Functions managers
     mousedown_control_management(c) {
         if(c.event.target.parent.name == this.name) {
-            [this.xdrag, this.ydrag] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
             let func = this.MOUSEDOWN_CONTROL[c.event.target.name] || this.MOUSEDOWN_DEFAULT;
             if(typeof func == 'function') {
                 func.call(this, c);
@@ -344,13 +344,18 @@ class Fibonacci extends ChartGraphic {
 
     // Control Area
     mousedown_control(c) {
+        console.log(this.name, ': control');
+        [this.xdrag, this.ydrag] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
+
         if(this.selected == false) {
             this.select();
+            $(document).trigger(Fibonacci.EVENT_SELECTED, [this]);
         }
-        console.log(this.name, ': control');
-        this.disable_chart_move();
-        this.chart.getZr().on('mousemove', this.mousemove_control, this);
-        this.chart.getZr().on('mouseup', this.mouseup_control, this);
+        if(!this.blocked && this.draggable) {
+            this.disable_chart_move();
+            this.chart.getZr().on('mousemove', this.mousemove_control, this);
+            this.chart.getZr().on('mouseup', this.mouseup_control, this);
+        }
     }
     
     mousemove_control(c) {
@@ -382,9 +387,18 @@ class Fibonacci extends ChartGraphic {
     // Handler start
     mousedown_control_start(c) {
         console.log(this.name, ': control_start');
-        this.disable_chart_move();
-        this.chart.getZr().on('mousemove', this.mousemove_control_start, this);
-        this.chart.getZr().on('mouseup', this.mouseup_control_start, this);
+        [this.xdrag, this.ydrag] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
+
+        if(this.selected == false) {
+            this.select();
+            $(document).trigger(Fibonacci.EVENT_SELECTED, [this]);
+        }
+        
+        if(!this.blocked && this.draggable) {
+            this.disable_chart_move();
+            this.chart.getZr().on('mousemove', this.mousemove_control_start, this);
+            this.chart.getZr().on('mouseup', this.mouseup_control_start, this);
+        }
     }
 
     mousemove_control_start(c) {
@@ -415,9 +429,18 @@ class Fibonacci extends ChartGraphic {
     // Handler end
     mousedown_control_end(c) {
         console.log(this.name, ': control_end');
-        this.disable_chart_move();
-        this.chart.getZr().on('mousemove', this.mousemove_control_end, this);
-        this.chart.getZr().on('mouseup', this.mouseup_control_end, this);
+        [this.xdrag, this.ydrag] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
+
+        if(this.selected == false) {
+            this.select();
+            $(document).trigger(Fibonacci.EVENT_SELECTED, [this]);
+        }
+        
+        if(!this.blocked && this.draggable) {
+            this.disable_chart_move();
+            this.chart.getZr().on('mousemove', this.mousemove_control_end, this);
+            this.chart.getZr().on('mouseup', this.mouseup_control_end, this);
+        }
     }
 
     mousemove_control_end(c) {
@@ -445,31 +468,75 @@ class Fibonacci extends ChartGraphic {
         this.enable_chart_move();
     }
 
+    static building_fibo = false;
+    static build_fibonacci({chart, template}) {
+        if(Fibonacci.building_fibo == false) {
+            Fibonacci.building_fibo = true;
+            chart.getZr().on('mousedown', Fibonacci.pick_start, [this, {chart, template}]);
+        }
+    }
 
-    // hide_controls() {
-    //     let cstart = this.chart.getOption().graphic[0].elements.filter( g => g.id == `${this.name}_START`)[0];
-    //     let cend = this.chart.getOption().graphic[0].elements.filter( g => g.id == `${this.name}_END`)[0];
-    //     cstart.style.lineWidth = ChartGraphic.CIRCLE_WIDTH_HOVER;
-    //     cstart.invisible = true;
-    //     cend.style.lineWidth = ChartGraphic.CIRCLE_WIDTH_HOVER;
-    //     cend.invisible = true;
-    //     this.chart.setOption({graphic: [cstart, cend]});
-    // }
+    static pick_start(e) {
+        let params = this[1];
+        let chart = params.chart;
+        let template = params.template;
+        let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
+        template[Const.INIT_ID] = new TimePrice(x, y);
+        template[Const.END_ID] = new TimePrice(x, y);
+        template[Const.CORRECTION_ID] = new TimePrice(x, y);
+        template[Const.DELTA_INIT_ID] = 0;
+        template[Const.DELTA_END_ID] = 0;
+        template[Const.NAME_ID] = `${Const.FIBO_RET_ID}-${new Date().valueOf()}`;
+        template.ref = new Fibonacci({template});
+        // template.ref.plot(chart);
+        $(document).trigger(Fibonacci.EVENT_PLOT, [template.ref]);
+        // $(document).trigger(Fibonacci.EVENT_SELECTED, [template.ref]);
+        // template.ref.select();
 
-    // show_controls() {
-    //     let cstart = this.chart.getOption().graphic[0].elements.filter( g => g.id == `${this.name}_START`)[0];
-    //     let cend = this.chart.getOption().graphic[0].elements.filter( g => g.id == `${this.name}_END`)[0];
-    //     cstart.invisible = false;
-    //     cend.invisible = false;
-    //     if(this.selected) {
-    //         cstart.style.lineWidth = ChartGraphic.CIRCLE_WIDTH_SELECTED;
-    //         cend.style.lineWidth = ChartGraphic.CIRCLE_WIDTH_SELECTED;
-    //     }
-    //     else {
-    //         cstart.style.lineWidth = ChartGraphic.CIRCLE_WIDTH_HOVER;
-    //         cend.style.lineWidth = ChartGraphic.CIRCLE_WIDTH_HOVER;
-    //     }
-    //     this.chart.setOption({graphic: [cstart, cend]}); //, {replaceMerge: ['graphic']});
-    // }
+        // TODO FORZAR EVENTO MOUSEDOWN END CONTROL
+        // template.ref.mousedown_control_end(e);
+        // Fibonacci.move_end(e, {chart, template});
+        template.ref.disable_chart_move();
+        template.ref.xdrag = x;
+        template.ref.ydrag = y;
+        chart.getZr().on('mousedown', Fibonacci.pick_end, template.ref);
+        chart.getZr().on('mousemove', template.ref.mousemove_control_end, template.ref);
+
+        chart.getZr().off('mousedown', Fibonacci.pick_start);
+        Fibonacci.building_fibo = false;
+    }
+
+    static pick_end(e) {
+        this.chart.getZr().off('mousemove', this.mousemove_control_end);
+        this.chart.getZr().off('mousedown', Fibonacci.pick_end);
+        this.enable_chart_move();
+    }
+    
+    static #load_template({retracement, params, template}) {
+        // Load retracement from template
+        retracement[Const.HASH_ID] = template[Const.HASH_ID];
+        retracement[Const.INIT_ID] = template[Const.INIT_ID];
+        retracement[Const.END_ID] = template[Const.END_ID];
+        retracement[Const.CORRECTION_ID] = template[Const.CORRECTION_ID];
+        let price = template[Const.INIT_ID].price;
+        retracement[Const.RET_LEVELS_ID] = {};
+        template[Const.RET_LEVELS_ID].forEach(l => {
+            retracement[Const.RET_LEVELS_ID][l] = price;
+        });
+        retracement[Const.TREND_ID] = template[Const.TREND_ID];
+        retracement[Const.DELTA_INIT_ID] = template[Const.DELTA_INIT_ID];
+        retracement[Const.DELTA_END_ID] = template[Const.DELTA_END_ID];
+        // Load parameters from template
+        params[Const.NAME_ID] = template[Const.NAME_ID];
+        params.template_name = template.template_name;
+        params.draggable = template.draggable;
+        params.textShow = template.textShow;
+        params.textSide = template.textSide;
+        params.textInfo = template.textInfo;
+        params.lineDashStep = template.lineDashStep;
+        params.lineWidth = template.lineWidth;
+        params.opacity = template.opacity;
+        params.lineColor = template.lineColor;
+    }
 }
 

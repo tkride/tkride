@@ -14,6 +14,7 @@ class ChartGraphic {
 
     // PROPERTIES
     name;
+    template_name;
     xstart;
     xend;
     xstart_chart;
@@ -22,10 +23,10 @@ class ChartGraphic {
     ystart_chart;
     yend;
     yend_chart;
+    blocked = false;
     draggable = true;
     xdrag;
     ydrag;
-    resizable = true;
     chart;
     children = [];
     selected = false;
@@ -39,6 +40,7 @@ class ChartGraphic {
 
     constructor(data) {
         this.name = data.name;
+        this.template_name = data.template_name;
         this.xstart = data.xstart;
         this.xend = data.xend;
         if(this.xstart > this.xend) { [this.xstart, this.xend] = [this.xend, this.xstart]; }
@@ -46,7 +48,6 @@ class ChartGraphic {
         this.yend = data.yend;
         // if(this.ystart > this.yend) { [this.ystart, this.yend] = [this.yend, this.ystart];}
         this.draggable = (data.draggable != undefined) ? data.draggable : true;
-        this.resizable = (data.resizabl != undefined) ? data.resizable : true;
         this.that = this;
     }
 
@@ -135,8 +136,14 @@ class ChartGraphic {
 
     unbind_handler_events()
     {
+        // TODO WORKAROUND: POR ALGUN MOTIVO, ECHARTS ELIMINA TODOS LOS HANDLERS DEL EVENTO MOUSEOVER, BUG ECHARTS??
+        let filt = Object.assign({}, this.chart._$handlers);
+        filt = filt.mouseover.filter(mo => mo.h != this.mouseover_cb);
         this.chart.off('mousedown', this.mousedown_cb);//, this.mousedown_control_management.bind(this));
         this.chart.off('mouseover'), this.mouseover_cb;//, this.mouseover.bind(this));
         this.chart.off('mouseout', this.mouseout_cb);//, this.mouseout.bind(this));
+        
+        // TODO WORKAROUND: POR ALGUN MOTIVO, ECHARTS ELIMINA TODOS LOS HANDLERS DEL EVENTO MOUSEOVER, BUG ECHARTS??
+        this.chart._$handlers.mouseover = filt;
     }
 }
