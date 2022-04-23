@@ -11,7 +11,7 @@ class MenuPatterns {
     static ID_MENU_PATTERNS = 'patterns-menu'
     static ELEMENT_ID_MENU_PATTERNS = '#patterns-menu';
     static ELEMENT_ID_MENU_CONTENT = '#patterns-menu-content';
-    static ELEMENT_ID_MENU_ICON = '#patterns';
+    static MENU_ICON = '#patterns';
     
     //Menu buttons
     static ELEMENT_ID_CLOSE = '#patterns-menu-close';
@@ -87,14 +87,14 @@ class MenuPatterns {
     static EVENT_BUILD_MENU = 'event-patterns-build-menu';
     static EVENT_SHOW_PATTERNS = 'event-patterns-show-patterns';
     static EVENT_MENU_CLOSE = 'event-patterns-close-patterns-menu';
-    static EVENT_SUBMIT = 'event-patterns-submit';
+    // static EVENT_SUBMIT = 'event-patterns-submit';
     // static EVENT_SEARCH_IN_RET_SELECTED = 'event-search-in-ret-selected';
-    static EVENT_CLEAR_FORM = 'event-patterns-clear-form';
-    static EVENT_DELETE_PATTERN = 'event-patterns-delete-pattern';
-    static EVENT_SAVE_PATTERN = 'event-patterns-save-pattern';
-    static EVENT_DDBB_LOAD_USER_PATTERNS = 'event-patterns-ddbb-load-user-patterns';
-    static EVENT_DDBB_DELETE_PATTERN = 'event-patterns-ddbb-delete-pattern';
-    static EVENT_DDBB_SAVE_PATTERN = 'event-patterns-ddbb-save-pattern';
+    // static EVENT_CLEAR_FORM = 'event-patterns-clear-form';
+    // static EVENT_DELETE_PATTERN = 'event-patterns-delete-pattern';
+    // static EVENT_SAVE_PATTERN = 'event-patterns-save-pattern';
+    // static EVENT_DDBB_LOAD_USER_PATTERNS = 'event-patterns-ddbb-load-user-patterns';
+    // static EVENT_DDBB_DELETE_PATTERN = 'event-patterns-ddbb-delete-pattern';
+    // static EVENT_DDBB_SAVE_PATTERN = 'event-patterns-ddbb-save-pattern';
     static EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED = 'event-patterns-ret-selected';
     static EVENT_TYPE_SELECTED = 'event-patterns-select-type';
     static EVENT_RET_SELECTED = 'event-patterns-ret-selected';
@@ -242,17 +242,17 @@ class MenuPatterns {
     #delete_pattern() {
         let values = this.#read_controls_values();
         let pattern = { [Const.NAME_ID]: values[Const.ID_ID ]};
-        $(document).trigger(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, [pattern]);
+        // $(document).trigger(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, [pattern]);
+        $(document).trigger(Const.EVENT_DDBB_DELETE_MODEL, [MenuPatterns.NAME, pattern]);
     }
     
-    // TODO FALTA BOTON BORRAR PATRON !!!
-    //TODO HAY QUE ENVIAR EL USUARIO AL CARGAR MAIN Y ESTAR LOGGEADO PARA QUE LO GUARDE CHART CONTROLLER
     #save_pattern() {
         // Get stored info from controls
         let pattern = this.#read_controls_values();
         if(pattern[Const.ID_ID]) {
             // Send DDBB query via chart controller
-            $(document).trigger(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, [pattern]);
+            // $(document).trigger(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, [pattern]);
+            $(document).trigger(Const.EVENT_DDBB_SAVE_MODEL, [MenuPatterns.NAME, pattern]);
         }
     }
 
@@ -261,10 +261,11 @@ class MenuPatterns {
         this.#display = new Display({ id: MenuPatterns.ID_MENU_PATTERNS,
                                       title: 'Patrones',
                                       title_css: { 'font-size': '1.25em' },
+                                      css: { padding: '0.7em' },
                                       top:'15%',
                                       left:'30%',
                                       draggable: true,
-                                      new_classes: 'scroll-custom',
+                                    //   new_classes: 'scroll-custom',
                                       overflow: false,
                                     //   width: '300px',
                                      });
@@ -288,7 +289,7 @@ class MenuPatterns {
 
         let stored_patterns = new Dropdown({
                                         id: MenuPatterns.ID_PATTERNS_MENU_STORED_PATTERNS,
-                                        items: [], //Object.keys(this.#models.patterns),
+                                        items: [],
                                         event: MenuPatterns.EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED,
                                         header: { arrow: true },
                                         css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
@@ -331,17 +332,13 @@ class MenuPatterns {
         //                          });
         let searchin_combobox = new Dropdown({
                                             id: MenuPatterns.ID_PATTERNS_MENU_SEARCH_IN_PATTERNS,
-                                            // items: Object.keys(this.#models.patterns),
                                             items: [],
                                             // event: MenuPatterns.EVENT_SEARCH_IN_RET_SELECTED,
                                             class: Const.CLASS_MENU_FIELD,
                                             header: { selected: true, label: { text: 'Buscar en resultado', position: Const.LABEL_POSITION_BEFORE} },
                                             css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
                                         });
-        // searchin_combobox.controls.each( (i, c) => results.control.append(c) );
         searchin_combobox.controls.each( (i, c) => this.#display.append_content(c) );
-        // Append control element to display
-        // this.#display.append_content(results.control);
         
         // Nivel de movimientos
         let mov_level = new Inputbox({
@@ -470,6 +467,7 @@ class MenuPatterns {
     }
 
     #create_menu_buttons() {
+        var that = this;
         let menu_footer = $('<div>', {
             id: MenuPatterns.ID_PATTERNS_MENU_FOOTER,
             css: {
@@ -492,7 +490,8 @@ class MenuPatterns {
             title: 'Guardar patrón'
         });
         menu_footer.append(button_save);
-        button_save.on('click', e => $(document).trigger(MenuPatterns.EVENT_SAVE_PATTERN))
+        // button_save.on('click', e => $(document).trigger(MenuPatterns.EVENT_SAVE_PATTERN))
+        button_save.on('click', e => this.#save_pattern())
 
         // Add button delete pattern
         let button_delete = $('<div>', {
@@ -501,7 +500,8 @@ class MenuPatterns {
             title: 'Eliminar patrón'
         });
         menu_footer.append(button_delete);
-        button_delete.on('click', e => $(document).trigger(MenuPatterns.EVENT_DELETE_PATTERN));
+        // button_delete.on('click', e => $(document).trigger(MenuPatterns.EVENT_DELETE_PATTERN));
+        button_delete.on('click', e => this.#delete_pattern());
 
         // Add button reset form
         let button_reset = $('<div>', {
@@ -510,7 +510,8 @@ class MenuPatterns {
             title: 'Limpiar formulario'
         });
         menu_footer.append(button_reset);
-        button_reset.on('click', e => $(document).trigger(MenuPatterns.EVENT_CLEAR_FORM));
+        // button_reset.on('click', e => $(document).trigger(MenuPatterns.EVENT_CLEAR_FORM));
+        button_reset.on('click', e => this.#load_controls_values(MenuPatterns.EMPTY_FORM));
 
         // Add button submit form to process pattern
         let button_submit = $('<div>', {
@@ -521,7 +522,15 @@ class MenuPatterns {
         });
         menu_footer.append(button_submit);
         // Click button action
-        button_submit.on('click', e => $(document).trigger(MenuPatterns.EVENT_SUBMIT) );
+        // button_submit.on('click', e => $(document).trigger(MenuPatterns.EVENT_SUBMIT) );
+        button_submit.on('click', e => {
+            that.#options = that.#read_controls_values();
+            that.values_hist.push(that.#options);
+            $(document).trigger(MenuPatterns.EVENT_SHOW_PATTERNS, that.#options);
+            $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE);
+            $(MenuPatterns.ELEMENT_ID_MENU_CONTENT).unbind('keyup');
+            console.log(that.#options);
+        });
 
         this.#display.append(menu_footer);
     }
@@ -561,7 +570,7 @@ class MenuPatterns {
     init() {
         var that = this;
         try {
-            $(MenuPatterns.ELEMENT_ID_MENU_ICON).prop('title', MenuPatterns.TITLE);
+            $(MenuPatterns.MENU_ICON).prop('title', MenuPatterns.TITLE);
 
             MenuPatterns.PATTERN_TYPE_CALLBACK = {
                 [Const.MOVIMIENTOS_ID]: this.#show_menu_movements,
@@ -590,28 +599,32 @@ class MenuPatterns {
                 // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_SEARCH_IN_INPUT).val(ret_name);
             // });
 
-            $(document).on(MenuPatterns.EVENT_CLEAR_FORM, e => this.#load_controls_values(MenuPatterns.EMPTY_FORM));
+            // $(document).on(MenuPatterns.EVENT_CLEAR_FORM, e => this.#load_controls_values(MenuPatterns.EMPTY_FORM));
 
-            $(document).on(MenuPatterns.EVENT_DELETE_PATTERN, e => this.#delete_pattern());
+            // $(document).on(MenuPatterns.EVENT_DELETE_PATTERN, e => this.#delete_pattern());
 
-            $(document).on(MenuPatterns.EVENT_SAVE_PATTERN, e => this.#save_pattern());
+            // $(document).on(MenuPatterns.EVENT_SAVE_PATTERN, e => this.#save_pattern());
 
             $(document).on(Const.EVENT_CLOSE, e => $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE));
 
             $(document).on('click', MenuPatterns.ELEMENT_ID_CLOSE, e => $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE));
 
-            $(document).on(MenuPatterns.EVENT_SUBMIT, e => {
-                that.#options = that.#read_controls_values();
-                that.values_hist.push(that.#options);
-                $(document).trigger(MenuPatterns.EVENT_SHOW_PATTERNS, that.#options);
-                $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE);
-                $(MenuPatterns.ELEMENT_ID_MENU_CONTENT).unbind('keyup');
-                console.log(that.#options);
-            });
+            // $(document).on(MenuPatterns.EVENT_SUBMIT, e => {
+            //     that.#options = that.#read_controls_values();
+            //     that.values_hist.push(that.#options);
+            //     $(document).trigger(MenuPatterns.EVENT_SHOW_PATTERNS, that.#options);
+            //     $(document).trigger(MenuPatterns.EVENT_MENU_CLOSE);
+            //     $(MenuPatterns.ELEMENT_ID_MENU_CONTENT).unbind('keyup');
+            //     console.log(that.#options);
+            // });
 
             $(document).on(MenuPatterns.EVENT_BUILD_MENU, e => { $(MenuPatterns.ELEMENT_ID_TYPE_SELECTED).val('RETROCESOS').change(); });
 
-            $(document).on(MenuPatterns.EVENT_UPDATE_MODEL, e => this.#update_model() );
+            $(document).on(Const.EVENT_UPDATE_MODEL, (e, source) => {
+                if(source == MenuPatterns.NAME) {
+                    this.#update_model();
+                }
+            });
         }
         catch(error) {
             console.error(error);

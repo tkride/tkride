@@ -360,6 +360,18 @@ class Const {
     static CHART_ID = 'chart';
     static CHART_INFO_ID = 'chart_info';
     static GRAPHICS_ID = 'graphic';
+
+    //GRAPHICS
+    static OPACIDAD_STR = 'Opacidad';
+    static LINE_SOLID = 'solid';
+    static LINE_DASH = 'dash';
+    static LINE_DOT = 'dot';
+
+    //DDBB EVENTS
+    static EVENT_DDBB_LOAD_USER_MODEL = 'event-ddbb-load-user-model';
+    static EVENT_DDBB_DELETE_MODEL = 'event-ddbb-delete-model';
+    static EVENT_DDBB_SAVE_MODEL = 'event-ddbb-save-model';
+    static EVENT_UPDATE_MODEL = 'event-update-model';
 }
     
 
@@ -563,8 +575,11 @@ class DDBB {
     static CHECK_USER_LOGGED = 'check_user_logged';
     static AUTHENTICATE_USER = 'authenticate_user';
     static DELETE_PATTERN = 'delete_pattern';
+    static DELETE_TEMPLATE = 'delete_template';
     static SAVE_PATTERN = 'save_pattern';
+    static SAVE_TEMPLATE = 'save_template';
     static LOAD_USER_PATTERNS = 'load_user_patterns';
+    static LOAD_USER_TEMPLATES = 'load_user_templates';
     static DDBB_ERROR = 'Error en base de datos';
     static DUPLICATE_KEY = 1062;
     static DUPLICATE_KEY_MSG = 'Identificador duplicado';

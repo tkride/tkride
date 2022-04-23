@@ -40,17 +40,17 @@ class EventController {
     #manage_patterns_menu() {
         if(MenuPatterns.is_visible()) {
             $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).hide();
-            $(MenuPatterns.ELEMENT_ID_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-            $(MenuPatterns.ELEMENT_ID_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
+            $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
             $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
         }
         else {
             $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).show();
             $(document).trigger(MenuPatterns.EVENT_BUILD_MENU);
-            $(MenuPatterns.ELEMENT_ID_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-            $(MenuPatterns.ELEMENT_ID_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
+            $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
             $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
-            $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+            $(document).trigger(Const.EVENT_UPDATE_MODEL, [MenuPatterns.NAME]);
         }
     }
 
@@ -119,7 +119,7 @@ class EventController {
             });
 
             // Show Patterns Menu
-            $(document).on('click', MenuPatterns.ELEMENT_ID_MENU_ICON, e => {
+            $(document).on('click', MenuPatterns.MENU_ICON, e => {
                 that.#manage_patterns_menu();
             });
 
@@ -131,6 +131,10 @@ class EventController {
             // Show Fibonacci Retracement Menu
             $(document).on('click', MenuFibonacci.MENU_ICON, e => {
                 $(document).trigger(Fibonacci.EVENT_CREATE);
+                $(MenuFibonacci.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                $(MenuFibonacci.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
+                $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
+                $(document).trigger(Const.EVENT_UPDATE_MODEL, [MenuFibonacci.NAME]);
             });
 
             // Load historic event
@@ -145,8 +149,8 @@ class EventController {
 
             $(document).on(MenuPatterns.EVENT_MENU_CLOSE, e => {
                 $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).hide();
-                $(MenuPatterns.ELEMENT_ID_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-                $(MenuPatterns.ELEMENT_ID_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
+                $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             });
 

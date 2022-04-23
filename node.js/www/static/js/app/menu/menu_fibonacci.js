@@ -7,19 +7,51 @@ class MenuFibonacci {
     //----------------------------- STATIC, CONSTANTS -----------------------------
     
     static NAME = 'menu-fibonacci';
+    static TITLE = 'Retroceso Fibonacci';
     static MENU_ICON = '#fibonacci-retracement';
 
     // Elements
+    // Float menu
     static ID_MENU_FLOAT_HANDLE = 'menu-float-handle';
     static ID_MENU_FLOAT_SETTIGNS = 'menu-float-settings';
     static ID_MENU_FLOAT_REMOVE = 'menu-float-remove';
     static ID_MENU_FLOAT_BLOCK = 'menu-float-block';
-    static ID_MENU_FIBONACCI_FLOAT = 'menu-fibonacci-float';
-    static ELEMENT_ID_MENU_FIBONACCI_FLOAT = '#menu-fibonacci-float';
+    static ID_MENU_FLOAT = 'menu-fibonacci-float';
+    static ELEMENT_ID_MENU_FLOAT = '#menu-fibonacci-float';
+    static ID_MENU_FLOAT_STORED_TEMPLATES = 'menu-fibonacci-float-stored-templates';
+    static ELEMENT_ID_MENU_FLOAT_STORED_TEMPLATES = '#menu-fibonacci-float-stored-templates';
+    
+    // Menu
     static ID_MENU_FIBONACCI = 'menu-fibonacci';
     static ELEMENT_ID_MENU_FIBONACCI = '#menu-fibonacci';
-    static ID_MENU_FIBONACCI_STORED_TEMPLATES = 'menu-fibonacci-stored-templates';
-    static ELEMENT_ID_MENU_FIBONACCI_STORED_TEMPLATES = '#menu-fibonacci-stored-templates';
+    static ID_MENU_STORED_TEMPLATES = 'menu-fibonacci-stored-templates';
+    static ELEMENT_ID_MENU_STORED_TEMPLATES = '#menu-fibonacci-stored-templates';
+    static ID_MENU_TEMPLATE_NAME = 'menu-fibonacci-template-name';
+    static ELEMENT_ID_MENU_TEMPLATE_NAME = '#menu-fibonacci-template-name';
+    static ID_MENU_RET_VALUES_LABEL = 'menu-fibonacci-ret-values-label';
+    static ELEMENT_ID_MENU_RET_VALUES_LABEL = '#menu-fibonacci-ret-values-label';
+    static ID_MENU_RET_VALUES = 'menu-fibonacci-ret-values';
+    static ELEMENT_ID_MENU_RET_VALUES = '#menu-fibonacci-ret_values';
+    static ID_MENU_OPACITY_LABEL = 'menu-fibonacci-opacity-label';
+    static ELEMENT_ID_MENU_OPACITY_LABEL = '#menu-fibonacci-opacity-label';
+    static ID_MENU_OPACITY = 'menu-fibonacci-opacity';
+    static ELEMENT_ID_MENU_OPACITY = '#menu-fibonacci-opacity';
+    static ID_MENU_TEXT_SHOW = 'menu-fibonacci-text-show';
+    static ELEMENT_ID_MENU_TEXT_SHOW = '#menu-fibonacci-text-show';
+    static TEXT_SHOW_LABEL = 'Mostrar texto';
+    static ID_MENU_TEXT_SIDE = 'menu-fibonacci-text-side';
+    static ELEMENT_ID_MENU_TEXT_SIDE = '#menu-fibonacci-text-side';
+    static ID_MENU_TEXT_INFO = 'menu-fibonacci-text-info';
+    static ELEMENT_ID_MENU_TEXT_INFO = '#menu-fibonacci-text-info';
+    // Menu buttons
+    static ID_BUTTON_SAVE = 'menu-fibonacci-button-save';
+    static ID_BUTTON_REMOVE = 'menu-fibonacci-button-remove';
+    static ID_BUTTON_RESET = 'menu-fibonacci-button-reset';
+    // Icons hover help text
+    static SETTINGS_TITLE = 'Configuración';
+    static REMOVE_TITLE = 'Eliminar';
+    static BLOCK_TITLE = 'Bloquear';
+    static TEMPLATES_TITLE = 'Plantillas';
     
     //Events
     static EVENT_MENU_CLOSE = 'event-menu-fibonacci-close';
@@ -28,85 +60,224 @@ class MenuFibonacci {
     static EVENT_REMOVE = 'event-menu-fibonacci-control-remove';
     static EVENT_BLOCK = 'event-menu-fibonacci-control-block';
     static EVENT_UPDATE_MODEL = 'event-menu-fibonacci-update-model';
+    // Buttons events
+    static EVENT_SUBMIT = 'event-menu-fibonacci-submit';
 
+    //Options
+    static MENU_TEXT_SIDE_OPTIONS = ['Izquierda', 'Derecha', 'Centro'];
+    static TEXT_SIDE_OPTIONS_TRANSLATOR = {
+        'Izquierda': 'left',
+        'Derecha': 'right',
+        'Centro': 'center',
+    };
+    static SIDE_TEXT_OPTIONS_TRANSLATOR = {
+        'left' : 'Izquierda',
+        'right' : 'Derecha',
+        'center' : 'Centro',
+    };
+    static MENU_TEXT_INFO_OPTIONS = ['%', 'Precio', '%(Precio)'];
+    static TEXT_INFO_OPTIONS_TRANSLATOR = {
+        '%': '%',
+        'Precio': 'value',
+        '%(Precio)': '%(value)',
+    };
+    static INFO_TEXT_OPTIONS_TRANSLATOR = {
+        '%': '%',
+        'value': 'Precio',
+        '%(value)': '%(Precio)',
+    };
+
+    static EMPTY_FORM = {
+        name: '',
+        [Const.RET_LEVELS_ID]: [],
+        colors: [],
+        opacity: 30,
+        lineWidth: 1,
+        lineType: Const.LINE_SOLID,
+        textShow: true,
+        textSide: 'right',
+        textInfo: '%',
+    }
     
+
     //----------------------------- PROPERTIES -----------------------------
     
     // TODO DUMMY DATA BORRAR
-    prev_config = {
-        fibo_name: 'test',
-        template_name: 'TEST',
-        hash: '',
+    prev_template = {
+        name: 'TMP',
+        type: Fibonacci.NAME,
         levels: [1.272, 1.618, 1.88],
-        colors: ['rgba(255, 125, 0, 1)', 'rgba(125, 255, 0, 1)', 'rgba(0, 125, 255, 1)'],
-        opacity: 0.3,
+        // colors: ['rgba(255, 125, 0, 1)', 'rgba(125, 255, 0, 1)', 'rgba(0, 125, 255, 1)'],
+        // opacity: 0.3,
+        colors: ['#FF7D00', '#7DFF00', '#007DFF'],
+        opacity: 30,
+        lineWidth: 1,
+        lineType: Const.LINE_SOLID,
         textShow: true,
         textSide: 'right',
         textInfo: '%',
     };
-    config = {
-        fibo_name: '',
-        template_name: '',
-        hash: '',
+    template = {
+        name: '',
+        type: Fibonacci.NAME,
         levels: [],
         colors: [],
-        opacity: 0,
-        textShow: '',
-        textSide: '',
-        textInfo: '',
+        opacity: 30,
+        lineWidth: 1,
+        lineType: Const.LINE_SOLID,
+        textShow: true,
+        textSide: 'right',
+        textInfo: '%',
     }
+    models;
     model;
     #menu;
     #menu_float;
     #settings;
     #remove;
     #block;
+    #stored_templates_float;
     #stored_templates;
+    #input_name;
+    #ret_values;
+    #opacity;
+    #show_text = true;
+    #text_side_options;
+    #text_info_options;
 
     fibo_ref;
     #open_float = false;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor(model) {
-        this.model = model;
+    constructor(models) {
+        this.models = models;
+        // this.model = models.templates[Fibonacci.NAME];
         this.init();
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
     
-    #get_clicked_stored_fibonacci(fib_name) {
-        // if(this.model.fibonacci) {
-        //     let fib = this.model.fibonacci[fib_name];
-        //     if(fib) {
-        //         this.#load_controls_values(fib);
-        //     }
-        // }
-        console.log(fib_name);
+    #get_clicked_stored_templates(name) {
+        try {
+            if(this.models.templates[Fibonacci.NAME]) {
+                let fib = this.models.templates[Fibonacci.NAME][name];
+                if(fib) {
+                    this.#load_controls_values(fib);
+                }
+            }
+            // this.#load_controls_values(this.model[name]);
+            // console.log(name);
+        }
+        catch(error) {
+            console.error(error);
+        }
     }
 
-    #load_controls_values(fib) {
+    #load_controls_values(config) {
+        try {
+            this.template = config;
+            this.#input_name.text = this.template.name;
+            this.#ret_values.text = this.template.levels.reduce( (s, l) => s+','+l);
+            //this.#level_colors
+            this.#opacity.set_val(this.template.opacity);
+            this.#show_text.checked = this.template.textShow;
+            let text_side = MenuFibonacci.SIDE_TEXT_OPTIONS_TRANSLATOR[this.template.textSide] || this.template.textSide;
+            let text_info = MenuFibonacci.INFO_TEXT_OPTIONS_TRANSLATOR[this.template.textInfo] || this.template.textInfo;
+            this.#text_side_options.select(text_side);
+            this.#text_info_options.select(text_info);
+        }
+        catch(error) {
+            console.error(error);
+        }
+    }
 
+    #read_controls_values() {
+        try {
+            let levels = this.#ret_values.text.split(',');
+            let text_side = MenuFibonacci.TEXT_SIDE_OPTIONS_TRANSLATOR[this.#text_side_options.selected] || this.#text_side_options.selected;
+            let text_info = MenuFibonacci.TEXT_INFO_OPTIONS_TRANSLATOR[this.#text_info_options.selected] || this.#text_info_options.selected;
+            this.template = {
+                type: Fibonacci.NAME,
+                name: this.#input_name.text,
+                [Const.RET_LEVELS_ID]: levels,
+                colors: [],
+                opacity: this.#opacity.value,
+                lineWidth: 1,
+                lineType: Const.LINE_SOLID,
+                textShow: this.#show_text.checked,
+                textSide: text_side,
+                textInfo: text_info,
+            }
+            return this.template;
+        }
+        catch(error) {
+            console.error(error);
+        }
     }
 
     #update_lock() {
-        if(this.fibo_ref.blocked) {
-            this.#block.removeClass(`${Const.CLASS_ICON_UNLOCK} ${Const.CLASS_HOVERABLE_ICON}`);
-            this.#block.addClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
-            this.#remove.removeClass(Const.CLASS_HOVERABLE_ICON);
-            this.#remove.addClass(Const.CLASS_DISABLED);
+        try {
+            if(this.fibo_ref.blocked) {
+                this.#block.removeClass(`${Const.CLASS_ICON_UNLOCK} ${Const.CLASS_HOVERABLE_ICON}`);
+                this.#block.addClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
+                this.#remove.removeClass(Const.CLASS_HOVERABLE_ICON);
+                this.#remove.addClass(Const.CLASS_DISABLED);
+            }
+            else {
+                this.#block.removeClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
+                this.#block.addClass(`${Const.CLASS_ICON_UNLOCK} ${Const.CLASS_HOVERABLE_ICON}`);
+                this.#remove.addClass(Const.CLASS_HOVERABLE_ICON);
+                this.#remove.removeClass(Const.CLASS_DISABLED);
+            }
         }
-        else {
-            this.#block.removeClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
-            this.#block.addClass(`${Const.CLASS_ICON_UNLOCK} ${Const.CLASS_HOVERABLE_ICON}`);
-            this.#remove.addClass(Const.CLASS_HOVERABLE_ICON);
-            this.#remove.removeClass(Const.CLASS_DISABLED);
+        catch(error) {
+            console.error(error);
+        }
+    }
+
+    #update_model() {
+        try {
+            // this.prev_template = (this.template.levels.length > 0) ? this.template : this.prev_template;
+            // Update templates list
+            // this.#stored_templates = $(MenuFibonacci.ELEMENT_ID_MENU_FIBONACCI_STORED_TEMPLATES).data('Dropdown');
+            // Save current selected template
+            // let template_selected = this.#stored_templates.selected;
+            let template_selected = this.#input_name.text;
+            // Load new model data available options
+            this.#stored_templates.items = Object.keys(this.models.templates[Fibonacci.NAME] || []);
+            this.#stored_templates_float.items = Object.keys(this.models.templates[Fibonacci.NAME] || []);
+            // Restores previous selected template if still exists
+            if(this.#stored_templates.items.includes(template_selected)) {
+                // this.#stored_templates.selected = template_selected;
+                // this.#stored_templates_float.selected = template_selected;
+                this.#stored_templates.select(template_selected);
+                this.#stored_templates_float.select(template_selected);
+            }
+        }
+        catch(error) {
+            console.error(error);
+        }
+    }
+    
+    #delete_template() {
+        let values = this.#read_controls_values();
+        let template = { name: values.name, type: Fibonacci.NAME };
+        $(document).trigger(Const.EVENT_DDBB_DELETE_MODEL, [MenuFibonacci.NAME, template]);
+    }
+    
+    #save_template() {
+        // Get stored info from controls
+        let template = this.#read_controls_values();
+        if(template.name) {
+            // Send DDBB query via chart controller
+            $(document).trigger(Const.EVENT_DDBB_SAVE_MODEL, [MenuFibonacci.NAME, template]);
         }
     }
 
     #create_menu_float() {
         // Creates main menu container
-        this.#menu_float = new Display({ id: MenuFibonacci.ID_MENU_FIBONACCI_FLOAT,
+        this.#menu_float = new Display({ id: MenuFibonacci.ID_MENU_FLOAT,
             top:'15%',
             left:'30%',
             no_title: true,
@@ -114,7 +285,7 @@ class MenuFibonacci {
             show: false,
             draggable: true,
             close: false,
-            height: '3em',
+            height: '40px',
             overflow: false,
         });
 
@@ -133,9 +304,10 @@ class MenuFibonacci {
             id: MenuFibonacci.ID_MENU_FLOAT_SETTIGNS,
             class: `${Const.CLASS_ICON_SETTINGS} ${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
             css: { padding: '1em' },
+            title: MenuFibonacci.SETTINGS_TITLE,
         });
         this.#menu_float.append_content(this.#settings);
-        this.#settings.on('click', e => $(document).trigger(MenuFibonacci.EVENT_OPEN_SETTINGS, e));
+        this.#settings.on('click', e => $(document).trigger(MenuFibonacci.EVENT_OPEN_SETTINGS, [this.fibo_ref]));
 
         
         // Remove
@@ -143,6 +315,7 @@ class MenuFibonacci {
             id: MenuFibonacci.ID_MENU_FLOAT_REMOVE,
             class: `${Const.CLASS_ICON_REMOVE} ${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
             css: { padding: '1em' },
+            title: MenuFibonacci.REMOVE_TITLE,
         });
         this.#menu_float.append_content(this.#remove);
         this.#remove.on('click', e => {
@@ -158,6 +331,7 @@ class MenuFibonacci {
             id: MenuFibonacci.ID_MENU_FLOAT_BLOCK,
             class: `${Const.CLASS_ICON_UNLOCK} ${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
             css: { padding: '0.5em', 'font-size': '1.5em', },
+            title: MenuFibonacci.BLOCK_TITLE
         });
         this.#menu_float.append_content(this.#block);
         this.#block.on('click', e => {
@@ -167,258 +341,255 @@ class MenuFibonacci {
 
 
         // Templates dropdown
-        this.#stored_templates = new Dropdown({
-                                        id: MenuFibonacci.ID_MENU_FIBONACCI_STORED_TEMPLATES,
-                                        items: ['A', 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'],
-                                        event: MenuFibonacci.EVENT_STORED_SELECTED,
-                                        header: { selected: true },
-                                        select_unknown: true,
-                                        class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
-                                        css: {
-                                            items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
-                                            container: { 'background-color': 'var(--color-invisible)', height: '1.35em', padding: '0.5em 0.3em', },
-                                        },
-                                    });
-        // this.#stored_templates.select('A');
-        $(document).on(MenuFibonacci.EVENT_STORED_SELECTED, (e, ret_name) => {
-            this.#get_clicked_stored_fibonacci(ret_name)
+        this.#stored_templates_float = new Dropdown({
+            id: MenuFibonacci.ID_MENU_FLOAT_STORED_TEMPLATES,
+            items: [],
+            event: MenuFibonacci.EVENT_STORED_SELECTED,
+            header: { selected: true },
+            select_unknown: true,
+            class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
+            css: {
+                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
+                container: { 'background-color': 'var(--color-invisible)', height: '1.35em', padding: '0.5em 0.3em', },
+            },
         });
-        this.#menu_float.append_content(this.#stored_templates.controls);
+        $(document).on(MenuFibonacci.EVENT_STORED_SELECTED, (e, name) => {
+            this.#get_clicked_stored_templates(name)
+        });
+        // this.#stored_templates_float.controls.prop('title', MenuFibonacci.TEMPLATES_TITLE);
+        this.#menu_float.append_content(this.#stored_templates_float.controls);
  
         // Append control element to floating menu
     }
 
     #create_menu() {
         // Creates main menu container
-        this.#menu = new Display({ id: MenuFibonacci.ID_MENU_FIBONACCI,
-                                      title: 'Fibonacci',
-                                      title_css: { 'font-size': '1.25em' },
-                                      top:'15%',
-                                      left:'30%',
-                                      draggable: true,
-                                      new_classes: 'scroll-custom',
-                                      //   width: '300px',
-                                      close_cb: this.hide.bind(this),
-                                     });
+        this.#menu = new Display({
+            id: MenuFibonacci.ID_MENU_FIBONACCI,
+            title: 'Fibonacci',
+            title_css: { 'font-size': '1.25em' },
+            css: { padding: '0.7em' },
+            top:'15%',
+            left:'30%',
+            draggable: true,
+            // new_classes: 'scroll-custom',
+            overflow: false,
+            // width: '300px',
+            close_cb: this.hide.bind(this),
+        });
 
-        this.#menu.element_handle_close.on('click', e =>  $(document).trigger(MenuFibonacci.EVENT_MENU_CLOSE) );
+        this.#menu.element_handle_close.on('click', e =>  $(document).trigger(MenuFibonacci.EVENT_MENU_CLOSE, [Fibonacci.NAME]) );
         this.#menu.control.hide();
 
         // Add separator
         this.#menu.append(Display.build_separator());
 
-        // Appends common controls to menu panel display
-        // // Creates name input box
-        // let name = new Inputbox({
-        //                             id: MenuFibonacci.ID_PATTERNS_MENU_PATTERN_NAME,
-        //                             container: { class: Const.CLASS_MENU_FIELD },
-        //                             label: { text: 'Nombre', position: Const.LABEL_POSITION_BEFORE },
-        //                             input: { class: Const.CLASS_TEXT_INPUT,
-        //                                      placeholder: 'Nombre del patrón  ',
-        //                                      css: { 'max-width': '9em',  'font-size': '0.8em' },
-        //                             }
-        //                         });
+        // Creates name input box
+        this.#input_name = new Inputbox({
+            id: MenuFibonacci.ID_MENU_TEMPLATE_NAME,
+            container: { class: Const.CLASS_MENU_FIELD },
+            label: { text: 'Nombre', position: Const.LABEL_POSITION_BEFORE },
+            input: { class: Const.CLASS_TEXT_INPUT,
+                     placeholder: 'Nombre de plantilla  ',
+                     css: { 'max-width': '9em',  'font-size': '0.8em' },
+            }
+        });
 
-        // this.#stored_templates = new Dropdown({
-        //                                 id: MenuFibonacci.ID_MENU_FIBONACCI_STORED_TEMPLATES,
-        //                                 items: [], //Object.keys(this.#models.patterns),
-        //                                 event: MenuFibonacci.EVENT_STORED_SELECTED,
-        //                                 header: { arrow: true },
-        //                                 css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
-        // });
-        // this.#stored_templates.controls.each( (i, c) => this.#menu.control.append(c) );
-        // $(document).on(MenuFibonacci.EVENT_STORED_SELECTED, (e, fib_name) => {
-        //     this.#get_clicked_stored_fibonacci(fib_name)
-        // });
-        // // Append control element to display
-        // this.#menu.append_content(stored.control);
+        // Templates dropdown
+        this.#stored_templates = new Dropdown({
+            id: MenuFibonacci.ID_MENU_STORED_TEMPLATES,
+            items: [],
+            event: MenuFibonacci.EVENT_STORED_SELECTED,
+            header: { arrow: true },
+            select_unknown: true,
+            // class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
+            css: {
+                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
+                // container: { 'background-color': 'var(--color-invisible)', height: '1.35em', padding: '0.5em 0.3em', },
+            },
+        });
 
-        // // Creates pattern type selection combo box
-        // let types_container = $('<div>', { class: Const.CLASS_MENU_FIELD});
-        // let types_label = $('<p>', { text: 'Tipo' });
-        // types_container.append(types_label);
-        // let types_combobox = new Dropdown({
-        //                                     id: MenuFibonacci.ID_PATTERNS_MENU_TYPE_SELECT,
-        //                                     items: MenuFibonacci.PATTERNS_TYPE_OPTIONS,
-        //                                     event: MenuFibonacci.EVENT_TYPE_SELECTED,
-        //                                     header: { selected: true },
-        //                                     css: { container: { 'font-size': '1em', 'font-weight': '400' } },
-        //                                 });
-        // types_combobox.controls.each( (i, c) => types_container.append(c) );
-        // // Append control element to display
-        // this.#display.append_content(types_container);
-        // //Build type selected event
-        // $(document).on(MenuFibonacci.EVENT_TYPE_SELECTED, (e, type) => {
-        //     $(MenuFibonacci.ELEMENT_ID_PATTERNS_MENU_CONTENT_ALL).hide();
-        //     if(MenuFibonacci.PATTERN_TYPE_CALLBACK[type]) {
-        //         MenuFibonacci.PATTERN_TYPE_CALLBACK[type]();
-        //     }
-        //     else console.warn(`WARNING: Selected pattern type ${type} don't defined.`);
+        this.#stored_templates.controls.each( (i, c) => this.#input_name.control.append(c) );
+        // $(document).on(MenuFibonacci.EVENT_STORED_SELECTED, (e, ret_name) => {
+        //     this.#get_clicked_stored_templates(ret_name)
         // });
 
-        // // Creates pattern results search in selection
-        // // let results = new Inputbox({
-        // //                             id: MenuFibonacci.ID_PATTERNS_MENU_SEARCH_IN_INPUT,
-        // //                             container: { class: Const.CLASS_MENU_FIELD },
-        // //                             input: { placeholder: 'Bucar en resultado... ' }
-        // //                          });
-        // let searchin_combobox = new Dropdown({
-        //                                     id: MenuFibonacci.ID_PATTERNS_MENU_SEARCH_IN_PATTERNS,
-        //                                     // items: Object.keys(this.#models.patterns),
-        //                                     items: [],
-        //                                     // event: MenuFibonacci.EVENT_SEARCH_IN_RET_SELECTED,
-        //                                     class: Const.CLASS_MENU_FIELD,
-        //                                     header: { selected: true, label: { text: 'Buscar en resultado', position: Const.LABEL_POSITION_BEFORE} },
-        //                                     css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
-        //                                 });
-        // // searchin_combobox.controls.each( (i, c) => results.control.append(c) );
-        // searchin_combobox.controls.each( (i, c) => this.#display.append_content(c) );
-        // // Append control element to display
-        // // this.#display.append_content(results.control);
+        // Append control element to display
+        this.#menu.append_content(this.#input_name.control);
+
+        let ret_label_container = $('<div>', {
+            css: { 'display': 'block', margin: '0 0 0 1em', },
+                    // class: Const.CLASS_MENU_FIELD,
+        });
+        let ret_label = $('<p>', {
+            id: MenuFibonacci.ID_MENU_RET_VALUES_LABEL,
+            class: Const.CLASS_MENU_FIELD,
+            text: 'Valores retroceso',
+        });
+        ret_label_container.append(ret_label);
+        this.#menu.append_content(ret_label_container);
+
         
-        // // Nivel de movimientos
-        // let mov_level = new Inputbox({
-        //     id: MenuFibonacci.ID_PATTERNS_MENU_MOV_LEVEL_ID,
-        //     container: { class: Const.CLASS_MENU_FIELD },
-        //     label: { text: 'Nivel movimiento', position: Const.LABEL_POSITION_BEFORE },
-        //     input: { class: Const.CLASS_MENU_INPUT_SHORT, text: '1' }
-        //  });
-        // // Append control element to display
-        //  this.#display.append_content(mov_level.control);
+        // Add retracement values
+        this.#ret_values = new Inputbox({
+            id: MenuFibonacci.ID_MENU_RET_VALUES,
+            container: { class: Const.CLASS_MENU_FIELD, tooltip: 'Valores de retroceso de fibonacci (ej: 0.23, 0.382, >0.618). Admite operadores > y <.)' },
+            input: { css: {'min-width': '13.5em' },  placeholder: 'Valores retroceso Fibonacci  ' }
+        });
 
-        // Add content menu ----------------------------------------------------------
-        // this.#create_menu_retracements();
-        // this.#create_menu_buttons();
+        // Append control element to display
+        this.#menu.append_content(this.#ret_values.control);
+
+
+        // Opacity
+        let opacity_label_container = $('<div>', {
+            css: { 'display': 'block', margin: '0 0 0 1em', },
+        });
+        let opacity_label = $('<p>', {
+            id: MenuFibonacci.ID_MENU_OPACITY_LABEL,
+            class: Const.CLASS_MENU_FIELD,
+            text: 'Opacidad',
+        });
+        opacity_label_container.append(opacity_label);
+        this.#menu.append_content(opacity_label_container);
+
+        this.#opacity = new Slider({
+            id: MenuFibonacci.ID_MENU_OPACITY,
+            min: 0,
+            max: 100,
+            step: 2,
+            default: 50,
+            class: Const.CLASS_MENU_FIELD,
+            css: {
+                input: { 'margin-right': '0.5em', height: '0.5em', width: '8em' },
+            },
+            show_output: true,
+        });
+        this.#menu.append_content(this.#opacity.control);
+
+
+        // Show text
+        this.#show_text = new Checkbox({
+            id: MenuFibonacci.ID_MENU_TEXT_SHOW,
+            label:MenuFibonacci.TEXT_SHOW_LABEL,
+            class: Const.CLASS_MENU_FIELD,
+        });
+        this.#menu.append_content(this.#show_text.control);
+
+
+        // Text side
+        this.#text_side_options = new Dropdown({
+            id: MenuFibonacci.ID_MENU_TEXT_SIDE,
+            items: MenuFibonacci.MENU_TEXT_SIDE_OPTIONS,
+            header: {
+                selected: true,
+                label: {
+                    text: 'Posición texto',
+                    position: Const.LABEL_POSITION_BEFORE,
+                    css: { 'marging-bottom': '1em' },
+                },
+            },
+            class: Const.CLASS_MENU_FIELD,
+            css: {
+                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
+            },
+        });
+        this.#menu.append_content(this.#text_side_options.control);
+        this.#text_side_options.select(MenuFibonacci.MENU_TEXT_SIDE_OPTIONS[1]);
+
+        
+        // Text info
+        this.#text_info_options = new Dropdown({
+            id: MenuFibonacci.ID_MENU_TEXT_INFO,
+            items: MenuFibonacci.MENU_TEXT_INFO_OPTIONS,
+            header: {
+                selected: true,
+                label: {
+                    text: 'Información texto',
+                    position: Const.LABEL_POSITION_BEFORE,
+                    css: { 'marging-bottom': '1em' },
+                 },
+             },
+            class: Const.CLASS_MENU_FIELD,
+            css: {
+                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
+            },
+        });
+        this.#menu.append_content(this.#text_info_options.control);
+        this.#text_info_options.select(MenuFibonacci.MENU_TEXT_INFO_OPTIONS[0]);
+
+        this.#create_menu_buttons();
+    }
+
+    #create_menu_buttons() {
+        let menu_footer = $('<div>', {
+            id: MenuFibonacci.ID_MENU_FOOTER,
+            css: { 'margin': '0 0 4em 1em', },
+        });
+
+        // Add button save template
+        let button_save = $('<div>', {
+            id: MenuFibonacci.ID_BUTTON_SAVE,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_SAVE}`,
+            title: 'Guardar plantilla'
+        });
+        menu_footer.append(button_save);
+        button_save.on('click', e => this.#save_template())
+
+        // Add button delete pattern
+        let button_delete = $('<div>', {
+            id: MenuFibonacci.ID_BUTTON_REMOVE,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_REMOVE}`,
+            title: 'Eliminar plantilla'
+        });
+        menu_footer.append(button_delete);
+        button_delete.on('click', e => this.#delete_template());
+
+        // Add button reset form
+        let button_reset = $('<div>', {
+            id: MenuFibonacci.ID_BUTTON_RESET,
+            class: `${Const.CLASS_BUTTON_GENERAL} ${Display.CLASS_ICONS} ${Const.CLASS_ICON_CLEAR}`,
+            title: 'Limpiar formulario'
+        });
+        menu_footer.append(button_reset);
+        button_reset.on('click', e => this.#load_controls_values(MenuFibonacci.EMPTY_FORM));
+
+        this.#menu.append(menu_footer);
     }
     
     #init_events() {
-        $(document).on(MenuFibonacci.EVENT_UPDATE_MODEL, (e, params) => {
-            prev_config = {};
-        });
+        try {
+            $(document).on(Const.EVENT_UPDATE_MODEL, (e, source) => {
+                if(source == MenuFibonacci.NAME) {
+                    this.#update_model();
+                }
+            });
+
+            // $(document).on(Const.EVENT_CLOSE, e => $(document).trigger(MenuFibonacci.EVENT_MENU_CLOSE, [Fibonacci.NAME]));
+
+            // TODO LANZAR EVENTO SUBMIT CON CADA CAMBIO DE VALOR, SE DEBE VER INTERACTIVO EN PANTALLA
+            $(document).on(MenuFibonacci.EVENT_SUBMIT, e => {
+            });
+        }
+        catch(error) {
+            console.error(error);
+        }
     }
-
-    // #create_menu_retracements() {
-    //     let ret_content = $('<div>', { id: MenuFibonacci.ID_PATTERNS_MENU_CONTENT_RETRACEMENTS } );
-    //     ret_content.css({ margin: '0', display: 'none' });
-
-    //     // Add separator
-    //     ret_content.append(Display.build_separator());
-
-    //     // Add retracement values
-    //     let ret_values = new Inputbox({
-    //         id: MenuFibonacci.ID_PATTERNS_MENU_RET_VALUES,
-    //         container: { class: Const.CLASS_MENU_FIELD, tooltip: 'Valores de retroceso de fibonacci (ej: 0.23, 0.382, >0.618). Admite operadores > y <.)' },
-    //         input: { css: {'min-width': '13.5em' },  placeholder: 'Valores retroceso Fibonacci  ' }
-    //         });
-    //     // Append control element to display
-    //     ret_content.append(ret_values.control);
-
-    //     // Add from option
-    //     let from = new RadioButton({
-    //                                     id: MenuFibonacci.ID_PATTERNS_MENU_RET_FROM,
-    //                                     container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
-    //                                     name: Const.FROM_ID,
-    //                                     label: { text: 'Desde', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
-    //                                     buttons: { values: {
-    //                                                         [Const.INICIO_ID]: Const.INIT_ID,
-    //                                                         [Const.FIN_ID]: Const.END_ID,
-    //                                                         [Const.CORRECCION_DESDE_ID]: Const.CORRECTION_ID
-    //                                                 },
-    //                                                 checked: Const.INIT_ID,
-    //                                                 class: Const.CLASS_BUTTON_GENERAL,
-    //                                                 css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
-    //                                             }
-    //                                 });
-    //     // Append control element to display
-    //     ret_content.append(from.control);
-
-    //     // Add iterate value
-    //     let iterate = new Inputbox({
-    //         id: MenuFibonacci.ID_PATTERNS_MENU_RET_ITERATE,
-    //         container: { class: Const.CLASS_MENU_FIELD },
-    //         label: { text: 'Itera búsqueda', position: Const.LABEL_POSITION_BEFORE },
-    //         input: { class: Const.CLASS_MENU_INPUT_SHORT, text: '0' }
-    //     });
-    //     // Append control element to display
-    //     ret_content.append(iterate.control);
-
-    //     // Add filter max option
-    //     let filter_max = new RadioButton({
-    //         id: MenuFibonacci.ID_PATTERNS_MENU_RET_FILTER_MAX,
-    //         container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
-    //         name: MenuFibonacci.NAME_FILTER_MAX,
-    //         label: { text: 'Solo máximo', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
-    //         buttons: { values: {
-    //                             [MenuFibonacci.FILTER_MAX_NO_ID]: Const.NO,
-    //                             [MenuFibonacci.FILTER_MAX_MOV_ID]: Const.MOVIMIENTO,
-    //                             [MenuFibonacci.FILTER_MAX_RET_ID]: Const.RETROCESO
-    //                     },
-    //                     checked: Const.NO,
-    //                     class: Const.CLASS_BUTTON_GENERAL,
-    //                     css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
-    //                 }
-    //     });
-    //     // Append control element to display
-    //     ret_content.append(filter_max.control);
-
-    //     // Append levels data source
-    //     let levels_data_source = new Dropdown({
-    //         id: MenuFibonacci.ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE,
-    //         // items: Object.keys(this.#models.patterns),
-    //         items: [],
-    //         // event: MenuFibonacci.EVENT_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE_SELECTED,
-    //         class: Const.CLASS_MENU_FIELD,
-    //         header: { selected: true, label: { text: 'Datos fuente de niveles', position: Const.LABEL_POSITION_BEFORE } },
-    //         css: { items: { 'font-size': '0.8em', 'font-weight': '400' } },
-    //     });
-    //     levels_data_source.controls.each( (i, c) => ret_content.append(c) );
-
-    //     // // Add from option
-    //     // let levels_from = new RadioButton({
-    //     //     id: MenuFibonacci.ID_PATTERNS_MENU_RET_LEVELS_FROM,
-    //     //     container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
-    //     //     name: Const.FROM_STOP_ID,
-    //     //     label: { text: 'Desde de niveles', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
-    //     //     buttons: { values: {
-    //     //                         [Const.INICIO_ID]: Const.INIT_ID,
-    //     //                         [Const.FIN_ID]: Const.END_ID,
-    //     //                         [Const.CORRECCION_DESDE_ID]: Const.CORRECTION_ID
-    //     //                 },
-    //     //                 checked: Const.INIT_ID,
-    //     //                 class: Const.CLASS_BUTTON_GENERAL,
-    //     //                 css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
-    //     //             }
-    //     // });
-    //     // // Append control element to display
-    //     // ret_content.append(levels_from.control);
-
-    //     // Append control element to display
-    //     this.#display.append_content(ret_content);
-    // }
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
     init() {
+        $(MenuFibonacci.MENU_ICON).prop('title', MenuFibonacci.TITLE);
+
         this.#create_menu_float();
         this.#create_menu();
         this.#init_events();
     }
 
-    load_config(params) {
-        this.config.fibo_name = params.name;
-        this.config.template_name = params.template_name;
-        this.config.levels = params.levels;
-        this.config.colors = params.colors;
-        this.config.opacity = params.opacity;
-        this.config.textShow = params.textShow;
-        this.config.textSide = params.textSide;
-        this.config.textInfo = params.textInfo;
-    }
-
     show(params) {
         this.#menu_float.hide();
         this.#menu.show();
-        this.#load_controls_values(params);
+        this.#load_controls_values(params.template);
     }
 
     hide() {
@@ -432,8 +603,8 @@ class MenuFibonacci {
         this.#open_float = true;
         this.#menu_float.show();
         this.fibo_ref = params;
-        this.load_config(params);
-        this.#stored_templates.select(this.config.template_name);
+        this.template = params.template;
+        this.#stored_templates_float.select(this.template.name);
         this.#update_lock();
     }
 

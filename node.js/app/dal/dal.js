@@ -124,6 +124,52 @@ exports.delete_pattern = async (params) => {
     }
 }
 
+exports.save_template = async (params) => {
+    try {
+        let user = params.user;
+        let name = params.name;
+        let type = params.type;
+        let values = JSON.stringify(params);
+        let res = await db.query({ query: `SELECT SAVE_TEMPLATE(?, ?, ?, ?)`, values: [user, name, type, values] });
+        console.log('Template saved: ', res);
+        res = Object.values(res[0])[0];
+        res = parseInt(res);
+        return res;
+    }
+    catch(error) {
+        throw error;
+    }
+}
+
+
+exports.load_user_templates = async (params) => {
+    try {
+        let user = params;
+        let res = await db.query({ query: `CALL LOAD_USER_TEMPLATES(?)`, values: [user] });
+        console.log('Load user templates: ', res);
+        return res;
+    }
+    catch(error) {
+        throw error;
+    }
+}
+
+
+exports.delete_template = async (params) => {
+    try {
+        let user = params.user;
+        let name = params.name;
+        let type = params.type;
+        let res = await db.query({ query: `SELECT DELETE_TEMPLATE(?, ?, ?)`, values: [user, name, type] });
+        res = Object.values(res[0])[0];
+        console.log('Delete template: ', res);
+        return res;
+    }
+    catch(error) {
+        throw error;
+    }
+}
+
 const actions = {
     "load_session": this.load_session,
     "save_session": this.save_session,
@@ -132,4 +178,7 @@ const actions = {
     "save_pattern": this.save_pattern,
     "load_user_patterns": this.load_user_patterns,
     "delete_pattern": this.delete_pattern,
+    "save_template": this.save_template,
+    "load_user_templates": this.load_user_templates,
+    "delete_template": this.delete_template,
 }

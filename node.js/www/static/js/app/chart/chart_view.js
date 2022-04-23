@@ -227,6 +227,7 @@ class ChartView {
     create_chart(params) {
         let id = params.id;
         let frame = params.frame[0];
+        // let chart = echarts.init(frame, null, { renderer: 'svg' });
         let chart = echarts.init(frame);
         // chart.setOption({animatoinEasing: 'linear'});
         // chart.setOption({animationEasingUpdate: 'linear'});
@@ -265,6 +266,10 @@ class ChartView {
             
             if(!data) {
                 throw ('No data available to plot.');
+            }
+
+            if(clear) {
+                chart.setOption({series: []}, { replaceMerge: ['series']});
             }
 
             // if ((data) && (data.dataType != Const.ACTIVO_ID)) {
@@ -417,8 +422,8 @@ class ChartView {
                         id: data.name,
                         name: data.name,
                         type: 'candlestick',
-                        clip: true,
                         data: data.data_y,
+                        clip: true,
                         // connectNulls: true,
                         itemStyle: {
                             color: this.cnf.colorUp,
@@ -445,6 +450,7 @@ class ChartView {
                         },
                         // restore: {},
                         saveAsImage: {
+                            icon: 'image://static/images/icons/camera.png',
                             name: data.name + '_' + data.marco + '_' + data.broker + '_' + Time.now(Time.FORMAT_FILE),
                             type: 'jpg',
                             excludeComponents: ['toolbox', 'title'],
@@ -494,6 +500,14 @@ class ChartView {
         }
 
         return ret;
+    }
+
+    update_candles({data, chart}) {
+        chart.setOption({series: [{
+                id: data.name,
+                name: data.name,
+                data: data.data_y,
+            }]});
     }
 
     plot_max(data, chart=null) {
@@ -1122,7 +1136,7 @@ class ChartView {
                 try {
                     f.plot(chart);
                     // ChartView.#chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID].push(f);
-                    this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][f[Const.NAME_ID]] = f;
+                    this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][f[Const.ID_ID]] = f;
                 }
                 catch(error) {
                     console.error(`EXCEPTION draw_fibonacci:${error}.`);
@@ -1162,7 +1176,7 @@ class ChartView {
             else {
                 Object.values(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach( g => {
                     let target_name = (e.target) ? e.target.parent.name : '';
-                    if(g[Const.NAME_ID] != target_name) {
+                    if(g[Const.ID_ID] != target_name) {
                         if(typeof g.unselect == "function") {
                             g.unselect();
                         }
@@ -1203,5 +1217,49 @@ class ChartView {
             y1 = 0;
             chart.getZr().off('mousemove', dragAxisZoom);
         });
+    }
+
+    select({chart, items}) {
+        if((items instanceof Array) == false) {
+            items = [items];
+        }
+
+        if(items[0] == '*') {
+            Object.values(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach( g => {
+                if(typeof g.select == 'function') {
+                    g.select();
+                }
+            });
+        }
+        else {
+            items.forEach( i => {
+                let item = this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][i];
+                if(typeof item.select == 'function') {
+                    item.select();
+                }
+            });
+        }
+    }
+
+    unselect({chart, items}) {
+        if((items instanceof Array) == false) {
+            items = [items];
+        }
+
+        if(items[0] == '*') {
+            Object.values(this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID]).forEach( g => {
+                if(typeof g.unselect == 'function') {
+                    g.unselect();
+                }
+            });
+        }
+        else {
+            items.forEach( i => {
+                let item = this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][i];
+                if(typeof item.unselect == 'function') {
+                    item.unselect();
+                }
+            });
+        }
     }
 }

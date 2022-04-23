@@ -39,10 +39,13 @@ class ChartController {
     //----------------------------- PROPERTIES -----------------------------
 
     // Models
+    #EVENT_SOURCE = {};
+    #MENUS_ICON_GRAPHIC = {};
     #models = {};
     #chart_models = {};
+    patterns_dao;
+    templates_dao;
     #trash = [];
-    // #patterns = {};
     // View
     #view;
     //Brokers manager
@@ -74,6 +77,8 @@ class ChartController {
     #control_settings;
     #patterns_cb;
     #TSQL = TSQL_node;
+
+    persist_tool = false; // Persist last tool enabled
     
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -191,8 +196,8 @@ class ChartController {
         // Get initial date time
         let end_time = Time.now(Time.FORMAT_STR);
         this.currActive[this.#TSQL.MARCO_ID] = this.#time_frame.time_frame;
-        // let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-        let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        // let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
 
         let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
                     [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
@@ -241,121 +246,6 @@ catch(err) {
         // $(document).on(plot_event_id, e => { if(event_id) $(document).trigger(event_id); });
     }
 
-    // event_ddbb_load_user_patterns() {
-    //     console.log('Load patterns.');
-    //     return this.interface_ddbb.process({ user: this.interface_ddbb.user, query: DDBB.LOAD_USER_PATTERNS, params: this.interface_ddbb.user })
-    //     .then( res => {
-    //         if(res.errno == undefined) {
-    //             let patterns = {};
-    //             console.log('Patterns loaded:', res);
-    //             res[0].forEach( row => {
-    //                 try {
-    //                     let pattern = JSON.parse(row.values);
-    //                     patterns[pattern[Const.ID_ID]] = pattern;
-    //                 }
-    //                 catch(err) { console.error('Error loading pattern information:', err); }
-    //             });
-    //             this.models[Const.PATTERNS_ID] = patterns;
-    //             $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
-    //             return true;
-    //         }
-    //         else {
-    //             console.error('Error loading patterns:', res);
-    //             let msg_error = this.interface_ddbb.get_error_message(res);
-    //             this.write_status({error:'(!) Error cargando patrones: ' + msg_error, timeout: 5000});
-    //             return false;
-    //         }
-    //     })
-    //     .catch(err => {
-    //         console.error(err);
-    //         return false;
-    //     });
-    // }
-
-    // event_ddbb_delete_pattern(pattern) {
-    //     console.log('Delete pattern:', pattern);
-    //     pattern.user = this.interface_ddbb.user;
-    //     return this.interface_ddbb.process({ user: pattern.user, query: DDBB.DELETE_PATTERN, params: pattern })
-    //     .then( res => {
-    //         if(res.errno == undefined) {
-    //             if(res >= 1) {
-    //                 console.log('Pattern deleted:', res);
-    //                 this.event_ddbb_load_user_patterns()
-    //                 .then( res => res)
-    //                 .catch( error => {
-    //                     console.error(error);
-    //                     this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
-    //                     return false;
-    //                 });
-    //             }
-    //             else {
-    //                 console.log(`Pattern do not exist in database ${pattern[Const.NAME_ID]}.`);
-    //                 this.write_status({info:'El patrón no existe en base de datos', timeout: 5000});
-    //             }
-    //         }
-    //         else {
-    //             console.error('Error deleting pattern:', res);
-    //             let msg_error = this.interface_ddbb.get_error_message(res.errno);
-    //             this.write_status({error:'(!) Error borrando patrón: ' + msg_error, timeout: 5000});
-    //             return false;
-    //         }
-    //     })
-    //     .catch(err => {
-    //         console.error(err);
-    //         return false;
-    //     });
-    // }
-
-    // event_ddbb_save_pattern(pattern) {
-    //     console.log('Save pattern into DDBB.');
-    //     pattern.user = this.interface_ddbb.user;
-    //     return this.interface_ddbb.process({ user: pattern.user, query: DDBB.SAVE_PATTERN, params: JSON.stringify(pattern) })
-    //     .then( res => {
-    //         if(res == 1) {
-    //             console.log('Pattern saved:', res);
-    //             this.event_ddbb_load_user_patterns()
-    //             .then( res => res)
-    //             .catch( error => {
-    //                 console.error(error);
-    //                 this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
-    //                 return false;
-    //             });
-    //         }
-    //         else {
-    //             console.error('Error saving pattern:', res);
-    //             let msg_error = this.interface_ddbb.get_error_message(res);
-    //             this.write_status({error:'(!) Error guardando patrón: ' + msg_error, timeout: 5000});
-    //             return false;
-    //         }
-    //     })
-    //     .catch(err => {
-    //         console.error(err);
-    //         return false;
-    //     });
-    // }
-    
-    // loopPromise(i, cb, end) {
-    //     var that = this;
-    //     return new Promise((resolve, reject) => {
-    //         cb(i[0], that)
-    //         .then( () => {
-    //             i.splice(0,1);
-    //             if(i.length == 0) { end.resolve(); resolve(); }
-    //             else { that.loopPromise(i, cb, end); }
-    //         })
-    //         .then( () => resolve())
-    //         .catch(error => reject(error));
-    //     });
-    // }
-
-    // iterateMovs(i, that) {
-    //     // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
-    //     let model_key = that.current_model_key;
-    //     // that.write_status({progress:'Cargando información de movimientos...', value:i-1, max:that.#menus[MenuMovs.NAME].level_max, loading:1});
-    //     that.write_status({info:'Cargando información de movimientos...', loading:1});
-    //     // return that.load_movements(that.#menus[MenuMovs.NAME].id, i, that.#menus[MenuMovs.NAME].level_max)
-    //     return that.load_movements(model_key, i, that.#menus[MenuMovs.NAME].level_max)
-    // }
 
     //----------------------------- EVENTS SET TIME FRAME -----------------------------
 
@@ -458,39 +348,69 @@ catch(err) {
     #create_menus() {
         if(!this.#menus[MenuStatus.NAME]) { this.#menus[MenuStatus.NAME] = new MenuStatus(this); }
         if(!this.#menus[MenuMovs.NAME]) { this.#menus[MenuMovs.NAME] = new MenuMovs(); }
-        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.patterns_dao.models); }
+        // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.patterns_dao.models); }
+        if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#models); }
         if(!this.#menus[MenuSettings.NAME]) { this.#menus[MenuSettings.NAME] = new MenuSettings(this); }
         if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
         if(!this.#key_config) { this.#key_config = new KeyConfig(); }
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
-        if(!this.#menus[MenuFibonacci.NAME]) { this.#menus[MenuFibonacci.NAME] = new MenuFibonacci(this); }
+        if(!this.#menus[Fibonacci.NAME]) {
+            this.#MENUS_ICON_GRAPHIC[Fibonacci.NAME] = MenuFibonacci.MENU_ICON;
+            this.#models.templates = this.#models.templates || {};
+            this.#models.templates[Fibonacci.NAME] = this.#models.templates[Fibonacci.NAME] || {};
+            this.#menus[Fibonacci.NAME] = new MenuFibonacci(this.#models);
+        }
 
-        $(document).on(Fibonacci.EVENT_SELECTED, (e, params) => {
-            this.#menus[MenuFibonacci.NAME].show_float(params);
+        $(document).on(ChartGraphic.EVENT_SELECTED, (e, params) => {
+            let menu_name = params.constructor.name;
+            if(this.#menus[menu_name]) {
+                this.#menus[menu_name].show_float(params);
+            }
         });
 
-        $(document).on(Fibonacci.EVENT_UNSELECTED, (e, params) => {
-            this.#menus[MenuFibonacci.NAME].hide_float();
-            this.#menus[MenuFibonacci.NAME].hide();
+        $(document).on(ChartGraphic.EVENT_UNSELECTED, (e, params) => {
+            let menu_name = params.constructor.name;
+            if(this.#menus[menu_name]) {
+                this.#menus[menu_name].hide_float();
+                this.#menus[menu_name].hide();
+            }
         });
 
         $(document).on(Fibonacci.EVENT_CREATE, (e, params) => {
-            let conf = this.#menus[MenuFibonacci.NAME].prev_config;
-            Fibonacci.build_fibonacci({ chart: this.active_chart, template: conf });
+            let conf = this.#menus[Fibonacci.NAME].prev_template;
+            Fibonacci.create({ chart: this.active_chart, template: conf });
         });
 
-        $(document).on(Fibonacci.EVENT_PLOT, (e, fibos) => {
+        $(document).on(ChartGraphic.EVENT_PLOT, (e, fibos) => {
             this.#view.draw_fibonacci(fibos, this.active_chart);
         });
 
+        $(document).on(ChartGraphic.EVENT_CREATED, (e, type) => {
+            if(!this.persist_tool) {
+                let icon = this.#MENUS_ICON_GRAPHIC[type];
+                if(icon) {
+                    $(icon).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                    $(icon).addClass(Const.CLASS_HOVERABLE_ICON);
+                }
+                $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
+            }
+        });
+
         $(document).on(MenuFibonacci.EVENT_OPEN_SETTINGS, (e, params) => {
-            this.#menus[MenuFibonacci.NAME].show(params);
+            this.#menus[Fibonacci.NAME].show(params);
         });
 
         $(document).on(MenuFibonacci.EVENT_REMOVE, (e, fibo) => {
             this.throw_trash(fibo, MenuFibonacci.EVENT_REMOVE);
-            this.#view.clear_chart(this.active_chart, [fibo.name]);
+            this.#view.clear_chart(this.active_chart, [fibo[Const.ID_ID]]);
         });
+
+        // $(document).on(MenuFibonacci.EVENT_MENU_CLOSE, (e, menu_name) => {
+        //     if(this.#menus[menu_name]) {
+        //         this.#menus[menu_name].hide_float();
+        //         this.#menus[menu_name].hide();
+        //     }
+        // });
     }
 
     #init_interfaces() {
@@ -518,6 +438,46 @@ catch(err) {
         });
     }
 
+    // TODO PASAR A LOS MENUS EL OBJETO DAO? LA SUSCRIPCION A EVENTOS EN EL CONTROLADOR, SERIA CON FINES DE NOTIFICACION A USUARIO
+    #init_events_models() {
+        // $(document).on(DDBB.EVENT_DDBB_LOAD_USER_MODEL, (e) => {
+        //     this.templates_dao.load()
+        //     .then(res => $(document).trigger(DDBB.EVENT_UPDATE_MODEL))
+        //     .catch(error => this.write_status( { error: error, timeout: 5000 })})
+        //     .finally(() => $(document).trigger(Const.EVENT_UPDATE_MODEL, source));
+        // });
+
+        $(document).on(Const.EVENT_DDBB_DELETE_MODEL, (e, source, model_name) => {
+            let source_info = this.#EVENT_SOURCE[source];
+            let dao = source_info[0];
+            let source_name = source_info[1];
+            if(dao != undefined) {
+                dao.delete(model_name)
+                .then(res => this.write_status({info: `${source_name} ${model_name[Const.NAME_ID]} eliminada.`, timeout: 5000}))
+                .catch(error => {this.write_status({error: error, timeout: 5000})})
+                .finally(() => $(document).trigger(Const.EVENT_UPDATE_MODEL, source));
+            }
+            else {
+                this.write_status({error: `ERROR eliminando modelo, fuente "${source}" desconocida.`, timeout: 5000});
+            }
+        });
+
+        $(document).on(Const.EVENT_DDBB_SAVE_MODEL, (e, source, info) => {
+            let source_info = this.#EVENT_SOURCE[source];
+            let dao = source_info[0];
+            let source_name = source_info[1];
+            if(dao != undefined) {
+                dao.save(info)
+                .then(res => this.write_status({info: `${source_name} ${info.ID || info.name} guardada.`, timeout: 5000}))
+                .catch(error => this.write_status({error: error, timeout: 5000}))
+                .finally(() => $(document).trigger(Const.EVENT_UPDATE_MODEL, [source]));
+            }
+            else {
+                this.write_status({error: `ERROR guardando modelo, fuente "${source}" desconocida.`, timeout: 5000});
+            }
+        });
+    }
+
     //----------------------------- PUBLIC METHODS -----------------------------
 
     init(user, login_timestamp, view) {
@@ -531,6 +491,11 @@ catch(err) {
             
             // Create patterns model
             this.patterns_dao = new PatternsDAO(this.interface_ddbb, this.#models);
+            this.#EVENT_SOURCE[MenuPatterns.NAME] = [this.patterns_dao, MenuPatterns.TITLE];
+            
+            // Create templates model
+            this.templates_dao = new TemplatesDAO(this.interface_ddbb, this.#models);
+            this.#EVENT_SOURCE[MenuFibonacci.NAME] = [this.templates_dao, MenuFibonacci.TITLE];
 
             // Creates all option menus
             this.#create_menus();
@@ -693,7 +658,8 @@ catch(err) {
                 Object.values(pattern).forEach(p => {
                     if(Object.keys(p[Const.DATA_ID]).length) {
                         Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach(r => {
-                            fibos.push(new Fibonacci({ retracement:r, params:{ name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }}) );
+                            // fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }}) );
+                            fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}`, opacity: 30 }}) );
                         });
                     }
                 });
@@ -706,33 +672,32 @@ catch(err) {
             // Time Frame header //TODO CAMBIAR
             // this.#build_header();
 
-            // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => that.event_ddbb_load_user_patterns());
-            // $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => that.event_ddbb_delete_pattern(pattern_name));
-            // $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => that.event_ddbb_save_pattern(pattern));
-            $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => {
-                this.patterns_dao.load_patterns()
-                .then(res => $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL))
-                .catch(error => this.write_status( { error: error, timeout: 5000 }));
-            });
+            // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => {
+            //     this.patterns_dao.load()
+            //     .then(res => $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL))
+            //     .catch(error => this.write_status( { error: error, timeout: 5000 }));
+            // });
 
-            $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => {
-                this.patterns_dao.delete_pattern(pattern_name)
-                .then(res => {
-                    this.write_status({info: `Patrón ${pattern_name[Const.NAME_ID]} eliminado.`, timeout: 5000});
-                    $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
-                })
-                .catch(error => this.write_status({error: error, timeout: 5000}));
-            });
+            // $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => {
+            //     // this.patterns_dao.delete_pattern(pattern_name)
+            //     this.patterns_dao.delete(pattern_name)
+            //     .then(res => {
+            //         this.write_status({info: `Patrón ${pattern_name[Const.NAME_ID]} eliminado.`, timeout: 5000});
+            //         $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+            //     })
+            //     .catch(error => this.write_status({error: error, timeout: 5000}));
+            // });
 
-            $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => {
-                this.patterns_dao.save_pattern(pattern)
-                .then(res => {
-                    this.write_status({info: `Patrón ${pattern[Const.ID_ID]} guardado.`, timeout: 5000});
-                    $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
-                })
-                .catch(error => this.write_status({error: error, timeout: 5000}));
-            });
+            // $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => {
+            //     this.patterns_dao.save(pattern)
+            //     .then(res => {
+            //         this.write_status({info: `Patrón ${pattern[Const.ID_ID]} guardado.`, timeout: 5000});
+            //         $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
+            //     })
+            //     .catch(error => this.write_status({error: error, timeout: 5000}));
+            // });
 
+            this.#init_events_models();
             console.log("Chart Controller Initialized OK.");
         }
         catch(error) {
@@ -990,6 +955,18 @@ catch(err) {
         });
     }
     
+    // create_stream(query, chart) {
+    //     var that = this;
+    //     setInterval(() => {
+    //         let end_time = Time.now(Time.FORMAT_STR);
+    //         let init_time = Time.subtract_value(end_time, 1, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+    //         query[this.#TSQL.INTERVALO_ID] = init_time;
+    //         this.load_historical(query)
+    //         .then(data => that.#view.update_candles({data, chart}))
+    //         .catch(err => console.error(err));
+    //     }, 1000);
+    // }
+    
     plot_historical(request, chart, model_key = null, clear=true) {
         var that = this;
         return new Promise( (resolve, reject) => {
@@ -997,6 +974,7 @@ catch(err) {
             .then( data => that.plot_candles(data, chart, clear) )
             .then( data => that.zoom_chart_default(data) )
             .then( data => that.active_chart.hideLoading())
+            // .then( data => that.create_stream(request, chart))
             .then( data => resolve(data))
             .catch( data => {
                 console.error('Error loading active:', data);

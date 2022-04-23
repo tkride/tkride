@@ -751,13 +751,14 @@ class Display {
         if(params.width) this.#width = params.width;
         if(params.height) this.#height = params.height;
 
+        if(params.width) this.#width = params.width.replace(/[a-zA-Z]+/g, '');
+        if(params.width) this.#width_units = params.width.replace(/[0-9.]+/g, '');
+        if(params.height) this.#height = params.height.replace(/[a-zA-Z]+/g, '');
+        if(params.height) this.#height_units = params.height.replace(/[0-9.]+/g, '');
+
         // Set position
         if(params.center != undefined) this.#center = params.center;
         if(this.#center == true) {
-            if(params.width) this.#width = params.width.replace(/[a-zA-Z]+/g, '');
-            if(params.width) this.#width_units = params.width.replace(/[0-9.]+/g, '');
-            if(params.height) this.#height = params.height.replace(/[a-zA-Z]+/g, '');
-            if(params.height) this.#height_units = params.height.replace(/[0-9.]+/g, '');
 
             if(this.#width_units == undefined) { this.#width_units = 'px'; }
             if(this.#height_units == undefined) { this.#height_units = 'px'; }
@@ -1131,7 +1132,7 @@ class Inputbox {
     //----------------------------- GETTERS & SETTERS -----------------------------
     
     // Input
-    get text() { return this.#input.text; }
+    get text() { return this.#input.control.val(); }
     set text(text) {
         this.#input.text = text;
         this.#input.control.val(text);
@@ -1310,3 +1311,221 @@ class RadioButton {
     }
 
 } // RadioButton
+
+
+
+
+/** 'slider' */
+
+class Slider {
+    
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+    
+    static NAME = "slider";
+
+    static DEFAULT_ID = 'SLIDER-';
+
+    //----------------------------- PROPERTIES -----------------------------
+
+    control;
+    #form;
+    #label;
+    #input_range;
+    #output;
+    id;
+    min;
+    max;
+    step;
+    value;
+    css;
+    class;
+    show_output;
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor(params) {
+        this.init(params);
+    }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    #create_control() {
+        this.control = $('<div>', {
+            id: this.id,
+            name: this.id,
+            css: this.css.container || ' ',
+            class: this.class || '',
+        });
+
+        // Form
+        this.#form = $('<form>', { id: this.id + 'form'});
+        
+        if(this.label) {
+            this.#label = $('<label>', {
+                id: this.id+'-label',
+                name: this.id+'-label',
+                text: this.label.text || '',
+                class: this.label.class || '',
+                css: this.css.label || { 'margin-left': '0.2em' },
+            });
+
+            if( (this.label.position == undefined) ||
+                (this.label.position == Const.LABEL_POSITION_BEFORE) ) {
+                this.#form.append(this.#label);
+            }
+        }
+
+        // Range input
+        this.#input_range = $('<input>',{
+            id: this.id + '-input',
+            name: this.id + '-input',
+            type: 'range',
+            min: this.min,
+            max: this.max,
+            step: this.step,
+            value: this.value,
+            css: this.css.input || ' ',
+        });
+        if(this.css) {
+            this.#input_range.css(this.css);
+        }
+
+        // Appends input to form
+        this.#form.append(this.#input_range);
+        
+        // Output
+        if(this.show_output) {
+            this.#output = $('<span>', {
+                id: this.id+'-output',
+                name: this.id+'-output',
+                css: this.css.output || { 'display': 'inline', 'margin-left': '0.2em' },
+            });
+            this.#output.text(this.value);
+            
+            this.#form.append(this.#output);
+        }
+
+        if(this.label && this.#label && (this.label.position == Const.LABEL_POSITION_AFTER)) {
+            this.#form.append(this.#label);
+        }
+
+        this.#input_range.on('change', e => {
+            this.value = this.#input_range.val();
+            if(this.show_output) {
+                this.#output.text(this.value);
+            }
+        });
+
+        this.control.append(this.#form);
+
+        this.control.data('Slider', this);
+    }
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+    
+    init(params) {
+        this.id = params.id || `${Slider.DEFAULT_ID}${new Date().valueOf()}`;
+        this.min = params.min || 0;
+        this.max = params.max || 1;
+        this.step = params.step || 0.1;
+        this.value = params.default || 0;
+        this.class = params.class;
+        this.css = params.css;
+        this.label = params.label;
+        this.show_output = params.show_output;
+        this.#create_control();
+    }
+
+    //----------------------------- GETTERS & SETTERS -----------------------------
+
+    set_val(value) {
+        this.value = value;
+        this.#input_range.val(value);
+        if(this.show_output) {
+            this.#output.text(this.value);
+        }
+    }
+} // Slider
+
+
+
+
+/** 'Checkbox' */
+
+class Checkbox {
+    
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+    
+    static NAME = 'checkbox';
+    static TITLE = 'Checkbox';
+    static CLASS_CONTAINER = 'custom-checkbox-container';
+    static CLASS_CHECKMARK = 'custom-checkbox-checkmark';
+
+    //----------------------------- PROPERTIES -----------------------------
+
+    control;
+    #input;
+    #checkmark;
+    id;
+    label;
+    css;
+    class;
+    side;
+    // color;
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor(params) {
+        this.init(params);
+    }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    #create_control() {
+        this.control = $('<label>', {
+            id: this.id + '-label',
+            css: this.css || ' ',
+            class: `${this.class} ${Checkbox.CLASS_CONTAINER}`,
+            text: this.label,
+        });
+
+        this.#input = $('<input>',{ type: "checkbox", });        
+
+        this.#checkmark = $('<span>', {
+            id: this.id + '-checkmark',
+            class: Checkbox.CLASS_CHECKMARK,
+        });
+        if((this.side) && (this.side == 'left')) {
+            this.#checkmark.css({left: '0'});
+        }
+
+        this.control.append(this.#input, this.#checkmark);
+        this.control.data('Checkbox', this);
+    }
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+    
+    init(params) {
+        let search_id = params.id;
+        if(search_id == undefined) {
+            search_id = Checkbox.TITLE;
+        }
+        //Check if current id exists
+        let count = 1;
+        while($(`#${search_id}`).length > 0) {
+            search_id = `${search_id}-${count++}`;
+        }
+        this.id = search_id;
+        this.label = params.label;
+        this.css = params.css;
+        this.class = params.class;
+        this.side = params.side || 'right';
+        // this.color = params.color;
+        this.#create_control();
+    }
+
+    //----------------------------- GETTERS & SETTERS -----------------------------
+
+    get checked() { return this.#input.prop('checked'); }
+    set checked(checked) { this.#input.prop('checked', checked); }
+}

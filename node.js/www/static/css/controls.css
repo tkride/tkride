@@ -129,14 +129,15 @@ tr:last-child td:first-child {
     background-color: var(--back);
     border: var(--border-width) var(--border-style) var(--border-color);
     border-radius: var(--border-radius);
+    box-shadow: 1px 1px 5px;
     left: 33vw;
     top: 12.5vh;
     position: absolute;
     display: none;
     opacity: 0.9;
+    z-index: var(--z-panel);
     /* overflow-y: auto; */
     /* overflow-x: hidden !important; */
-    z-index: var(--z-panel);
 }
 
 /*

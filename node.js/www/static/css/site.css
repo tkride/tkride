@@ -538,6 +538,89 @@ input[type=radio] {
 }
 
 
+/* --------------------------------- CUSTOM CHECKBOX --------------------------------- */
+
+
+.points {
+    background-image: radial-gradient(var(--font-color) 20%, var(--color-invisible) 20%);
+    background-position: 0;
+    background-size: 6px 8px;
+    height: 3px;
+    width: 1px;
+    margin: 0.3em 0.3em;
+}
+
+
+/* --------------------------------- CUSTOM CHECKBOX --------------------------------- */
+
+/* The container */
+.custom-checkbox-container {
+  position: relative;
+  padding-left: 1em;
+  margin-bottom: 1em;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Hide the browser's default checkbox */
+.custom-checkbox-container input {
+  position: relative;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+.custom-checkbox-checkmark {
+  position: absolute;
+  border: 1px solid var(--input-border-color);
+  border-radius: 4px;
+  top: 0;
+  margin: -0.1em 0 0 -0.5em;
+  height: 1.2em;
+  width: 1.2em;
+  background-color: #eee0;
+}
+
+/* On mouse-over, add a grey background color */
+.custom-checkbox-container:hover input ~ .custom-checkbox-checkmark {
+  background-color: var(--border-color);
+}
+
+/* When the checkbox is checked, add a blue background */
+.custom-checkbox-container input:checked ~ .custom-checkbox-checkmark {
+  background-color: var(--selected);
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.custom-checkbox-checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.custom-checkbox-container input:checked ~ .custom-checkbox-checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.custom-checkbox-container .custom-checkbox-checkmark:after {
+    left: 0.5em;
+    top: 0.2em;
+    width: 0.1em;
+    height: 0.5em;
+    border: solid white;
+    border-width: 0 0.15em 0.15em 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+
+
 /* --------------------------------- TERMINAL --------------------------------- */
 
 /* --------------------------------- TEXTURES --------------------------------- */
@@ -591,7 +674,7 @@ input[type=radio] {
       linear-gradient(180deg, hsl(0,0%,78%)  0%, 
       hsl(0,0%,90%) 47%, 
       hsl(0,0%,78%) 53%,
-      hsl(0,0%,70%)100%);
+      hsl(0,0%,70%) 100%);
   }
   
   /* Oval ------------------------- */
@@ -616,13 +699,3 @@ input[type=radio] {
       hsla(210,50%,40%, .25) 0 -5px 6px 4px, /* outer SD */
       hsla(210,80%,95%,   1) 0  5px 6px 4px; /* outer HL */
   }
-
-
-  .points {
-    background-image: radial-gradient(var(--font-color) 20%, var(--color-invisible) 20%);
-    background-position: 0;
-    background-size: 6px 8px;
-    height: 3px;
-    width: 1px;
-    margin: 0.3em 0.3em;
-}
