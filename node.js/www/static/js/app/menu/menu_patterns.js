@@ -67,6 +67,9 @@ class MenuPatterns {
     // Retracement filter max (movement or retracement)
     static ID_PATTERNS_MENU_RET_FILTER_MAX = 'patterns-menu-ret-filter-max';
     static ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX = '#patterns-menu-ret-filter-max';
+    // Retracement filter mode (family or interval)
+    static ID_PATTERNS_MENU_RET_FILTER_MODE = 'patterns-menu-ret-filter-mode';
+    static ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MODE = '#patterns-menu-ret-filter-mode';
 
     // Filter only max
     static ID_FILTER_MAX = 'patterns-menu-ret-filter-max';
@@ -75,6 +78,13 @@ class MenuPatterns {
     static FILTER_MAX_MOV_ID = 'MOVIM.';
     static FILTER_MAX_RET_ID = 'RETROCESO';
     static ONLY_MAX_DEFAULT_VALUE = Const.MAXIMO;
+
+    // Filter mode
+    static ID_FILTER_MDOE = 'patterns-menu-ret-filter-mode';
+    static NAME_FILTER_MODE = 'filtermode';
+    static FILTER_MODE_FAMILY_ID = 'FAMILIA';
+    static FILTER_MODE_INTERVAL_ID = 'INTERVALO';
+    static FILTER_MODE_DEFAULT_VALUE = Const.FILTER_INTERVAL;
 
     // Stop data source
     static ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE = 'patterns-menu-ret-levels-data-source';
@@ -185,6 +195,7 @@ class MenuPatterns {
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_ITERATE_INPUT).val(pattern[Const.ITERATE_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_VALUES_INPUT).val(pattern[Const.RET_LEVELS_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected = pattern[Const.ONLY_MAX_ID];
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MODE).data('RadioButton').selected = pattern[Const.FILTER_MODE_ID];
         // this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX, pattern[Const.ONLY_MAX_ID]);
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').select(pattern[Const.RET_LEVELS_DATA_SOURCE_ID]);
         // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected = pattern[Const.RET_LEVELS_FROM_ID];
@@ -227,6 +238,7 @@ class MenuPatterns {
         pattern[Const.RET_LEVELS_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_VALUES_INPUT).val();
         pattern[Const.ONLY_MAX_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected;
         // pattern[Const.ONLY_MAX_ID] = that.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX);
+        pattern[Const.FILTER_MODE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MODE).data('RadioButton').selected;
         pattern[Const.RET_LEVELS_DATA_SOURCE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').selected;
         // pattern[Const.RET_LEVELS_FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected;
         return pattern;
@@ -422,8 +434,27 @@ class MenuPatterns {
                         css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
                     }
         });
+
         // Append control element to display
         ret_content.append(filter_max.control);
+
+        // Add filter max option
+        let filter_mode = new RadioButton({
+            id: MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MODE,
+            container: { class: `${Const.CLASS_MENU_FIELD} ${Const.CLASS_MENU_OPTIONS_RADIO}` },
+            name: MenuPatterns.NAME_FILTER_MODE,
+            label: { text: 'Modo filtro', css: { 'display': 'block', 'margin-bottom': '0.5em' } },
+            buttons: { values: {
+                                [MenuPatterns.FILTER_MODE_FAMILY_ID]: Const.FILTER_FAMILY,
+                                [MenuPatterns.FILTER_MODE_INTERVAL_ID]: Const.FILTER_INTERVAL,
+                        },
+                        checked: Const.FILTER_INTERVAL,
+                        class: Const.CLASS_BUTTON_GENERAL,
+                        css: { 'margin': '0', 'font-size': '0.7em', 'font-weight': '200'}
+                    }
+        });
+        // Append control element to display
+        ret_content.append(filter_mode.control);
 
         // Append levels data source
         let levels_data_source = new Dropdown({

@@ -68,7 +68,7 @@ class ChartGraphic {
     constructor({graphic, template}) {
         this[Const.ID_ID] = (graphic[Const.ID_ID] != undefined) ?
                                     graphic[Const.ID_ID] :
-                                    `${Const.FIBO_RET_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
+                                    `${Const.CHART_GRAPHIC_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
         this.name = template.name;
         this.xstart = graphic[Const.INIT_ID].time;
         // this.xend = graphic[Const.END_ID].time;
@@ -133,6 +133,8 @@ class ChartGraphic {
             draggable: true,
             xstart: xstart,
             xend: xend,
+            ystart: ystart,
+            yend: yend,
         }
 
         return this.graphic;
@@ -464,7 +466,7 @@ class ChartGraphic {
     }
 
 
-    // CREATE GRAPHIC CONTROL -------------------------------------------------------------------------------
+    // BUILD GRAPHIC CONTROL -------------------------------------------------------------------------------
 
     static building_graphic = false;
     static create({chart, template}) {
@@ -481,6 +483,7 @@ class ChartGraphic {
         let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
         let graphic = {};
         graphic[Const.HASH_ID] = new Date().valueOf();
+        graphic[Const.ID_ID] =  `${Const.CHART_GRAPHIC_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
         graphic[Const.INIT_ID] = new TimePrice(x, y);
         graphic[Const.END_ID] = new TimePrice(x, y);
         graphic[Const.DELTA_INIT_ID] = 0;

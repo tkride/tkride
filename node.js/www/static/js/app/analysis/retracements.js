@@ -2,27 +2,27 @@
 
 /** 'retracements.js' */
 
-class Retracement {
-    data = {};
-    nok = {};
-    searchindata = {};
-    stats = {};
-    searchin = '';
+class Retracement extends AnalysisData {
+    // data = {};
+    // nok = {};
+    // searchindata = {};
+    // stats = {};
+    // searchin = '';
     level;
     levels = {};
     trend;
     trend_parent;
-    from;
-    until;
+    // from;
+    // until;
     onlymax = 0;
     ret_min = -Infinity; //Number.MIN_SAFE_INTEGER;
     ret_max = Infinity; //Number.MAX_SAFE_INTEGER;
-    logical = '';
-    iterate = 0;
-    query;
+    // logical = '';
+    // iterate = 0;
+    // query;
 }
 
-class Retracements {
+class Retracements extends Analysis {
 
     //----------------------------- PUBLIC METHODS -----------------------------
 
@@ -142,6 +142,7 @@ class Retracements {
                         if(from) { m[Const.DELTA_INIT_ID] = m[Const.END_ID].price - m[Const.INIT_ID].price; }
                         if(until) { m[Const.DELTA_END_ID] = m[Const.CORRECTION_ID].price - m[Const.END_ID].price; }
                         if((from != undefined) || (until != undefined)) { m[Const.RET_ID] = Math.abs(m[Const.DELTA_END_ID] / m[Const.DELTA_INIT_ID]); }
+                        // m[Const.TREND_ID] = -1*trend_sign;
                         // console.log(Retracements.toString(m)); console.log('');
                     }
 
@@ -180,8 +181,12 @@ class Retracements {
                     m[Const.RET_LEVELS_ID] = {};
 
                     ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
+                    let pending_nok = [];
                     if(ok) retracements.push(m);
-                    else nok.push(m);
+                    else {
+                        // nok.push(m);
+                        pending_nok.push(m);
+                    }
 
                     // If iteration defined
                     if(ret[Const.ITERATE_ID] && (m[Const.RET_ID] <= ret_max)) {
@@ -203,24 +208,29 @@ class Retracements {
                                                          trend_sign: trend_sign,
                         });
                         
-                        // Append iteration results to retracements
-                        retracements.push(...res_it.ok);
-                        nok.push(...res_it.nok);
+                        // If (at least 1) result ok, stores results and nok is emptied
+                        if(res_it.ok.length > 0) {
+                            retracements.push(...res_it.ok);
+                            pending_nok = [];
+                        }
+                        else { nok.push(...res_it.nok); }
                     }
+                    
+                    nok.push(...pending_nok);
                 });
+
+                // Sort results by timestamp
+                retracements.sort();
+                nok.sort();
 
                 // If filter only max is defined
                 if(ret[Const.ONLY_MAX_ID] != Const.NO) {
-                    retracements = Retracements.filter_max_movements(retracements, ret[Const.ONLY_MAX_ID]);
-                    // nok = Retracements.filter_max_movements(nok, ret[Const.ONLY_MAX_ID]);
+                    retracements = Retracements.filter_max_movements({source: retracements, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
+                    nok = Retracements.filter_max_movements({source: nok, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
                 }
 
                 // Append calculated retracement level price data
-
                 retracements.map( v => ret[Const.RET_LEVELS_ID].forEach( l => v[Const.RET_LEVELS_ID][l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l)) );
-                
-                // Sort results by timestamp
-                retracements.sort();
 
                 // Push current level results into Retracement final object
                 ret[Const.DATA_ID][level].push(...retracements);
@@ -279,6 +289,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         
         ret[Const.ITERATE_ID] = (request[Const.ITERATE_ID] != undefined) ? parseInt(request[Const.ITERATE_ID]) : 0;
         ret[Const.ONLY_MAX_ID] = (request[Const.ONLY_MAX_ID] != undefined) ? request[Const.ONLY_MAX_ID] : 0;
+        ret[Const.FILTER_MODE_ID] = (request[Const.FILTER_MODE_ID] != undefined) ? request[Const.FILTER_MODE_ID] : Const.FILTER_INTERVAL;
 
         ret[Const.FROM_ID] = request[Const.FROM_ID];
         if(ret[Const.FROM_ID]) {
@@ -781,6 +792,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             let iter = 0;
             let end_fixed = (params.from == Const.END_ID) ? true : false;
             let trend_sign = (params.trend_sign < 0) ? Const.BEAR : Const.BULL;
+            let delete_nok = false; // If (at least) 1 solution is ok => nok is emptied
             
             let ms = source.filter( mov => mov[Const.TREND_ID] == m[Const.TREND_ID]);
             let prev_ret = m[Const.RET_ID];
@@ -789,8 +801,9 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                 // Merge with next movement
                 let new_mov = Retracements.merge_movements(m, ms[i], trend_sign, end_fixed);
 
-                //
-                if(new_mov == null) {
+                // if(new_mov == null) {
+                if(new_mov.valid == false) {
+                    nok.push(new_mov);
                     break;
                 }
 
@@ -804,11 +817,18 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                     
                     // Check retracement restrictions
                     let check = ((new_mov[Const.RET_ID] >= ret_min) && (new_mov[Const.RET_ID] <= ret_max));
-                    if( (check == false) || (prev_ret > new_mov[Const.RET_ID]) ) {
-                        nok.push(new_mov);
+                    // if( (check == false) || (prev_ret > new_mov[Const.RET_ID]) ) {
+                    if(check == false) {
+                        if(delete_nok == false) {
+                            nok.push(new_mov);
+                        }
                         if(new_mov[Const.RET_ID] > ret_max) break;
                     }
-                    else { ok.push(new_mov); }
+                    else {
+                        ok.push(new_mov);
+                        delete_nok = true;
+                        nok = [];
+                    }
                     m = new_mov;
                 }
             }
@@ -844,6 +864,9 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         (m1[Const.CORRECTION_ID].price != null) &&
         (m2[Const.CORRECTION_ID].price != null) )
         {
+            // let init_lower = ( ( (m2[Const.INIT_ID].price - new_mov[Const.INIT_ID].price) * new_mov[Const.TREND_ID] * trend_sign) < 0);
+            // let end_greater = ( ( (m2[Const.END_ID].price - new_mov[Const.END_ID].price) * new_mov[Const.TREND_ID] * trend_sign) > 0);
+            // let correction_lower = ( ( (m2[Const.CORRECTION_ID].price - new_mov[Const.CORRECTION_ID].price) * new_mov[Const.TREND_ID] * trend_sign) < 0);
             let init_lower = ( ( (m2[Const.INIT_ID].price - new_mov[Const.INIT_ID].price) * new_mov[Const.TREND_ID] * trend_sign) < 0);
             let end_greater = ( ( (m2[Const.END_ID].price - new_mov[Const.END_ID].price) * new_mov[Const.TREND_ID] * trend_sign) > 0);
             let correction_lower = ( ( (m2[Const.CORRECTION_ID].price - new_mov[Const.CORRECTION_ID].price) * new_mov[Const.TREND_ID] * trend_sign) < 0);
@@ -857,25 +880,29 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                         new_mov[Const.CORRECTION_ID] = m2[Const.CORRECTION_ID];
                         new_mov[Const.DELTA_END_ID] = new_mov[Const.CORRECTION_ID].price - new_mov[Const.END_ID].price;
                         new_mov[Const.RET_ID] = new_mov[Const.DELTA_END_ID] / new_mov[Const.DELTA_INIT_ID];
-                        if(new_mov[Const.RET_ID] > 0) {
-                            new_mov = null;
-                        }
-                        else {
-                            new_mov[Const.RET_ID] = Math.abs(new_mov[Const.RET_ID]);
-                        }
+                        if(new_mov[Const.RET_ID] > 0) { new_mov = null; }
+                        else { new_mov[Const.RET_ID] = Math.abs(new_mov[Const.RET_ID]); }
                     }
                     // No valid new movement
-                    else { new_mov = null; }
+                    else {
+                        // if(new_mov[Const.TREND_ID] != trend_sign) {
+                        if(trend_sign > 0) {
+                            // new_mov = null;
+                            new_mov.valid = false;
+                        }
+                    }
                 }
                 // No valid new movement
-                else { new_mov = null; }
+                // else { new_mov = null; }
+                else { new_mov.valid = false; }
             }
             // BULL: init>= / BEAR: init<=
             else {
                 // BULL: end> / BEAR: end<
                 if(end_greater) {
                     if(end_fixed) {
-                        new_mov = null;
+                        // new_mov = null;
+                        new_mov.valid = false;
                     }
                     else {
                         new_mov[Const.END_ID] = m2[Const.END_ID];
@@ -905,13 +932,11 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                 }
             }
         }
-        else {
-            new_mov = null;
-        }
+        // else { new_mov = null; }
+        else { new_mov.valid = false; }
 
         return new_mov;
     }
-
 
     /**
      * filter_max_movements_
@@ -982,30 +1007,47 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
      * filter_max_movements
      * @param source Data source to be filtered.
      * @param type Tipe of filter: { Const.ONLY_MAX_MOVEMENT | Const.ONLY_MAX_RETRACEMENT }.
+     * @param mode Operation mode: { Const.FILTER_FAMILY | Const.FILTER_INTERVAL }.
+     * @param mode.FAMILY Filters only results born from same parent.
+     * @param mode.INTERVAL Filters results inside greatest result interval (start: same/greater initial time, end: before/same correction time).
      * @returns source with data filtered.
      */
     //TODO NO FILTRA BIEN LOS MAXIMOS MOVIMIENTOS BAJISTAS
-    static filter_max_movements(source, type) {
+    static filter_max_movements({source, type, mode}) {
         console.time('filter_max');
         let total_len = source.length;
         let idx = 0;
+        mode = (mode != undefined) ? mode : Const.FILTER_INTERVAL;
         while(idx < total_len) {
-                                                    //TODO ENER EN CUENTA LA TENDENCIA !!!!!
             // Get first init current time
-            let init_current_time = source[idx][Const.INIT_ID].time;
+            // let init_current_time = source[idx][Const.INIT_ID].time;
+            let init_current_time = source[idx][Const.TIMESTAMP_ID];
             let trend_current = source[idx][Const.TREND_ID];
+            let group_current = [];
 
             // Select all retracements which starts at same time that current init with same trend
-            let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
+            // let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
+            let init_current = source.filter( m => (m[Const.TIMESTAMP_ID] == init_current_time) && (m[Const.TREND_ID] == trend_current) );
 
-            // Get last correction instant for all movements that start at same time
-            let corr_current_time = init_current.reduce( (a, b) => (a[Const.CORRECTION_ID].time > b[Const.CORRECTION_ID].time) ? a : b );
-            corr_current_time = corr_current_time[Const.CORRECTION_ID].time;
+            if(init_current.length) {
+                // Get last correction instant for all movements that start at same time
+                let corr_current_time = init_current.reduce( (a, b) => (a[Const.CORRECTION_ID].time > b[Const.CORRECTION_ID].time) ? a : b );
+                corr_current_time = corr_current_time[Const.CORRECTION_ID].time;
 
-            // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
-            let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
-                                                    && (m[Const.CORRECTION_ID].time <= corr_current_time)
-                                                    && (m[Const.TREND_ID] == trend_current) );
+                // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
+                // let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
+                //                                         && (m[Const.CORRECTION_ID].time <= corr_current_time)
+                //                                         && (m[Const.TREND_ID] == trend_current) );
+
+                group_current = source.filter(m => {
+                    let res = (mode == Const.FILTER_FAMILY) ?
+                                (m[Const.TIMESTAMP_ID] == init_current_time)
+                                : (m[Const.TIMESTAMP_ID] >= init_current_time);
+                    res &= (m[Const.CORRECTION_ID].time <= corr_current_time)
+                            && (m[Const.TREND_ID] == trend_current);
+                    return res;
+                });
+            }
 
             // If more than 1 result, max filter can be applied
             if(group_current.length > 1) {
@@ -1042,32 +1084,31 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
     } // filter_max_movements
 
 
-    /**
-     * append_hash: Appends hash count identificator, to family results.
-     * @param {*} m Movement.
-     */
-     static append_hash(m) {
-        m[Const.HASH_ID] = m[Const.HASH_ID] + Const.HASH_SEP_STR + 0;
-    }
+    // /**
+    //  * append_hash: Appends hash count identificator, to family results.
+    //  * @param {*} m Movement.
+    //  */
+    //  static append_hash(m) {
+    //     m[Const.HASH_ID] = m[Const.HASH_ID] + Const.HASH_SEP_STR + 0;
+    // }
 
-
-    /**
-     * increment_hash: Increments last hash count id, to be used as familiy results identification. Append first if not created
-     * @param {*} m Movement.
-     */
-    static increment_hash(m) {
-        let hash = m[Const.HASH_ID];
-        let hash_values = hash.split(Const.HASH_SEP_STR);
-        if(hash_values.length <= 1) {
-            hash = hash + Const.HASH_SEP_STR + 0;
-        }
-        else {
-            let hash_count = parseInt(hash_values[hash_values.length - 1]);
-            hash_values[hash_values.length - 1] = '' + (++hash_count);
-            hash = hash_values.reduce( (a, b) => a + Const.HASH_SEP_STR + b);
-        }
-        m[Const.HASH_ID] = hash;
-    }
+    // /**
+    //  * increment_hash: Increments last hash count id, to be used as familiy results identification. Append first if not created
+    //  * @param {*} m Movement.
+    //  */
+    // static increment_hash(m) {
+    //     let hash = m[Const.HASH_ID];
+    //     let hash_values = hash.split(Const.HASH_SEP_STR);
+    //     if(hash_values.length <= 1) {
+    //         hash = hash + Const.HASH_SEP_STR + 0;
+    //     }
+    //     else {
+    //         let hash_count = parseInt(hash_values[hash_values.length - 1]);
+    //         hash_values[hash_values.length - 1] = '' + (++hash_count);
+    //         hash = hash_values.reduce( (a, b) => a + Const.HASH_SEP_STR + b);
+    //     }
+    //     m[Const.HASH_ID] = hash;
+    // }
 
 
     static toString(m) {

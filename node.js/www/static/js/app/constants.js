@@ -298,6 +298,7 @@ class Const {
     static SEARCH_IN_DATA_ID = 'searchindata';
     static ITERATE_ID = 'iterate';
     static ONLY_MAX_ID = 'onlymax';
+    static FILTER_MODE_ID = 'filtermode';
     static PATTERN_RESULTS_ID = 'patternresults';
     static PATTERNS_ID = 'patterns';
     static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource';
@@ -314,9 +315,19 @@ class Const {
     static NO = 0;
     static ONLY_MAX_MOVEMENT = 1;
     static ONLY_MAX_RETRACEMENT = -1;
+    static FILTER_FAMILY = 1;
+    static FILTER_INTERVAL = 2;
 
     // NAMES
+    static CHART_GRAPHIC_ID = 'CHART_GRAPH';
     static FIBO_RET_ID = 'FIBO_RET';
+    static TREND_LINE_ID = 'TREND_LINE';
+
+    // TREND LINE
+    static DELTA_X_ID = 'deltax';
+    static DELTA_Y_ID = 'deltay';
+    static SLOPE_ID = 'slope';
+    static ANGLE_ID = 'angle';
 
     // CANDLES INDEX
     static IDX_CANDLE_TIME = 0;
@@ -427,6 +438,15 @@ class Time {
     static MINUTES_IN_MONTH = 43200;
     static USE_UTC_MS = 0;
     static USE_STR = 0;
+
+    static UNIT_TIME_SECONDS = {
+        "m": 60,
+        "h": 60*60,
+        "d": 60*60*24,
+        "w": 7*24*60*60,
+        "M": 30*24*60*60
+    };
+
     static TIME_FRAMES = [
         "1m",
         "5m",
@@ -463,6 +483,15 @@ class Time {
 
     static FORMAT_STR = 'YYYY-MM-DD HH:mm:ss';
     static FORMAT_FILE = 'YYYY_MM_DD_HHmmss';
+
+    static get_unit_seconds(units) {
+        let units_in = units.replace(/[0-9]/g, '');
+        let value = units.replace(/[a-zA-Z]/g, '');
+        let seconds_unit = Time.UNIT_TIME_SECONDS[units_in];
+        seconds_unit = (seconds_unit != undefined) ? seconds_unit : 60; //Default seconds minute
+        let ret = value*seconds_unit;
+        return ret;
+    }
 
     static convert_units(units) {
         let units_in = units.replace(/[0-9]/g, '');

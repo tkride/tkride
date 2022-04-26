@@ -43,7 +43,6 @@ class Fibonacci extends ChartGraphic {
         textInfo: '%',
     };
     fillColor = [];
-    that = this;
 
     constructor({graphic, template}) {
         graphic = graphic || {};
@@ -126,10 +125,10 @@ class Fibonacci extends ChartGraphic {
         let width = (xend - xstart);
         let yvalue, stroke, fill, height, text;
         
-        let line_width =  api.value(Fibonacci.LINE_WIDTH) * 0.3;
-        // let line_type =  api.value(Fibonacci.LINE_TYPE);
-        // let line_dash = Fibonacci.LINE_TYPE_PATTERN[line_type];
-        let line_dash = Math.abs(width);
+        let line_width = api.value(Fibonacci.LINE_WIDTH) * 0.3;
+        let line_type =  api.value(Fibonacci.LINE_TYPE);
+        let line_dash = Fibonacci.LINE_TYPE_PATTERN[line_type];
+        // let line_dash = Math.abs(width);
         
         let len = api.value(Fibonacci.NUM_VALUES);
         let yprev = 0;
@@ -143,8 +142,28 @@ class Fibonacci extends ChartGraphic {
                 [stroke, fill] = [api.value(Fibonacci.STROKE + idx), api.value(Fibonacci.FILL + idx)];
 
                 height = -(yvalue - yprev);
-                height = (height) ? height : 1;
+                height = (height) ? height : 2;
                 this.children.push(...[
+                    {
+                        type: 'line',
+                        id: `${name}_LEVEL_LINE_${text}`,
+                        name: `${name}_LEVEL_LINE_${text}`,
+                        x: 0,
+                        y: 0,
+                        shape: {
+                            x1: xstart,
+                            y1: yvalue,
+                            x2: xend,
+                            y2: yvalue,
+                        },
+                        style: {
+                            fill: fill,
+                            stroke: stroke,
+                            lineWidth: line_width,
+                            lineDash: line_dash,
+                            // lineDash: [...line_dash],
+                        },
+                    },
                     {
                         type: 'rect',
                         id: `${name}_LEVEL_${text}`,
@@ -161,7 +180,8 @@ class Fibonacci extends ChartGraphic {
                             fill: fill,
                             stroke: stroke,
                             lineWidth: line_width,
-                            lineDash: [line_dash, Math.abs(width) + Math.abs((2*height))],
+                            // lineDash: [line_dash, Math.abs(width) + Math.abs((2*height))],
+                            lineDash: [0, Math.abs(width) + Math.abs((2*height))],
                             // lineDash: [...line_dash],
                         },
                     },
@@ -281,17 +301,9 @@ class Fibonacci extends ChartGraphic {
 
 
 
-    // BUILD FIBONACCI -------------------------------------------------------------------------------
+    // BUILD GRAPHIC CONTROL -------------------------------------------------------------------------------
 //TODO LOS MENUS TAMBIEN TIENEN QUE SER ESCALABLES, EXTENDER CLASES BASE
 //TODO MENU FLOTANTE AGREGA SETTINGS PROPIOS, EL MENU EXTENDIDO, PROPIEDADES
-    // static building_graphic = false;
-
-    // static create({chart, template}) {
-    //     if(Fibonacci.building_graphic == false) {
-    //         Fibonacci.building_graphic = true;
-    //         chart.getZr().on('mousedown', Fibonacci.pick_start, [this, {chart, template}]);
-    //     }
-    // }
 
     static pick_start(e) {
         let params = this[1];
@@ -300,6 +312,7 @@ class Fibonacci extends ChartGraphic {
         let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
         let graphic = {}
         graphic[Const.HASH_ID] = new Date().valueOf();
+        graphic[Const.ID_ID] =  `${Const.FIBO_RET_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
         graphic[Const.INIT_ID] = new TimePrice(x, y);
         graphic[Const.END_ID] = new TimePrice(x, y);
         graphic[Const.CORRECTION_ID] = new TimePrice(x, y);

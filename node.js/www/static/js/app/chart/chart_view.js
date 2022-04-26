@@ -353,8 +353,8 @@ class ChartView {
                         axisTick: { show: false },
                         splitLine: { show: false },
                         axisLabel: {
+                            // formatter: axisValue => { return moment(axisValue).format("MM-DD HH:mm"); },
                             show: true,
-                            formatter: axisValue => { return moment(axisValue).format("MM-DD HH:mm"); },
                             color: this.cnf.colorTextAxis,
                             fontSize: 15,
                         },
@@ -1126,7 +1126,7 @@ class ChartView {
         return label;
     }
     
-    draw_fibonacci(data, chart) {
+    draw_graphic_control(data, chart) {
         try {
             if((data instanceof Array) == false) {
                 data = [data];
@@ -1139,7 +1139,7 @@ class ChartView {
                     this.chart_tree[chart[Const.ID_ID]][Const.GRAPHICS_ID][f[Const.ID_ID]] = f;
                 }
                 catch(error) {
-                    console.error(`EXCEPTION draw_fibonacci:${error}.`);
+                    console.error(`EXCEPTION draw_graphic_control:${error}.`);
                 }
             });
         }

@@ -137,6 +137,17 @@ class EventController {
                 $(document).trigger(Const.EVENT_UPDATE_MODEL, [MenuFibonacci.NAME]);
             });
 
+var TREND_MENU_ICON = '#trend-line';
+// TODO DUMMY TEST -> CREAR SU MENU
+            // Show Trend Line Menu
+            $(document).on('click', TREND_MENU_ICON, e => {
+                $(document).trigger(TrendLine.EVENT_CREATE);
+                $(TREND_MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                $(TREND_MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
+                $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
+                // $(document).trigger(Const.EVENT_UPDATE_MODEL, [MenuTrendLine.NAME]);
+            });
+
             // Load historic event
             $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => {
                 $(document).trigger(MenuMovs.EVENT_CLOSE_MENU);

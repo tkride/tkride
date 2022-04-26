@@ -488,13 +488,21 @@ class PanelPatterns {
                     let priceMax = [].concat(...data_plot[this.#current_name].data[this.level]
                                                             .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
                                                 .reduce( (a,b) => a > b ? a : b);
-                    let dateMin = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.INIT_ID].time)).reduce((a, b) => a < b ? a : b);
-                    let dateMax = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.CORRECTION_ID].time)).reduce((a, b) => a > b ? a : b);
+                    // dateMin = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.INIT_ID].time)).reduce((a, b) => a < b ? a : b);
+                    // dateMax = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.CORRECTION_ID].time)).reduce((a, b) => a > b ? a : b);
+                    let dateMin = Object.values(data_plot).map( r => (r.data[this.level]) ?
+                                                    r.data[this.level].map(t => t[Const.INIT_ID].time) : undefined)
+                                                    .filter( d => d != undefined);
+                    dateMin = dateMin.reduce( (a,b) => a < b ? a : b)[0];
+                    let dateMax = Object.values(data_plot).map( r => (r.data[this.level]) ?
+                                                    r.data[this.level].map(t => t[Const.CORRECTION_ID].time) : undefined)
+                                                    .filter( d => d != undefined);
+                    dateMax = dateMax.reduce( (a,b) => a > b ? a : b)[0];
                     this.#visual_conf.zoom = {
                         startValue: {x: dateMin, y:priceMin},
                         endValue: { x: dateMax, y:priceMax},
-                        // margin: {x: 30, y: 150}, //Margin values [x:candles, y:% (max-min)]
-                        margin: {x: 60, y: 300}, //Margin values [x:candles, y:% (max-min)]
+                        margin: {x: 40, y: 75}, //Margin values [x:candles, y:% (max-min)]
+                        // margin: {x: 60, y: 300}, //Margin values [x:candles, y:% (max-min)]
                         onlyValid: [true, true]
                     };
                 }

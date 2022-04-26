@@ -196,8 +196,8 @@ class ChartController {
         // Get initial date time
         let end_time = Time.now(Time.FORMAT_STR);
         this.currActive[this.#TSQL.MARCO_ID] = this.#time_frame.time_frame;
-        let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-        // let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        // let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+        let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
 
         let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
                     [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
@@ -369,20 +369,29 @@ catch(err) {
         });
 
         $(document).on(ChartGraphic.EVENT_UNSELECTED, (e, params) => {
-            let menu_name = params.constructor.name;
+            let menu_name = '';
+            if(params && params.constructor && params.constructor.name) {
+                menu_name = params.constructor.name;
+            }
             if(this.#menus[menu_name]) {
                 this.#menus[menu_name].hide_float();
                 this.#menus[menu_name].hide();
             }
         });
 
+// TODO HACER ESTE EVENTO GENERICO PARA TODOS LOS CONTROLES  GRAFICOS (CAMBIAR NOMBRE), LLAMAR A CADA 'BUILDER' SEGUN DICCIONARIO?
         $(document).on(Fibonacci.EVENT_CREATE, (e, params) => {
             let conf = this.#menus[Fibonacci.NAME].prev_template;
             Fibonacci.create({ chart: this.active_chart, template: conf });
         });
 
+        $(document).on(TrendLine.EVENT_CREATE, (e, params) => {
+            let conf = {};//this.#menus[TrendLine.NAME].prev_template;
+            TrendLine.create({ chart: this.active_chart, template: conf });
+        });
+
         $(document).on(ChartGraphic.EVENT_PLOT, (e, fibos) => {
-            this.#view.draw_fibonacci(fibos, this.active_chart);
+            this.#view.draw_graphic_control(fibos, this.active_chart);
         });
 
         $(document).on(ChartGraphic.EVENT_CREATED, (e, type) => {
@@ -653,7 +662,7 @@ catch(err) {
                 let ret_plot = that.#view.format_retracements(pattern);
                 that.#view.plot_retracements(ret_plot, that.active_chart);
                 // let fibo_ret = that.#view.format_fibo_retracement_data(pattern);
-                // that.#view.draw_fibonacci(ret_plot, fibo_ret, query, that.active_chart);
+                // that.#view.draw_graphic_control(ret_plot, fibo_ret, query, that.active_chart);
                 let fibos = [];
                 Object.values(pattern).forEach(p => {
                     if(Object.keys(p[Const.DATA_ID]).length) {
@@ -663,7 +672,7 @@ catch(err) {
                         });
                     }
                 });
-                that.#view.draw_fibonacci(fibos, that.active_chart);
+                that.#view.draw_graphic_control(fibos, that.active_chart);
             });
 
             // Handles event to load candles historic
