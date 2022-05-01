@@ -30,7 +30,7 @@ exports.load_session = async (user) => {
     return new Promise((resolve, reject) => {
         try {
             db.query({ query: `CALL LOAD_SESSION(?);`, values: [user] })
-            .then( res => resolve(res))
+            .then( res => resolve(res));
         }
         catch(error) {
             reject(error);
@@ -41,9 +41,10 @@ exports.load_session = async (user) => {
 exports.save_session = async (session) => {
     return new Promise((resolve, reject) => {
         try {
+            // TODO GUARDAR TABLA DE RESOURCES, NO 1 ENTRADA
             let user = session.user;
-            let resources = session.resources;
-            let sessions = session.sessions;
+            let resources = JSON.stringify(session.resources);
+            let sessions = JSON.stringify(session.sessions);
             db.query({ query: `CALL SAVE_SESSION(?, ?, ?);`, values: [user, resources, sessions] })
             .then( res => resolve(res))
         }

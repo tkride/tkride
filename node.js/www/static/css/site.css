@@ -74,11 +74,13 @@ input {
 }
 
 #chart-main {
-    width: 96.5vw; /* TODO: Comentar linea de abajo para permitir menu lateral*/
-    /*width: 100vw;*/
-    height: 94vh; /*100vh;*/
-    bottom: 6vh;
+    /* width: 96.5vw; /* TODO: Comentar linea de abajo para permitir menu lateral*/
+    /* width: 100vw; */
+    /* height: 94vh; */
+    /* height: 100%; */
+    /* bottom: 6vh; */
     left: 0;
+    margin-right: 50px;
     background-color: #ff000088;
     display: block;
 }
@@ -170,7 +172,7 @@ input[type="radio"]:checked + label {
     /* border: 1px solid black; */
     background-color: var(--button-back);
     color: var(--font-color);
-    border-radius: 5px;
+    border-radius: 2px;
     padding: 0.5em 1em;
 }
 

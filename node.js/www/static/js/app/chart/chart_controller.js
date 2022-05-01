@@ -36,6 +36,13 @@ class ChartController {
 
     static TRASH_MAX_SIZE = 100;
 
+    //Default value
+    static DEFAULT_ACTIVE = {
+        [Const.ID_ID]:'BTCUSDT',
+        [Const.BROKER_ID]:'binance',
+        [Const.MARCO_ID]:'2h',
+    }
+
     //----------------------------- PROPERTIES -----------------------------
 
     // Models
@@ -83,13 +90,6 @@ class ChartController {
     //----------------------------- CONSTRUCTOR -----------------------------
 
     constructor() {
-        //Default value
-        this.currActive = {
-            [this.#TSQL.ID_ID]:'BTCUSDT',
-            [this.#TSQL.BROKER_ID]:'binance',
-            [this.#TSQL.MARCO_ID]:'2h',
-        };
-
         this.#patterns_cb = {
             [Const.RETROCESOS_ID]: this.#process_patterns_ret,
             [Const.MOVIMIENTOS_ID]: this.#process_patterns_mov,
@@ -104,7 +104,10 @@ class ChartController {
         if(this.currActive) {
             $(ChartController.ELEMENT_CHART_TITLE + this.#activeChart.id).text(this.currActive[Const.ID_ID] + ' (' + this.currActive[Const.BROKER_ID] + ')');
         }
-        $(document).trigger(ChartController.EVENT_TIME_FRAME_CHANGED, this.#time_frame.time_frame);
+        // $(document).trigger(ChartController.EVENT_TIME_FRAME_CHANGED, this.#time_frame.time_frame);
+        if($(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).length > 0) {
+            $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).data('Dropdown').selected = this.currActive[Const.MARCO_ID];
+        }
     }
 
     #process_patterns_ret(ops, that) {
@@ -173,85 +176,125 @@ class ChartController {
     
     //----------------------------- EVENTS LOAD HISTORIC -----------------------------
 
-    event_load_historic(active, event_id) {
+    eventLoadHistoric({idFrame, active, timeFrame, eventId}) {
         var that = this;
-        if(active) {
-            this.currActive = active;
+        let clearChart = false;
+        this.currActive = this.currActive || {};
+
+        // Time frame
+        if(timeFrame) {
+            this.currActive[Const.MARCO_ID] = timeFrame;
         }
-        
-        if(!this.#time_frame.time_frame) {
-            console.error('Selecciona un marco temporal.');
-            return;
+
+        // Active
+        if(active) {
+            // Deletes chart and graphic controls
+            try {
+                let series_to_del = Object.keys(this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.GRAPHICS_ID]);
+                series_to_del.push(this.currActive[Const.ID_ID]);
+                this.#view.clear_chart(this.active_chart, series_to_del);
+                this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.GRAPHICS_ID] = {};
+                this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.CHART_ID] = {};
+                // this.#activeChart = undefined; // TODO HAY QUE GESTIONAR EL LAYOUT ANTES DE PODER ELIMINAR LA GRAFICA ANTERIOR
+            }
+            catch(err) { /* If not exists, chart tree creation is managed in later chart creation. */ }
+
+            // Replace with new active
+            this.currActive = { ...this.currActive, ...active};
+            clearChart = true;
         }
         
         if(!this.currActive) {
             console.error('Selecciona un activo.');
-            this.write_status({error:'Selecciona un activo.'});
+            this.writeStatus({error:'Selecciona un activo.'});
             return;
         }
 
-        // this.write_status({progress:'Cargando información del activo...', value:0, max:1, loading:1 });
-        this.write_status({info:'Cargando información del activo...', loading:1 });
-
-        // Get initial date time
-        let end_time = Time.now(Time.FORMAT_STR);
-        this.currActive[this.#TSQL.MARCO_ID] = this.#time_frame.time_frame;
-        // let init_time = Time.subtract_value(end_time, 100000, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-        let init_time = Time.subtract_value(end_time, 150, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-
-        let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
-                    [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
-                    [this.#TSQL.MARCO_ID]:this.currActive[this.#TSQL.MARCO_ID],
-                    [this.#TSQL.INTERVALO_ID]:init_time, // + this.#TSQL.PARAM_SEPARATOR + end_time,
-        };
-
-        if(this.#activeChart == null) {
-            let id_chart = this.create_chart({ col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
-            this.#chart_frames[id_chart][Const.ACTIVE_ID] = this.currActive;
+        if(!this.currActive[Const.MARCO_ID]) {
+            console.error('Selecciona un marco temporal.');
+            return;
         }
-try{        
-        this.#update_chart_header();
-}
-catch(err) {
-    console.log(err);
-}
-        
-        this.active_chart.showLoading(ChartView.SHOW_LOADING_OPS);
-        this.plot_historical(query, this.active_chart, null, true)
-        .then(() => {
-            // Updates menu movs options
-            this.#menus[MenuMovs.NAME].update_active(this.current_active, this.active_chart_id);
-            
-//TODO GUARDAR MODELO DE DATOS FUENTE, NO SOLO 'CHART MODEL'
-            if(!this.#models[that.current_model_key]) this.#models[that.current_model_key] = new DataModel();
-            this.#models[that.current_model_key][Const.MOVS_ID] = new Movements(that.#chart_models[that.current_model_key].ohlc, that.#menus[MenuMovs.NAME].level_max, that.current_model_key);
 
-            console.time('Split movs');
-            let ret = this.#chart_models[that.current_model_key].split_movements_data(this.#models[that.current_model_key][Const.MOVS_ID]);
-            console.timeEnd('Split movs');
+        return new Promise( (resolve, reject) => {
+            // Status notification
+            // this.writeStatus({progress:'Cargando información del activo...', value:0, max:1, loading:1 });
+            this.writeStatus({info:'Cargando información del activo...', loading:1 });
+
+            // Get initial date time
+            let end_time = Time.now(Time.FORMAT_STR);
+            // this.currActive[Const.MARCO_ID] = this.#time_frame.time_frame;
+            // let init_time = Time.subtract_value(end_time, 100000, this.currActive[Const.MARCO_ID]).format(Time.FORMAT_STR);
+            let init_time = Time.subtract_value(end_time, 150, this.currActive[Const.MARCO_ID]).format(Time.FORMAT_STR);
+
+            // let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
+            //             [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
+            //             [this.#TSQL.MARCO_ID]:this.currActive[Const.MARCO_ID],
+            //             [this.#TSQL.INTERVALO_ID]:init_time, // + this.#TSQL.PARAM_SEPARATOR + end_time,
+            let query = { [Const.ACTIVE_ID]:this.currActive[this.#TSQL.ID_ID],
+                        [Const.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
+                        [Const.TIME_FRAME_ID]:this.currActive[Const.MARCO_ID],
+                        [Const.START_TIME_ID]:init_time, // + this.#TSQL.PARAM_SEPARATOR + end_time,
+            };
+
+            if(this.#activeChart == null) {
+                let id_chart = this.create_chart({id: idFrame, place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+                this.#chart_frames[id_chart][Const.ACTIVE_ID] = this.currActive;
+            }
             
-            this.write_status({info:'Movimientos cargados.', timeout: 2500});
-            $(MenuMovs.MENU_ICON).removeClass(Const.CLASS_DISABLED);
-            
-            // Returns event or promise according to caller
-            if(event_id) $(document).trigger(event_id);
-            else return new Promise( resolve => resolve(this.currActive));
-        })
-        .catch( (err) => new Promise( (resolve, reject) => {
-                                        let msg = 'Error cargando los datos del activo:' + (event_id) ? event_id : '';
-                                        console.error(msg);
-                                        reject(msg);
-                                    })
-        );
-        // $(document).on(plot_event_id, e => { if(event_id) $(document).trigger(event_id); });
+            // Updates time frame dropdown and chart title
+            try { this.#update_chart_header(); }
+            catch(err) { console.error(err); }
+
+            // Plot chart
+            this.active_chart.showLoading(ChartView.SHOW_LOADING_OPS);
+            this.plot_historical(query, this.active_chart, null, clearChart)
+            .then(() => {
+                // Updates menu movs options
+                this.#menus[MenuMovs.NAME].update_active(this.current_active, this.active_chart_id);
+                
+    //TODO GUARDAR MODELO DE DATOS FUENTE, NO SOLO 'CHART MODEL'
+                if(!this.#models[that.current_model_key]) this.#models[that.current_model_key] = new DataModel();
+                this.#models[that.current_model_key][Const.MOVS_ID] = new Movements(that.#chart_models[that.current_model_key].ohlc, that.#menus[MenuMovs.NAME].level_max, that.current_model_key);
+
+                console.time('Split movs');
+                let ret = this.#chart_models[that.current_model_key].split_movements_data(this.#models[that.current_model_key][Const.MOVS_ID]);
+                console.timeEnd('Split movs');
+                
+                this.writeStatus({info:'Movimientos cargados.', timeout: 2500});
+                $(MenuMovs.MENU_ICON).removeClass(Const.CLASS_DISABLED);
+
+                //Update graphic controls for time frame changes
+                let graphics = Object.values(this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.GRAPHICS_ID]);
+                if(graphics.length) {
+                    graphics.forEach(g => g.set_time_frame(this.currActive[Const.MARCO_ID]));
+                    // this.#view.draw_graphic_control(graphics, this.active_chart);
+                }
+                
+                // Returns event or promise according to caller
+                if(eventId) $(document).trigger(eventId);
+                resolve(this.currActive);
+                // return new Promise( (resolve, reject) => resolve(this.currActive));
+                // else return new Promise( resolve => resolve(this.currActive));
+            })
+            .catch( (err) => new Promise( (resolve, reject) => {
+                                            let msg = 'Error cargando los datos del activo:' + (eventId) ? eventId : '';
+                                            console.error(msg);
+                                            reject(msg);
+                                        })
+            );
+        });
+        // $(document).on(plot_eventId, e => { if(eventId) $(document).trigger(eventId); });
     }
 
 
     //----------------------------- EVENTS SET TIME FRAME -----------------------------
 
     set_time_frame(timeFrame) {
-        this.#time_frame.time_frame = timeFrame;
-        this.currActive[Const.MARCO_ID] = timeFrame;
+        // this.#time_frame.time_frame = timeFrame;
+        if((!this.currActive[Const.MARCO_ID]) || (this.currActive[Const.MARCO_ID] != timeFrame)) {
+            this.currActive[Const.MARCO_ID] = timeFrame;
+            $(document).trigger(TickerFilter.EVENT_LOAD_HISTORIC);
+        }
     }
 
     bind_keys_time_frame(e) {
@@ -340,7 +383,7 @@ catch(err) {
             $(document).on(ChartController.EVENT_ADD_CHART, (e, ops) => {
                 console.log('EVENT_ADD_CHART');
                 this.create_chart({col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
-                this.event_load_historic(this.currActive);
+                this.eventLoadHistoric({active:this.currActive});
             });
         }
     }
@@ -348,7 +391,6 @@ catch(err) {
     #create_menus() {
         if(!this.#menus[MenuStatus.NAME]) { this.#menus[MenuStatus.NAME] = new MenuStatus(this); }
         if(!this.#menus[MenuMovs.NAME]) { this.#menus[MenuMovs.NAME] = new MenuMovs(); }
-        // if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.patterns_dao.models); }
         if(!this.#menus[MenuPatterns.NAME]) { this.#menus[MenuPatterns.NAME] = new MenuPatterns(this.#models); }
         if(!this.#menus[MenuSettings.NAME]) { this.#menus[MenuSettings.NAME] = new MenuSettings(this); }
         if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
@@ -382,12 +424,12 @@ catch(err) {
 // TODO HACER ESTE EVENTO GENERICO PARA TODOS LOS CONTROLES  GRAFICOS (CAMBIAR NOMBRE), LLAMAR A CADA 'BUILDER' SEGUN DICCIONARIO?
         $(document).on(Fibonacci.EVENT_CREATE, (e, params) => {
             let conf = this.#menus[Fibonacci.NAME].prev_template;
-            Fibonacci.create({ chart: this.active_chart, template: conf });
+            Fibonacci.create({ chart: this.active_chart, template: conf, timeFrame: this.current_active[Const.MARCO_ID] });
         });
 
         $(document).on(TrendLine.EVENT_CREATE, (e, params) => {
             let conf = {};//this.#menus[TrendLine.NAME].prev_template;
-            TrendLine.create({ chart: this.active_chart, template: conf });
+            TrendLine.create({ chart: this.active_chart, template: conf, timeFrame: this.current_active[Const.MARCO_ID] });
         });
 
         $(document).on(ChartGraphic.EVENT_PLOT, (e, fibos) => {
@@ -409,6 +451,7 @@ catch(err) {
             this.#menus[Fibonacci.NAME].show(params);
         });
 
+        // TODO PASAR EL EVENTO FUENTE COMO PARAMETRO DE ENTRADA, Y HACER UN EVENTO REMOVE GENERICO
         $(document).on(MenuFibonacci.EVENT_REMOVE, (e, fibo) => {
             this.throw_trash(fibo, MenuFibonacci.EVENT_REMOVE);
             this.#view.clear_chart(this.active_chart, [fibo[Const.ID_ID]]);
@@ -433,14 +476,32 @@ catch(err) {
             // Load from server, available brokers and tickers
             this.interface.get_brokers()
             .then( brokers_info => {
-                // console.log(brokers_info);
-                var brokers = new Brokers(brokers_info);
-                this.write_status({info:'Completada Carga de Tickers desde los brokers.'});
-                console.log('Completada Carga de Tickers desde los brokers.');
-                resolve(brokers);
+                // var brokers = new Brokers(brokers_info);
+                // resolve(brokers);
+                var broker_clients = {};
+                var tickersLoad = [];
+                brokers_info.forEach(broker => {
+                    try {
+                        let first = broker[0].toUpperCase();
+                        let brokerName = first + broker.substring(1);
+                        let brokerClass = eval(brokerName);
+                        broker_clients[broker] = new brokerClass();
+                        tickersLoad.push(broker_clients[broker].getTickers());
+                    }
+                    catch(error) {
+                        console.error(`Error creating broker client ${broker}: ${error}`);
+                    }
+                });
+                Promise.allSettled(tickersLoad)
+                .then(tickers => {
+                    this.writeStatus({info:'Completada Carga de Tickers desde los brokers.'});
+                    console.log('Completada Carga de Tickers desde los brokers.');
+                    var brokers = new Brokers(broker_clients);
+                    resolve(brokers);
+                });
             })
             .catch(error => {
-                this.write_status({error:'(!) Errores cargando tickers desde los brokers: ' + broker});
+                this.writeStatus({error:'(!) Errores cargando tickers desde los brokers: ' + error});
                 console.error(error);
                 reject(error);
             });
@@ -452,7 +513,7 @@ catch(err) {
         // $(document).on(DDBB.EVENT_DDBB_LOAD_USER_MODEL, (e) => {
         //     this.templates_dao.load()
         //     .then(res => $(document).trigger(DDBB.EVENT_UPDATE_MODEL))
-        //     .catch(error => this.write_status( { error: error, timeout: 5000 })})
+        //     .catch(error => this.writeStatus( { error: error, timeout: 5000 })})
         //     .finally(() => $(document).trigger(Const.EVENT_UPDATE_MODEL, source));
         // });
 
@@ -462,12 +523,12 @@ catch(err) {
             let source_name = source_info[1];
             if(dao != undefined) {
                 dao.delete(model_name)
-                .then(res => this.write_status({info: `${source_name} ${model_name[Const.NAME_ID]} eliminada.`, timeout: 5000}))
-                .catch(error => {this.write_status({error: error, timeout: 5000})})
+                .then(res => this.writeStatus({info: `${source_name} ${model_name[Const.NAME_ID]} eliminada.`, timeout: 5000}))
+                .catch(error => {this.writeStatus({error: error, timeout: 5000})})
                 .finally(() => $(document).trigger(Const.EVENT_UPDATE_MODEL, source));
             }
             else {
-                this.write_status({error: `ERROR eliminando modelo, fuente "${source}" desconocida.`, timeout: 5000});
+                this.writeStatus({error: `ERROR eliminando modelo, fuente "${source}" desconocida.`, timeout: 5000});
             }
         });
 
@@ -477,12 +538,12 @@ catch(err) {
             let source_name = source_info[1];
             if(dao != undefined) {
                 dao.save(info)
-                .then(res => this.write_status({info: `${source_name} ${info.ID || info.name} guardada.`, timeout: 5000}))
-                .catch(error => this.write_status({error: error, timeout: 5000}))
+                .then(res => this.writeStatus({info: `${source_name} ${info.ID || info.name} guardada.`, timeout: 5000}))
+                .catch(error => this.writeStatus({error: error, timeout: 5000}))
                 .finally(() => $(document).trigger(Const.EVENT_UPDATE_MODEL, [source]));
             }
             else {
-                this.write_status({error: `ERROR guardando modelo, fuente "${source}" desconocida.`, timeout: 5000});
+                this.writeStatus({error: `ERROR guardando modelo, fuente "${source}" desconocida.`, timeout: 5000});
             }
         });
     }
@@ -519,25 +580,31 @@ catch(err) {
             this.#time_frame = new TimeFrame();
 
             // Brokers manager
+            let brokersAwait = $.Deferred();
             this.#init_brokers()
             .then(brokers => {
                 this.#brokers = brokers;
-                this.#brokers = brokers;
                 this.#ticker_filter.brokers = brokers;
+                brokersAwait.resolve();
             })
             .catch(err => console.error(err));
 
             // Load last session
-            console.log('Load last user session.');
-            this.interface_ddbb.process({ user: this.interface_ddbb.user,
-                                          login_timestamp: this.interface_ddbb.login_timestamp,
-                                          query: DDBB.LOAD_SESSION,
-                                          params: this.interface_ddbb.user })
-            .then( res => console.log('Last session info:', res))
-            .catch(err => console.err(err));
+            $.when(brokersAwait).done( () => {
+                console.log('Load last user session.');
+                this.interface_ddbb.process({ user: this.interface_ddbb.user,
+                                            login_timestamp: this.interface_ddbb.login_timestamp,
+                                            query: DDBB.LOAD_SESSION,
+                                            params: this.interface_ddbb.user })
+                .then( res => {
+                    console.log('Last session info:', res);
+                    this.restoreSession(res);
+                })
+                .catch(err => console.error(err));
+            });
 
             // Set autosave last session timer
-            setInterval(this.save_session, Const.AUTOSAVE_SESSION_TIME, this);
+            setInterval(this.saveSession, Const.AUTOSAVE_SESSION_TIME, this);
             
             
             //TODO REVISAR EVENTOS QUE DEBE GESTIONAR ESTE CONTROLADOR - SEPARAR EVENTOS DE TECLADO -> MOVER AL CONTROLADOR DE TECLADO
@@ -613,28 +680,28 @@ catch(err) {
             // Handles event Show Patterns results
             $(document).on(MenuPatterns.EVENT_SHOW_PATTERNS, function(e, query) {
                 let start_time = 0;
-                that.write_status({info:'Buscando coincidencias...', loading:1});
+                that.writeStatus({info:'Buscando coincidencias...', loading:1});
                 query.model_key = that.current_model_key;
                 start_time = performance.now();
                 if(that.#patterns_cb[query[Const.TIPO_PARAM_ID]]) {
                     that.#patterns_cb[query[Const.TIPO_PARAM_ID]](query, that)
                     .then( res => {
-                        // that.write_status({clear: 1});
+                        // that.writeStatus({clear: 1});
                         let end_time = performance.now();
                         let total_time = (end_time - start_time).toFixed(3);
                         console.log(`Pattern process time for ${query[Const.ID_ID]}: ${total_time}ms`);
-                        that.write_status({info:`Tiempo de proceso total para ${query[Const.ID_ID]}: ${total_time}ms`, timeout:5000});
+                        that.writeStatus({info:`Tiempo de proceso total para ${query[Const.ID_ID]}: ${total_time}ms`, timeout:5000});
                         $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE, query);
                     })
                     .catch( err => {
                         // console.error('Error procesando patrones: ', err);
-                        // that.write_status({error:['Error procesando patrones:', err], timeout:5000});
+                        // that.writeStatus({error:['Error procesando patrones:', err], timeout:5000});
                         console.error(err);
-                        that.write_status({error:[err], timeout:5000});
+                        that.writeStatus({error:[err], timeout:5000});
                     });
                 }
                 else {
-                    that.write_status({error:'Error, tipo de patrón desconocido: ' + options[Const.TIPO_PARAM_ID], timeout:5000});
+                    that.writeStatus({error:'Error, tipo de patrón desconocido: ' + options[Const.TIPO_PARAM_ID], timeout:5000});
                 }
             });
 
@@ -668,7 +735,7 @@ catch(err) {
                     if(Object.keys(p[Const.DATA_ID]).length) {
                         Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach(r => {
                             // fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }}) );
-                            fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}`, opacity: 30 }}) );
+                            fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}`, opacity: 30 }, timeFrame: that.currActive[Const.MARCO_ID]}) );
                         });
                     }
                 });
@@ -676,7 +743,9 @@ catch(err) {
             });
 
             // Handles event to load candles historic
-            $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => that.event_load_historic(active));
+            $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => that.eventLoadHistoric({active}));
+            
+            $(document).on(TimeFrame.EVENT_LOAD_HISTORIC, (e, timeFrame) => that.eventLoadHistoric({timeFrame}));
 
             // Time Frame header //TODO CAMBIAR
             // this.#build_header();
@@ -684,26 +753,26 @@ catch(err) {
             // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => {
             //     this.patterns_dao.load()
             //     .then(res => $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL))
-            //     .catch(error => this.write_status( { error: error, timeout: 5000 }));
+            //     .catch(error => this.writeStatus( { error: error, timeout: 5000 }));
             // });
 
             // $(document).on(MenuPatterns.EVENT_DDBB_DELETE_PATTERN, (e, pattern_name) => {
             //     // this.patterns_dao.delete_pattern(pattern_name)
             //     this.patterns_dao.delete(pattern_name)
             //     .then(res => {
-            //         this.write_status({info: `Patrón ${pattern_name[Const.NAME_ID]} eliminado.`, timeout: 5000});
+            //         this.writeStatus({info: `Patrón ${pattern_name[Const.NAME_ID]} eliminado.`, timeout: 5000});
             //         $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
             //     })
-            //     .catch(error => this.write_status({error: error, timeout: 5000}));
+            //     .catch(error => this.writeStatus({error: error, timeout: 5000}));
             // });
 
             // $(document).on(MenuPatterns.EVENT_DDBB_SAVE_PATTERN, (e, pattern) => {
             //     this.patterns_dao.save(pattern)
             //     .then(res => {
-            //         this.write_status({info: `Patrón ${pattern[Const.ID_ID]} guardado.`, timeout: 5000});
+            //         this.writeStatus({info: `Patrón ${pattern[Const.ID_ID]} guardado.`, timeout: 5000});
             //         $(document).trigger(MenuPatterns.EVENT_UPDATE_MODEL);
             //     })
-            //     .catch(error => this.write_status({error: error, timeout: 5000}));
+            //     .catch(error => this.writeStatus({error: error, timeout: 5000}));
             // });
 
             this.#init_events_models();
@@ -845,17 +914,17 @@ catch(err) {
         return frame;
     }
 
-    create_chart(place) {
+    create_chart({id, place}) {
         var that = this;
         try {
-            let id = this.#n_frames + '_' + Date.now();
+            id = id || this.#n_frames + '_' + Date.now();
             let frame = this.generate_layout(place, id);
             // TODO GUARDAR EL ARBOL EN LA VISTA?
             this.#chart_frames[id] = this.#view.create_chart({ id: id, num: this.#n_frames, frame: frame })
             this.#n_frames++;
             this.#activeChart = this.#chart_frames[id];
             this.#create_header();
-            return id; //this.#activeChart;
+            return id;
         }
         catch(error) {
             console.error('Error creating chart:', error);
@@ -883,27 +952,21 @@ catch(err) {
             id: ChartController.TIME_FRAME_ID + id + '-container',
             class: ChartController.CLASS_CHART_TIME_FRAME, // + ' ' + Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_BUTTON_GENERAL,
         });
-        // .append('<p>' + this.#time_frame.time_frame + '</p>');
         this.#chart_frames[id].frame.append(time_frame_el);
 
          //TODO PUEDE QUE LOS MARCOS TEMPORALES CAMBIEN DE UN BROKER A OTRO EN EL FUTURO
         let time_frame_dropdown = new Dropdown( {
                                                   id: ChartController.TIME_FRAME_ID + id,
-                                                //   element: time_frame_el,
                                                   items: Time.TIME_FRAMES,
                                                   event: ChartController.EVENT_TIME_FRAME_CHANGED,
                                                   header: { selected: true }
                                                 });
                                                 
-        // time_frame_dropdown.controls.each( (i, c) => this.#chart_frames[id].frame.append(c) );
         time_frame_dropdown.controls.each( (i, c) => time_frame_el.append(c) );
 
-        $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, time_frame, el) => {
-            $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).data('Dropdown').selected = time_frame;
-            // $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).find('p').text(time_frame);
-            this.set_time_frame(time_frame);
-        });
+        $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, timeFrame, el) => this.eventLoadHistoric({timeFrame}) );
 
+        $(document).on(TimeFrame.EVENT_TIME_FRAME_CHANGED, (e, timeFrame) =>  this.eventLoadHistoric({timeFrame}) );
     }
 
     plot_candles(data, chart=null, clear=true) {
@@ -911,6 +974,12 @@ catch(err) {
             chart = this.active_chart;
         }
         return this.#view.plot_candles(data, chart, clear);
+    }
+
+    updateCandles({query, modelKey, data, chart}) {
+        let dataOhlc = this.#chart_models[modelKey].splitOhlcData({ query, data, append: true });
+
+        this.#view.updateCandles({ data: dataOhlc, chart });
     }
 
     zoom_chart_default(data) {
@@ -949,11 +1018,18 @@ catch(err) {
             // model_key = this.generate_model_key(request, this.#activeChart.id);
             model_key = this.current_model_key;
             console.time('historic');
-            this.interface.load_historical(request, false)
+            let id = request[Const.ACTIVE_ID];
+            let broker = request[Const.BROKER_ID].toLowerCase();
+            let timeFrame = request[Const.TIME_FRAME_ID];
+            let startTime = request[Const.START_TIME_ID];
+            let endTime = request[Const.END_TIME_ID];
+            // this.interface.load_historical(request, false)
+            this.#brokers.brokers[broker].getHistoric({ id, timeFrame, startTime, endTime })
             .then(rawData => {
                     let model = new ModelChart();
                     that.#chart_models[model_key] = model;
-                    that.#chart_models[model_key].split_ohlc_data(rawData);
+                    that.#chart_models[model_key].splitOhlcData({query:request, data: rawData});
+                    // that.#chart_models[model_key].split_ohlc_data(rawData);
                     console.timeEnd('historic');
                     resolve(that.#chart_models[model_key].ohlc);
             })
@@ -964,17 +1040,19 @@ catch(err) {
         });
     }
     
-    // create_stream(query, chart) {
-    //     var that = this;
-    //     setInterval(() => {
-    //         let end_time = Time.now(Time.FORMAT_STR);
-    //         let init_time = Time.subtract_value(end_time, 1, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-    //         query[this.#TSQL.INTERVALO_ID] = init_time;
-    //         this.load_historical(query)
-    //         .then(data => that.#view.update_candles({data, chart}))
-    //         .catch(err => console.error(err));
-    //     }, 1000);
-    // }
+    create_stream(query, chart) {
+        let broker = query[Const.BROKER_ID].toLowerCase();
+        this.#brokers.brokers[broker].openWebSocket({query, callback: this.updateCandles.bind(this), modelKey: this.current_model_key, chart});
+        // var that = this;
+        // setInterval(() => {
+            // let end_time = Time.now(Time.FORMAT_STR);
+            // let init_time = Time.subtract_value(end_time, 1, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
+            // query[Const.START_TIME_ID] = init_time;
+            // this.load_historical(query)
+            // .then(data => this.#view.update_candles({data, chart}))
+            // .catch(err => console.error(err));
+        // }, 1000);
+    }
     
     plot_historical(request, chart, model_key = null, clear=true) {
         var that = this;
@@ -983,17 +1061,21 @@ catch(err) {
             .then( data => that.plot_candles(data, chart, clear) )
             .then( data => that.zoom_chart_default(data) )
             .then( data => that.active_chart.hideLoading())
-            // .then( data => that.create_stream(request, chart))
+            // .then( () => this.#brokers.brokers[broker].openWebSocket({query: request, callback: this.updateCandles.apply(chart), modelKey: that.current_model_key}))
+            .then( data => {
+                that.create_stream(request, chart);
+                return data;
+            })
             .then( data => resolve(data))
             .catch( data => {
                 console.error('Error loading active:', data);
-                this.write_status({info:'Error loading active: ' + JSON.stringify(data), timeout: 3000});
+                this.writeStatus({info:'Error loading active: ' + JSON.stringify(data), timeout: 3000});
                 reject(data);
             });
         });
     }
 
-    write_status(content) {
+    writeStatus(content) {
         let status = this.#menus[MenuStatus.NAME];
         if(content != null) {
             if(content.loading) status.show_loading();
@@ -1032,7 +1114,7 @@ catch(err) {
         
     }
 
-    save_session(that) {
+    saveSession(that) {
         // Save current session
         let session = {};
         let resource = {};
@@ -1040,151 +1122,69 @@ catch(err) {
             // console.log(that.#chart_frames[ch]);
             session[ch] = {};
             session[ch] = that.#chart_frames[ch][Const.ACTIVE_ID];
-            resource[ch] = '';
+            resource[ch] = {};
+            Object.keys(that.#view.chart_tree[ch][Const.GRAPHICS_ID]).forEach(g => {
+                resource[ch][g] = that.#view.chart_tree[ch][Const.GRAPHICS_ID][g].serialize();
+            });
         });
         
+        session.layout = that.#chart_layout;
         that.interface_ddbb.process({ user: that.interface_ddbb.user,
                                         login_timestamp: that.interface_ddbb.login_timestamp,
                                         query: DDBB.SAVE_SESSION,
-                                        params: JSON.stringify({ user: that.interface_ddbb.user, resources: JSON.stringify(resource), sessions: JSON.stringify(session) }) })
-        // .then( res => console.log(`Save session ${new Date().toLocaleString()} done.`))
-        .catch(err => console.err(err));
-    }
-    // INTERFACE METHODS
-    // Load data from server
-
-    select_data(request) {
-        try {
-            return this.interface.select_data(request);
-        }
-        catch(error) {
-            throw('Error when select server data maximum:', error);
-        }
+                                        params: JSON.stringify({ user: that.interface_ddbb.user, resources: /*JSON.stringify*/(resource), sessions: /*JSON.stringify*/(session) }) })
+        .then( res => console.log(`Save session ${new Date().toLocaleString()} done.`))
+        .catch(err => console.error(err));
     }
 
-    select_maximum(model_key, level, level_max) {
-        try {
-            return new Promise( (resolve, reject) => {
-                let data = $.Deferred();
+    restoreSession(session) {
+        let frames = {};
+        let resources = {};
 
-                if(level > level_max) level_max = level;
-                this.load_maximum(model_key, level_max)
-                .then( max => data.resolve(max))
-                .catch( error => data.reject(error));
+        try { frames = JSON.parse(session[0][0].session); }
+        catch(error) { console.error(error);}
 
-                $.when(data)
-                .done( max => {
-                    this.interface.select_maximum(model_key, level)
-                    .then( data => {
-                        this.#chart_models[model_key].max.level_selected = level;
-                        resolve(data);
-                    })
-                    .catch( error => {
-                        console.log('Error selecting max data:', error);
-                        reject(error);
-                    });
-                })
-                .catch( error => {
-                    console.error('Error loading max data:', error);
-                    reject(error);
-                });
+        try { resources = JSON.parse(session[0][0].resources); }
+        catch(error) { console.error(error);}
+
+        let layout = frames.layout;
+        delete frames.layout;
+        let framesId = Object.keys(frames);
+        let loadResults = [];
+        
+        if(framesId.length) {
+            framesId.forEach(id => {
+                loadResults.push(this.eventLoadHistoric({ idFrame: id, active: frames[id] }));
             });
         }
-        catch(error) {
-            throw('Error when select server data maximum:', error);
+        // If no session loaded
+        else {
+            if((this.currActive == undefined) || (this.currActive == {})) {
+                this.currActive = ChartController.DEFAULT_ACTIVE;
+            }
+            loadResults.push(this.eventLoadHistoric({}));    
         }
-    }
-
-    load_maximum(model_key, level_max) {
-        return new Promise( (resolve, reject) => {
-            let max = $.Deferred();
-            if(!model_key) model_key = this.generate_model_key(request, this.#activeChart.id);
-            
-            if((!this.#chart_models[model_key].max) || (this.#chart_models[model_key].max.level_max < level_max)) {
-                this.interface.load_maximum(model_key, level_max)
-                .then( rawData => {
-                    if(rawData) {
-                        this.#chart_models[model_key].split_max_data(rawData);
-                        console.log('LOAD_MAXIMUM DATA LOADED:', this.#chart_models[model_key].max);
-                        resolve(this.#chart_models[model_key].max);
-                    }
-                })
-                .catch( error => reject('Error loading max: ' + error));
-            }
-            else {
-                max.resolve(this.#chart_models[model_key].max);
-            }
-
-            $.when(max)
-            .done( data => resolve(data))
-            .catch( error => console.error('Error loading max:', error));
-        });
-    }
-
-    load_retracements(request, model_key) {
-        return new Promise( (resolve, reject) => {
-            if(request) {
-                if(!model_key) model_key = this.current_model_key;
-                request.model_key = model_key;
-                
-                // TODO XXX PARA GUARDAR EN MEMORIA, ACTUALMENTE HAY QUE DIFERENCIAR SOLO POR EL NOMBRE DEL RETROCESO, ...
-                // HAY QUE AÑADIR MODEL KEY DELANTE, CUANDO SE ORGANICE EN JS NO HABRA PROBLEMAS
-                let req = Object.assign({}, request);
-                req[Const.ID_ID] = model_key + '_' + req[Const.ID_ID];
-                if(req[Const.BUSCAR_EN_ID]) {
-                    req[Const.BUSCAR_EN_ID] = model_key + '_' + req[Const.BUSCAR_EN_ID];
-                }
-
-                this.interface.load_retracements(req)
-                .then( rawData => {
-                    let ret = this.#chart_models[request.model_key].split_retracements_data(rawData, request);
-                    if(ret === 'string' ) reject(ret);
-                    console.log(ret);
-                    resolve(ret);
+        
+        Promise.allSettled(loadResults)
+        .then(res => {
+            if(Object.keys(resources).length > 0) {
+                let frameId = Object.keys(resources)[0];
+                let graphicsSerialized = Object.values(resources[frameId]);
+                let graphics = [];
+                graphicsSerialized.forEach( g => {
+                    try { graphics.push(ChartGraphic.deserialize(g)); }
+                    catch(error) { console.error(`Error deserializing graphic control: ${error}`); }
                 });
+                // this.#view.draw_graphic_control(graphics, this.active_chart);
+                this.#view.draw_graphic_control(graphics, this.#chart_frames[frameId].chart);
             }
-            else { reject('No request received.'); }
+        })
+        .catch(error => {
+            let errMsg = `Error restoring preivous session: ${error}`;
+            console.error(errMsg);
+            this.writeStatus({error: errMsg});
         });
     }
 
-    // Plot methods
-    plot_max(rawData, chart) {
-        this.#view.plot_max(rawData, chart);
-    }
-
-    plot_movements(rawData, chart){
-        this.#view.plot_movements(rawData, chart);
-    }
-
-    // plot_retracements(rawData, chart){
-    //     this.#view.plot_movements(rawData, chart);
-    // }
-
-    //----------------------------- TIME FRAME METHODS -----------------------------
-
-    // enables_time_frame_input(e) {
-    //     // $("#chart-time-frame-panel").css('display', 'block');
-    //     $("#chart-time-frame-panel").show();
-    //     $(TimeFrame.INPUT).focus();
-    //     this.bind_keys_time_frame(e);
-    // }
-
-    // disables_time_frame_input() {
-    //     $(TimeFrame.INPUT).val('');
-    //     // $("#chart-time-frame-panel").css('display', 'none');
-    //     $("#chart-time-frame-panel").hide();
-    //     $(TimeFrame.INPUT).unbind('keyup');
-    //     // $(TimeFrame.INPUT).off();
-    // }
-
-    // is_time_frame_visible() {
-    //     let res = ($("#chart-time-frame-panel").is(":visible"));
-    //     return res;
-    // }
-    
-    // is_ticker_filter_focused() {
-    //     let res = $(TimeFrame.INPUT).is(":focus");
-    //     return res;
-    // }
 
 }

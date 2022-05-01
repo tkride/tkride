@@ -3,6 +3,10 @@
 class ChartView {
 
     // ----------------------------- STATIC, CONSTANTS -----------------------------
+
+    static ELEMENT_ID_CHART_MAIN = '#chart-main';
+    static ELEMENT_ID_FOOTER_MENU = '#footer-menu';
+
     static CHART_TOOLTIP_HEADER_DUMMY = '<p class="chart-tooltip-text" style="color: rgba(0,0,0,0);">';
     static CHART_TOOLTIP_TEXT = '<p class="chart-tooltip-text">';
     static P_CLOSE = '</p>';
@@ -101,6 +105,7 @@ class ChartView {
         if(chartSettings) {
             this.cnf = chartSettings;
         }
+        this.resize_chart_window();
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
@@ -236,7 +241,8 @@ class ChartView {
         chart[Const.ID_ID] = id;
         // let timeFrame = this.create_time_frame(name);
         // $(frame).append(timeFrame);
-        $(window).resize(function() { chart.resize(); });
+        var that = this;
+        $(window).resize(() => that.resize_chart_window(chart));
         this.zoomAxis(chart, id);
         this.chart_tree[id] = {};
         this.chart_tree[id][Const.CHART_ID] = chart;
@@ -269,7 +275,8 @@ class ChartView {
             }
 
             if(clear) {
-                chart.setOption({series: []}, { replaceMerge: ['series']});
+                // chart.setOption({series: []}, { replaceMerge: ['series']});
+                this.clear_chart(chart);
             }
 
             // if ((data) && (data.dataType != Const.ACTIVO_ID)) {
@@ -296,10 +303,8 @@ class ChartView {
             let slider_height = 18;
             let slider_vert_offset = doc_heigh * 0.075;
             
-            this.clear_chart(chart);
-// data.data_y.forEach( (v, i) => {
-//     v.splice(0,0,data.data_x[i]);
-// });
+            // this.clear_chart(chart);
+     
             // Specify the configuration items and data for the chart
             this.#chart_view = {
                 
@@ -357,6 +362,7 @@ class ChartView {
                             show: true,
                             color: this.cnf.colorTextAxis,
                             fontSize: 15,
+                            backgroundColor: 'transparent',
                         },
                         min: null,
                         max: null,
@@ -368,8 +374,9 @@ class ChartView {
                     {
                         scale: true,
                         gridIndex: 0,
+                        position: 'right',
                         splitNumber: 11,
-                        offset: -8,
+                        offset: -30,
                         // axisLine: { show: true, lineStyle: { color: this.cnf.colorTextAxis } },
                         axisLine: { show: true, lineStyle: { color: this.cnf.colorLineAxis } },
                         axisTick: { show: false },
@@ -379,6 +386,7 @@ class ChartView {
                             color: this.cnf.colorTextAxis,
                             fontSize: 15,
                             formatter: price => { return price; },
+                            backgroundColor: 'transparent',
                         },
                         min: min_y,
                         max: max_y,
@@ -443,6 +451,7 @@ class ChartView {
                     // }
                 ],
 
+
                 toolbox: {
                     feature: {
                         dataZoom: {
@@ -502,7 +511,7 @@ class ChartView {
         return ret;
     }
 
-    update_candles({data, chart}) {
+    updateCandles({data, chart}) {
         chart.setOption({series: [{
                 id: data.name,
                 name: data.name,
@@ -1148,6 +1157,17 @@ class ChartView {
         }
     }
 
+
+    resize_chart_window(chart) {
+        let screen_height = $(window).height(); //$(window).outerHeight();
+        let footer_menu_height = $(ChartView.ELEMENT_ID_FOOTER_MENU).css('height');
+        footer_menu_height = footer_menu_height.replace(/[a-zA-Z]/g, '');
+        screen_height -= footer_menu_height;
+        $(ChartView.ELEMENT_ID_CHART_MAIN).css('height', `${screen_height}px`);
+        if(chart != undefined) {
+            chart.resize();
+        }
+    }
 
     // ZOOM AXIS DRAGGING --------------------------------------------------------------------------------------------
 

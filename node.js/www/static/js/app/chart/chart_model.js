@@ -17,6 +17,19 @@ class ModelChart {
 
     // ----------------------------- STATIC, CONSTANTS -----------------------------
 
+    static OPEN_TIME = 0;
+    static OPEN = 1;
+    static HIGHT = 2;
+    static LOW = 3;
+    static CLOSE = 4;
+    static VOLUME = 5;
+    static CLOSE_TIME = 6;
+    static QUOTE_ASSET_VOLUME = 7;
+    static TRADES = 8;
+    static TAKER_BUY_BASE_ASSET_VOL = 9;
+    static TAKER_BUY_QUOTE_ASSET_VOL = 10;
+    static IGNORE = 11;
+
     // ----------------------------- PROPERTIES -----------------------------
     #id;
     #name;
@@ -33,109 +46,136 @@ class ModelChart {
     // ----------------------------- PRIVATE METHODS -----------------------------
 
     // ----------------------------- PUBLIC METHODS -----------------------------
-//TODO MOVER A LIBRERÍA ESTATICA A PARTE, DEJAR SOLO DATOS Y MÉTODOS RELACIONADOS
     
-    // split_ohlc_data(rawData) {
-    //     let dataJson;
-    //     let data_x = [];
-    //     let data_y = [];
-    //     let volumes = [];
-    //     let trades = [];
-    //     let max_y = 0;
-    //     let min_y = 1E108;
-    //     let max_x = '';
-    //     let min_x = '';
+    splitOhlcData(rawData) {
+        let dataJson;
+        let data_x = [];
+        let data_y = [];
+        let volumes = [];
+        let trades = [];
+        let max_y = 0;
+        let min_y = 1E108;
+        let max_x = '';
+        let min_x = '';
         
-    //     try {
-    //         if((rawData === undefined) || (rawData == null)) {
-    //             throw ('No valid candles (OHLC) data received.');
-    //         }
-    //         if (((Const.TIPO_PARAM_ID in rawData) == false) || (rawData[Const.TIPO_PARAM_ID] != Const.ACTIVO_ID)) {
-    //             // throw (Exception('ACTIVE data is needed to plot candles, received ' + instanceof data + ' instead.'));
-    //             throw ('ACTIVO data type is needed to parse OHLC, received ' + rawData[Const.TIPO_PARAM_ID] + ' instead.');
-    //         }
-    //         if (rawData) {
-    //             dataJson = JSON.parse(rawData[Const.JSON_ID]);
-    //         }
-    //         // console.log(dataJson)
-    //         if(!dataJson) {
-    //             throw('No valid JSON data received from server.');
-    //         }
+        try {
+            if(rawData === undefined) {
+                throw ('No valid candles (OHLC) data received.');
+            }
 
-    //         // Supposed sorted data ...
-    //         min_x = dataJson[0][0];
-    //         max_x = dataJson[dataJson.length-1][0];
-    //         for (let i = 0; i < dataJson.length; i++) {
-    //             // Stores date time string as x data
-    //             data_x.push(dataJson[i].splice(0, 1)[0]);
-    //             // Stored volume as [index, volume, {ALCISTA/BAJISTA} ]
-    //             // NOTA: Float | 0 -> Convierte a int. Para el caso de valores negativos es mejor que Math.floor(x)
-    //             volumes.push( [ i, (dataJson[i][4] | 0), (dataJson[i][0] < dataJson[i][1] ? Const.ALCISTA:Const.BAJISTA) ] );
-    //             // Stores trades
-    //             trades.push(dataJson[i].splice(7, 1));
-    //             // Deletes remaining unused data
-    //             dataJson[i].splice(5, (dataJson[i].length-4));
-    //             // Stores open, high, low, close array
-    //             data_y.push(dataJson[i])
+            if(!rawData) {
+                throw('No valid JSON data received from server.');
+            }
+
+            // Convert from array of dicts to array
+            var query = rawData.query;
+            dataJson = rawData.data.map( v => [
+                v[ModelChart.OPEN_TIME],
+                parseFloat(v[ModelChart.OPEN]),
+                parseFloat(v[ModelChart.CLOSE]),
+                parseFloat(v[ModelChart.HIGHT]),
+                parseFloat(v[ModelChart.LOW]),
+                parseFloat(v[ModelChart.VOLUME]),
+                parseFloat(v[ModelChart.TRADES])
+            ]);
+
+            // Supposed sorted data ...
+            for (let i = 0; i < dataJson.length; i++) {
+                // Stored volume as [index, volume, {ALCISTA/BAJISTA} ]
+                // NOTA: Float | 0 -> Convierte a int. Para el caso de valores negativos es mejor que Math.floor(x)
+                volumes.push( [ i, (dataJson[i][5] | 0), (dataJson[i][0] < dataJson[i][1] ? Const.ALCISTA:Const.BAJISTA) ] );
+                dataJson[i].splice(5, 1);
+
+                // Stores trades
+                trades.push(dataJson[i].splice(5, 1));
+
+                // Stores date time string as x data
+                data_y.push(dataJson[i]);
+            }
+
+            if(rawData.append) {
+                // let firstValue = this.#ohlc_data.data_y.map(v => v[1]).indexOf( v => v[1] != undefined);
+                // this.#ohlc_data.data_y.splice(firstValue, 1);
+                // let lastValue =  this.#ohlc_data.data_y.indexOf( v => v[1] != undefined, firstValue+1);
+                // this.#ohlc_data.data_y.splice(lastValue, 1, data_y);
+                let lastCandle = this.#ohlc_data.data_y.map(v => v[0]).indexOf(data_y[0][0]);
+                if(lastCandle === -1) {
+                    // lastCandle = this.#ohlc_data.data_y.map(v => v[0]).indexOf(max_x);
+                    // let firstCandle = this.#ohlc_data.data_y.map(v => v[0]).indexOf(max_x);
+                    // this.#ohlc_data.data_y.shift();
+                    // this.#ohlc_data.data_y.push(...data_y);
+                    this.#ohlc_data.data_y.splice(this.#ohlc_data.firstCandle, 1);
+                    this.#ohlc_data.data_y.splice(this.#ohlc_data.lastCandle, 1, ...data_y);
+                }
+                else {
+                    this.#ohlc_data.data_y.splice(lastCandle, 1, ...data_y);
+                }
+
+                this.#ohlc_data.volume.shift();
+                this.#ohlc_data.volume.push(...volumes);
+                this.#ohlc_data.trades.shift();
+                this.#ohlc_data.trades.push(...trades);
+                min_y = Math.min(...this.#ohlc_data.data_y.map(v=>v.slice(4, 5)))
+                max_y = Math.max(...this.#ohlc_data.data_y.map(v=>v.slice(3, 4)))
+                // min_x = this.#ohlc_data.data_y[0][0];
+                // max_x = this.#ohlc_data.data_y[this.#ohlc_data.data_y.length-1][0];
+            }
+            else {
+                min_y = Math.min(...data_y.map(v=>v.slice(4, 5)))
+                max_y = Math.max(...data_y.map(v=>v.slice(3, 4)))
                 
-    //             dataJson[i].splice(4, 1);
+                min_x = data_y[0][0];
+                max_x = data_y[data_y.length-1][0];
 
-    //             // if (data_x[i] > max_x)
-    //             //     max_x = data_x[i];
-    //             // else if (data_x[i] < min_x)
-    //             //     min_x = data_x[i];
+                //Fill with empty data to let move start and end beyond limits
+                let span_len = 200;
 
-    //             let curr_max_y = Math.max(...dataJson[i]);
-    //             let curr_min_y = Math.min(...dataJson[i]);
-    //             if (max_y < curr_max_y)
-    //                 max_y = curr_max_y;
-    //             else if (min_y > curr_min_y)
-    //                 min_y = curr_min_y;
-    //         }
-            
+                let limit_date = Time.subtract_value(data_y[0][Const.IDX_CANDLE_TIME], span_len, query.timeFrame);
+                let dates = Time.generate_dates(limit_date, data_y[0][Const.IDX_CANDLE_TIME], query.timeFrame);
+                let dates_arr = dates.map(v=>[v, undefined, undefined, undefined, undefined]);
+                // Insert dates at beginning
+                data_y.splice(0, 0, ...dates_arr);
+                let firstCandle = dates_arr.length;
+                let lastCandle = data_y.length - 1;
 
-    //         //Fill with empty data to let move start and end beyond limits
-    //         let tframe = Time.convert_units(rawData[Const.MARCO_ID][0]);
-    //         let span_len = 100;
 
-    //         let limit_date = Time.subtract_value(data_x[0], span_len, rawData[Const.MARCO_ID][0]).format(Time.FORMAT_STR);
-    //         let dates = Time.generate_dates(limit_date, data_x[0], rawData[Const.MARCO_ID][0]);
-    //         data_x.splice(0, 0, ...dates);
-    //         data_y.splice(0, 0, ...(Array(dates.length).fill(Array(4))));
-            
-    //         limit_date = Time.add_value(data_x[data_x.length - 1], span_len, rawData[Const.MARCO_ID][0]).format(Time.FORMAT_STR);
-    //         let start_date = Time.add_value(data_x[data_x.length - 1], 1, rawData[Const.MARCO_ID][0]).format(Time.FORMAT_STR);
-    //         dates = Time.generate_dates(start_date, limit_date, rawData[Const.MARCO_ID][0]);
-    //         data_x.splice(data_x.length, 0, ...dates);
-    //         data_y.splice(data_y.length, 0, ...(new Array(dates.length).fill(Array(4))));
+                limit_date = Time.add_value(data_y[data_y.length - 1][Const.IDX_CANDLE_TIME], span_len, query.timeFrame);
+                let start_date = Time.add_value(data_y[data_y.length - 1][Const.IDX_CANDLE_TIME], 1, query.timeFrame);
+                dates = Time.generate_dates(start_date, limit_date, query.timeFrame);
+                dates_arr = dates.map(v=>[v, undefined, undefined, undefined, undefined]);
+                // Insert dates at end
+                data_y.splice(data_y.length, 0, ...dates_arr);
 
-    //         // console.log(datos_json)
-    //         this.#ohlc_data = {
-    //             id: rawData[Const.ID_ID][0],
-    //             name: rawData[Const.ID_ID][0],
-    //             broker: rawData[Const.BROKER_ID][0],
-    //             marco: rawData[Const.MARCO_ID][0],
-    //             dataType: rawData[Const.TIPO_PARAM_ID],
-    //             data_x: data_x,
-    //             data_y: data_y,
-    //             volume: volumes,
-    //             trades: trades,
-    //             max_y: max_y,
-    //             min_y: min_y,
-    //             max_x: max_x,
-    //             min_x: min_x,
-    //         };
 
-    //         this.#id = this.#ohlc_data.name;
-    //         this.#name = this.#ohlc_data.name;
-    //     }
-    //     catch(error) {
-    //         console.error(error);
-    //         return error;
-    //     }
+                // console.log(datos_json)
+                this.#ohlc_data = {
+                    id: query.active,
+                    name: query.active,
+                    broker: query.broker,
+                    marco: query.timeFrame,
+                    dataType: query.data_type,
+                    data_y: data_y,
+                    volume: volumes,
+                    trades: trades,
+                    max_y: max_y,
+                    min_y: min_y,
+                    max_x: max_x,
+                    min_x: min_x,
+                    firstCandle: firstCandle,
+                    lastCandle: lastCandle,
+                };
+                this.#id = this.#ohlc_data.name;
+                this.#name = this.#ohlc_data.name;
+            }
+        }
+        catch(error) {
+            console.error(error);
+            return error;
+        }
 
-    //     return this.#ohlc_data;
-    // }
+        return this.#ohlc_data;
+    }
+    
     split_ohlc_data(rawData) {
         let dataJson;
         let data_x = [];
@@ -151,31 +191,32 @@ class ModelChart {
             if(rawData === undefined) {
                 throw ('No valid candles (OHLC) data received.');
             }
-            // if (((Const.TIPO_PARAM_ID in rawData) == false) || (rawData[Const.TIPO_PARAM_ID] != Const.ACTIVO_ID)) {
-            //     // throw (Exception('ACTIVE data is needed to plot candles, received ' + instanceof data + ' instead.'));
-            //     throw ('ACTIVO data type is needed to parse OHLC, received ' + rawData[Const.TIPO_PARAM_ID] + ' instead.');
-            // }
-            // if (rawData) {
-                // dataJson = JSON.parse(rawData[Const.JSON_ID]);
-                // dataJson = rawData;
-            // }
-            // console.log(dataJson)
-            // if(!dataJson) {
+
             if(!rawData) {
                 throw('No valid JSON data received from server.');
             }
 
             // Convert from array of dicts to array
             var query = rawData.query;
-            dataJson = rawData.data.map( v => [v.openTime, parseFloat(v.open), parseFloat(v.close), parseFloat(v.high), parseFloat(v.low), parseFloat(v.volume), parseFloat(v.trades)]);
+            if((rawData.data[0] instanceof Array) == false) {
+                dataJson = rawData.data.map( v => [v.openTime, parseFloat(v.open), parseFloat(v.close), parseFloat(v.high), parseFloat(v.low), parseFloat(v.volume), parseFloat(v.trades)]);
+            }
+            else {
+                dataJson = rawData.data.map( v => [
+                    v[ModelChart.OPEN_TIME],
+                    parseFloat(v[ModelChart.OPEN]),
+                    parseFloat(v[ModelChart.HIGHT]),
+                    parseFloat(v[ModelChart.LOW]),
+                    parseFloat(v[ModelChart.CLOSE]),
+                    parseFloat(v[ModelChart.VOLUME]),
+                    parseFloat(v[ModelChart.TRADES])
+                ]);
+            }
 
             // Supposed sorted data ...
-            // min_x = dataJson[0][0];
-            // max_x = dataJson[dataJson.length-1][0];
             for (let i = 0; i < dataJson.length; i++) {
                 // Stores date time string as x data
                 data_y.push(dataJson[i].slice(0, 5));
-                // data_x.push(dataJson[i].splice(0, 1)[0]);
 
                 // Stored volume as [index, volume, {ALCISTA/BAJISTA} ]
                 // NOTA: Float | 0 -> Convierte a int. Para el caso de valores negativos es mejor que Math.floor(x)
@@ -183,26 +224,6 @@ class ModelChart {
                 
                 // Stores trades
                 trades.push(dataJson[i].splice(7, 1));
-                
-                // Deletes remaining unused data
-                // dataJson[i].splice(5, (dataJson[i].length-4));
-                
-                // Stores open, high, low, close array
-                // data_y.push(dataJson[i])
-                
-                // dataJson[i].splice(4, 1);
-
-                // if (data_x[i] > max_x)
-                //     max_x = data_x[i];
-                // else if (data_x[i] < min_x)
-                //     min_x = data_x[i];
-
-                // let curr_max_y = Math.max(...dataJson[i]);
-                // let curr_min_y = Math.min(...dataJson[i]);
-                // if (max_y < curr_max_y)
-                //     max_y = curr_max_y;
-                // else if (min_y > curr_min_y)
-                //     min_y = curr_min_y;
             }
 
             min_y = Math.min(...data_y.map(v=>v.slice(4, 5)))

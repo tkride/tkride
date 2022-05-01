@@ -1,4 +1,6 @@
 
+/** ajax_worker.js */
+
 
 addEventListener('message', e => {
     var data = e.data;
@@ -7,6 +9,7 @@ addEventListener('message', e => {
     // console.log('AJAX WEB WORKER:', data, data.headers);
     var request = new XMLHttpRequest();
     request.timeout = data.timeout;
+    let method = data.method;
 
     //Definimos el tratamiento del callback de la petición AJAX
     request.onreadystatechange = function() {
@@ -34,11 +37,14 @@ addEventListener('message', e => {
             }
         }
     }; //on ready state change
-    request.open("POST", data.url, true); //data.async); //Definimos la petición AJAX propiamente
-    // request.setRequestHeader(Object.keys(data.headers), data.headers[Object.keys(data.headers)]);
-    // request.setRequestHeader('X-CSRFToken', data.headers[Object.keys(data.headers)]);
-    request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    request.send(data.query); //Envía la petición
+    request.open((method) ? method : "POST", data.url, true); //data.async); //Definimos la petición AJAX propiamente
+    if(data.query) {
+        request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+        request.send(data.query); //Envía la petición
+    }
+    else {
+        request.send();
+    }
     
 console.log('REQUEST: ', request, 'URL: ', data.url);
 

@@ -90,6 +90,16 @@ class InterfaceTSQL {
         return query;
     }
 
+    // get_brokers() {
+    //     return new Promise((resolve, reject) => {
+    //         let query = this.build_query(this.#TSQL.GET_BROKERS);
+    //         this.send_query_worker(query,
+    //                                 brokers => resolve(brokers),
+    //                                 error => reject(error)
+    //                                 );
+    //     });
+    // }
+    // revisar la carpeta con los nombres
     get_brokers() {
         return new Promise((resolve, reject) => {
             let query = this.build_query(this.#TSQL.GET_BROKERS);

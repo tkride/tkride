@@ -218,7 +218,7 @@ class MenuFibonacci {
 
     #update_lock() {
         try {
-            if(this.fibo_ref.blocked) {
+            if(this.fibo_ref.controlStatus.blocked) {
                 this.#block.removeClass(`${Const.CLASS_ICON_UNLOCK} ${Const.CLASS_HOVERABLE_ICON}`);
                 this.#block.addClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
                 this.#remove.removeClass(Const.CLASS_HOVERABLE_ICON);
@@ -319,7 +319,7 @@ class MenuFibonacci {
         });
         this.#menu_float.append_content(this.#remove);
         this.#remove.on('click', e => {
-            if(this.fibo_ref.blocked == false) {
+            if(this.fibo_ref.controlStatus.blocked == false) {
                 this.#menu_float.hide()
                 $(document).trigger(MenuFibonacci.EVENT_REMOVE, this.fibo_ref);
             }
@@ -335,7 +335,7 @@ class MenuFibonacci {
         });
         this.#menu_float.append_content(this.#block);
         this.#block.on('click', e => {
-            this.fibo_ref.blocked = !this.fibo_ref.blocked;
+            this.fibo_ref.controlStatus.blocked = !this.fibo_ref.controlStatus.blocked;
             this.#update_lock();
         });
 

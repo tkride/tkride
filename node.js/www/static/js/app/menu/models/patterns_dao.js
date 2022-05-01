@@ -216,17 +216,10 @@ class PatternsDAO {
                     this.load()
                     .then( () => resolve(res))
                     .catch( err => reject(err));
-                    // .then( res => resolve(res))
-                    // .catch( error => {
-                    //     console.error(error);
-                    //     // this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
-                    //     resolve('Error cargando patrones desde base de datos.');
-                    // });
                 }
                 else {
                     console.error('Error saving pattern:', res);
                     let msg_error = this.#interface_ddbb.get_error_message(res);
-                    // this.write_status({error:'(!) Error guardando patrón: ' + msg_error, timeout: 5000});
                     reject(msg_error);
                 }
             })
@@ -253,24 +246,16 @@ class PatternsDAO {
                         this.load()
                         .then( () => resolve(res))
                         .catch( err => reject(err));
-                        // .then( res => resolve(res))
-                        // .catch( error => {
-                        //     console.error(error);
-                        //     // this.write_status( { error: 'Error cargando patrones desde base de datos.', timeout: 5000 });
-                        //     reject('Error cargando patrones desde base de datos.');
-                        // });
                     }
                     else {
                         let msg_error = `El patrón ${pattern[Const.NAME_ID]} no existe en la base de datos.`;
                         console.log(msg_error);
                         reject(msg_error);
-                        // this.write_status({info:'El patrón no existe en base de datos', timeout: 5000});
                     }
                 }
                 else {
                     console.error(`Error eliminando patrón ${res}.`);
                     let msg_error = this.#interface_ddbb.get_error_message(res.errno);
-                    // this.write_status({error:'(!) Error borrando patrón: ' + msg_error, timeout: 5000});
                     reject(msg_error);
                 }
             })

@@ -243,6 +243,11 @@ class Const {
         [Const.BOTH_ID] : Const.BOTH,
     }
 
+    static ACTIVE_ID = 'active';
+    static TIME_FRAME_ID = 'timeFrame';
+    static START_TIME_ID = 'startTime';
+    static END_TIME_ID = 'endTime';
+
     // STATISTICS
     static STATS_ID = 'stats';
     static OK_ID = 'ok';
@@ -365,8 +370,7 @@ class Const {
     static DEFAULT_LOAD_HISTORIC_TIMEOUT = 20 * 1000;
 
     // SESSION
-    static AUTOSAVE_SESSION_TIME = (1 * 60 * 1000); //1 minute
-    static ACTIVE_ID = 'active';
+    static AUTOSAVE_SESSION_TIME = (0.5 * 60 * 1000); //30 seconds 
 
     static CHART_ID = 'chart';
     static CHART_INFO_ID = 'chart_info';
@@ -383,6 +387,26 @@ class Const {
     static EVENT_DDBB_DELETE_MODEL = 'event-ddbb-delete-model';
     static EVENT_DDBB_SAVE_MODEL = 'event-ddbb-save-model';
     static EVENT_UPDATE_MODEL = 'event-update-model';
+}
+
+
+class ToolsCustom {
+
+    /**
+     * stringify: execute JSON stringify over any complex object, event with circular references.
+     * @param obj Object to stringify.
+     * @returns Objeect JSON string.
+     */
+    static stringify(obj) {
+        let setCheck = new WeakSet();
+        return JSON.stringify(obj, (key, value) => {
+            if((typeof value == "object") && (value !== null)) {
+                if(setCheck.has(value)) { return; }
+                setCheck.add(value);
+            }
+            return value;
+        });
+    };
 }
     
 
@@ -433,30 +457,37 @@ class KeyCode {
 }
 class Time {
     static MS_IN_SECONDS = 1000;
+    static S_IN_MINUTE = 60;
+    static S_IN_HOUR = Time.S_IN_MINUTE*60;
+    static S_IN_DAY = Time.S_IN_HOUR*24;
     static MINUTES_IN_HOUR = 60;
     static MINUTES_IN_DAY = 1440;
     static MINUTES_IN_MONTH = 43200;
     static USE_UTC_MS = 0;
     static USE_STR = 0;
 
-    static UNIT_TIME_SECONDS = {
-        "m": 60,
-        "h": 60*60,
-        "d": 60*60*24,
-        "w": 7*24*60*60,
-        "M": 30*24*60*60
+    static INTERVAL_TO_SECONDS = {
+        "m": Time.S_IN_MINUTE,
+        "h": Time.S_IN_HOUR,
+        "d": Time.S_IN_DAY,
+        "w": Time.S_IN_DAY*7,
+        "M": Time.S_IN_DAY*30,
     };
 
     static TIME_FRAMES = [
         "1m",
+        "3m",
         "5m",
         "15m",
         "30m",
         "1h",
         "2h",
         "4h",
+        "6h",
+        "8h",
         "12h",
         "1d",
+        "3d",
         "1w",
         "1M"
     ];
@@ -484,13 +515,58 @@ class Time {
     static FORMAT_STR = 'YYYY-MM-DD HH:mm:ss';
     static FORMAT_FILE = 'YYYY_MM_DD_HHmmss';
 
-    static get_unit_seconds(units) {
+    static convert_to_seconds(units) {
         let units_in = units.replace(/[0-9]/g, '');
         let value = units.replace(/[a-zA-Z]/g, '');
-        let seconds_unit = Time.UNIT_TIME_SECONDS[units_in];
+        let seconds_unit = Time.INTERVAL_TO_SECONDS[units_in];
         seconds_unit = (seconds_unit != undefined) ? seconds_unit : 60; //Default seconds minute
         let ret = value*seconds_unit;
         return ret;
+    }
+    
+    static getTimeQueries = ({timeFrame, from, startTime, endTime, querySize}) => {
+        try {
+            let timeQueries = [];
+            let timeFrameMs = Time.convert_to_seconds(timeFrame) * 1000;
+            if(from) {
+                // get start time form range
+                let msQuery = Time.convert_to_seconds(from) * 1000;
+                startTime = Date.now() - msQuery;
+                endTime = Date.now();
+            }
+            else {
+                // 4 Months by default, y no start time provided
+                if(!startTime) { startTime = new Date(new Date().getTime() - Time.convert_to_seconds('4M')); }
+                else { startTime = Date.parse(startTime); }
+
+                if(!endTime) endTime = Date.now();
+                else endTime = Date.parse(endTime);
+            }
+
+            if(startTime < 0) startTime = 0;
+
+            // Get number of queries of given size
+            let numQueries = ((endTime - startTime) / timeFrameMs) / querySize;
+            if(numQueries - Math.floor(numQueries) > 0) {
+                numQueries = parseInt(numQueries) + 1;
+            }
+
+            // Fill queries start and end time
+            let currentStart = startTime;
+            let currentEnd = startTime;
+            let timeAdded = (timeFrameMs * querySize);
+            
+            for(let i = 0; i < numQueries; i++) {
+                currentEnd += timeAdded;
+                if(currentEnd > endTime) currentEnd = endTime;
+                timeQueries.push({ startTime: currentStart, endTime: currentEnd })
+                currentStart = currentEnd;
+            }
+            return timeQueries;
+        }
+        catch(err) {
+            console.error(err);
+        }
     }
 
     static convert_units(units) {

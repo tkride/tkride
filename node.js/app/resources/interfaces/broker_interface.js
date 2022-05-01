@@ -9,6 +9,7 @@ const path = require('path');
 // PROPERTIES
 
 brokers = {};
+brokers_client = [];
 cb_map = {};
 
 // PRIVATE METHODS
@@ -21,12 +22,19 @@ const remove_extension = (file) => {
 
 const init = () => {
     try {
+        let path_current = path.dirname(__dirname).split('\\');
+        let base_dir = path_current.slice(0, 6);
         let b_path = path.join(__dirname, conf.interface_brokers_path);
         fs.readdirSync(b_path).filter(file_name => {
             let b = remove_extension(file_name);
             let b_path = './' + path.join(conf.interface_brokers_path, b);
             brokers[b] = require(b_path);
             brokers[b].init();
+        });
+        b_path = path.join(...base_dir, conf.interface_brokers_client_path);
+        fs.readdirSync(b_path).filter(file_name => {
+            let b = remove_extension(file_name);
+            brokers_client.push(b);
         });
     }
     catch(err) {
@@ -75,6 +83,9 @@ const process = (req, res) => {
 const get_brokers = () => {
     let get_ticker_promises = [];
     let brokers_list = [];
+    return new Promise((resolve, reject) => {
+        resolve(brokers_client);
+    });
     return new Promise((resolve, reject) => {
         Object.keys(brokers).forEach( b => {
             // console.log('broker_interface:get_brokers:', b);

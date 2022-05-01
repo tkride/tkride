@@ -5,11 +5,11 @@ class Fibonacci extends ChartGraphic {
     static NAME = 'Fibonacci';
 
     // CONSTANTS
-    static LINE_WIDTH = ChartGraphic.YEND + 1;
+    static LINE_WIDTH = ChartGraphic.YEND + 1; // 6
     static LINE_TYPE = Fibonacci.LINE_WIDTH + 1;
-    static SHOW_TEXT = Fibonacci.LINE_TYPE + 1;
-    static NUM_VALUES = Fibonacci.SHOW_TEXT + 1;
-    static YVALUES = Fibonacci.NUM_VALUES + 1;// 9
+    static TEXT_SHOW = Fibonacci.LINE_TYPE + 1;
+    static NUM_VALUES = Fibonacci.TEXT_SHOW + 1;
+    static YVALUES = Fibonacci.NUM_VALUES + 1;// 10
 
     // static TREND = 2;
     static YVALUE = 0;
@@ -27,14 +27,21 @@ class Fibonacci extends ChartGraphic {
     
 
     // PROPERTIES
+
+    // Values
+    values = {
+        ...this.values,
+        length: 0,
+        yvalues: [],
+    };
+
+    // TODO UNUSED?
     trend;
-    width;
-    height;
-    length = 0;
-    ydelta = {};
-    yvalues = [];
-    yvalues_chart = [];
+
+    // Fibonacci template
     template = {
+        ...this.template,
+        type: 'Fibonacci',
         colors: [],
         lineWidth: 1,
         lineType: Const.LINE_SOLID,
@@ -42,68 +49,68 @@ class Fibonacci extends ChartGraphic {
         textSide: 'right',
         textInfo: '%',
     };
+
+    // Render and dynamic control values
+    ydelta = {};
+    yvalues_chart = [];
     fillColor = [];
 
-    constructor({graphic, template}) {
-        graphic = graphic || {};
-        graphic = Object.assign({}, graphic);
-        
-        let datasource = (graphic[Const.RET_DATA_SOURCE_ID]) ? graphic[Const.RET_DATA_SOURCE_ID] : undefined;
-        if(datasource) {
-            graphic[Const.INIT_ID] = datasource[Const.INIT_ID];
-            graphic[Const.END_ID] = { time: graphic[Const.CORRECTION_ID].time, price: datasource[Const.END_ID].price };
-            graphic[Const.DELTA_INIT_ID] = graphic[Const.END_ID].price - graphic[Const.INIT_ID].price;
-            graphic[Const.DELTA_END_ID] = graphic[Const.CORRECTION_ID].price - graphic[Const.END_ID].price;
-            graphic[Const.RET_ID] = Math.abs(graphic[Const.DELTA_END_ID] / graphic[Const.DELTA_INIT_ID]);
+    constructor({graphic, template, timeFrame, serialized}) {
+        if(serialized) {
+            super({serialized});
+            this.values = serialized.values;
+            this.template = serialized.template;
+        }
+        else {
+            graphic = graphic || {};
+            graphic = Object.assign({}, graphic);
             
-            let ret_levels = graphic[Const.RET_LEVELS_ID];
-            graphic[Const.RET_LEVELS_DATA_SOURCE_ID] = [];
-            Object.keys(ret_levels).forEach(l => {
-                let level_yvalue = graphic[Const.END_ID].price - (graphic[Const.DELTA_INIT_ID] * l);
-                graphic[Const.RET_LEVELS_DATA_SOURCE_ID][l] = level_yvalue;
-            });
-        }
+            let datasource = (graphic[Const.RET_DATA_SOURCE_ID]) ? graphic[Const.RET_DATA_SOURCE_ID] : undefined;
+            if(datasource) {
+                graphic[Const.INIT_ID] = datasource[Const.INIT_ID];
+                graphic[Const.END_ID] = { time: graphic[Const.CORRECTION_ID].time, price: datasource[Const.END_ID].price };
+                graphic[Const.DELTA_INIT_ID] = graphic[Const.END_ID].price - graphic[Const.INIT_ID].price;
+                graphic[Const.DELTA_END_ID] = graphic[Const.CORRECTION_ID].price - graphic[Const.END_ID].price;
+                graphic[Const.RET_ID] = Math.abs(graphic[Const.DELTA_END_ID] / graphic[Const.DELTA_INIT_ID]);
+                
+                let ret_levels = graphic[Const.RET_LEVELS_ID];
+                graphic[Const.RET_LEVELS_DATA_SOURCE_ID] = [];
+                Object.keys(ret_levels).forEach(l => {
+                    let level_yvalue = graphic[Const.END_ID].price - (graphic[Const.DELTA_INIT_ID] * l);
+                    graphic[Const.RET_LEVELS_DATA_SOURCE_ID][l] = level_yvalue;
+                });
+            }
 
-        super({graphic: graphic, template });
-        // super({ [Const.ID_ID]: `${Const.FIBO_RET_ID}${(template.name) ? '_' + template.name:''}_${retracement[Const.HASH_ID]}`,
-        //         // name: (template.name != undefined) ?
-        //         //                     template.name :
-        //         //                     `${Const.FIBO_RET_ID}${(template.name) ? '_' + template.name:''}_${retracement[Const.HASH_ID]}`,
-        //         name: template.name,
-        //         xstart: (datasource) ? datasource[Const.INIT_ID].time : retracement[Const.INIT_ID].time,
-        //         xend: retracement[Const.CORRECTION_ID].time,
-        //         ystart: (datasource) ? datasource[Const.INIT_ID].price : retracement[Const.INIT_ID].price,
-        //         yend: (datasource) ? datasource[Const.END_ID].price : retracement[Const.END_ID].price,
-        //         draggable: template.draggable,
-        //     });
+            super({graphic: graphic, template, timeFrame });
 
-        this.template = { ...this.template, ...template };
+            this.template = { ...this.template, ...template };
 
-        let ret_levels = (graphic[Const.RET_LEVELS_DATA_SOURCE_ID]) ? graphic[Const.RET_LEVELS_DATA_SOURCE_ID] : graphic[Const.RET_LEVELS_ID];
-        this.yvalues = Object.values(ret_levels).filter(l => l);
-        if(this.template.levels == undefined) {
-            this.template.levels = Object.keys(graphic[Const.RET_LEVELS_ID]);
-        }
-        
-        this.trend = Const.TREND_STR[graphic[Const.TREND_ID]];
-        this.ydelta = {
-            [Const.DELTA_INIT_ID]: graphic[Const.DELTA_INIT_ID],
-            [Const.DELTA_END_ID]: graphic[Const.DELTA_END_ID]
-        };
-        this.length = this.template.levels.length;
+            let ret_levels = (graphic[Const.RET_LEVELS_DATA_SOURCE_ID]) ? graphic[Const.RET_LEVELS_DATA_SOURCE_ID] : graphic[Const.RET_LEVELS_ID];
+            this.values.yvalues = Object.values(ret_levels).filter(l => l);
+            if(this.template.levels == undefined) {
+                this.template.levels = Object.keys(graphic[Const.RET_LEVELS_ID]);
+            }
+            
+            this.trend = Const.TREND_STR[graphic[Const.TREND_ID]];
+            this.ydelta = {
+                [Const.DELTA_INIT_ID]: graphic[Const.DELTA_INIT_ID],
+                [Const.DELTA_END_ID]: graphic[Const.DELTA_END_ID]
+            };
+            this.values.length = this.template.levels.length;
 
-        if(this.template.colors.length < this.length) {
-            for(let i = this.template.colors.length; i < this.length; i++) {
-                let r = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
-                let g = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
-                let b = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
-                this.template.colors.push(`#${r}${g}${b}`);
+            if(this.template.colors.length < this.values.length) {
+                for(let i = this.template.colors.length; i < this.values.length; i++) {
+                    let r = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
+                    let g = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
+                    let b = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
+                    this.template.colors.push(`#${r}${g}${b}`);
+                }
             }
         }
 
-        if(this.fillColor.length < this.length) {
+        if(this.fillColor.length < this.values.length) {
             this.fillColor = [];
-            for(let i = 0; i < this.length; i++) {
+            for(let i = 0; i < this.values.length; i++) {
                 let opacity_hex = this.template.opacity.toString(16).toUpperCase().padStart(2,'0');
                 this.fillColor.push(`${this.template.colors[i]}${opacity_hex}`);
             }
@@ -117,7 +124,7 @@ class Fibonacci extends ChartGraphic {
         super.render(param, api);
 
         // let trend = api.value(Fibonacci.TREND);
-        let show_text = api.value(Fibonacci.SHOW_TEXT);
+        let textShow = api.value(Fibonacci.TEXT_SHOW);
         let xstart = this.graphic.xstart;
         let xend = this.graphic.xend;
         
@@ -187,7 +194,7 @@ class Fibonacci extends ChartGraphic {
                     },
                 ]);
 
-                if(show_text) {
+                if(textShow) {
                     this.children.push({
                         type: 'text',
                         id: `${name}_TEXT_${text}`,
@@ -213,16 +220,18 @@ class Fibonacci extends ChartGraphic {
     update_data() {
         // Width is fixed, so it's appended first once
         super.update_data();
-        let data = [this.template.lineWidth, this.template.lineType, this.template.textShow, this.yvalues.length];
+        let data = [this.template.lineWidth, this.template.lineType, this.template.textShow, this.values.yvalues.length];
         let text = this.get_text();
-        for(let i=0; i<this.yvalues.length; i++) {
-            data.push(...[this.yvalues[i], text[i], this.template.colors[i], this.fillColor[i]]);
+        for(let i=0; i<this.values.yvalues.length; i++) {
+            data.push(...[this.values.yvalues[i], text[i], this.template.colors[i], this.fillColor[i]]);
         }
         this.data[0].push(...data);
     }
 
     set_option(chart) {
-        let yenc = [ChartGraphic.YSTART, ChartGraphic.YEND].concat(...this.yvalues.map( (el, i) => Fibonacci.YVALUES + (i*4)));
+        super.set_option(chart);
+
+        let yenc = [ChartGraphic.YSTART, ChartGraphic.YEND].concat(...this.values.yvalues.map( (el, i) => Fibonacci.YVALUES + (i*4)));
         chart.setOption({ 
             series: [{
                 id: this[Const.ID_ID],
@@ -234,8 +243,8 @@ class Fibonacci extends ChartGraphic {
                     y: yenc,
                 },
                 data: this.data,
-                clip: true,
-                z: this.z_level,
+                // clip: true,
+                z: this.settings.z_level,
             }],
         });
     }
@@ -245,12 +254,12 @@ class Fibonacci extends ChartGraphic {
             return [...this.template.levels.map(v => parseFloat(v).toFixed(3))];
         }
         else if(this.template.textInfo == 'value') {
-            return [...this.yvalues.map(v => parseFloat(v).toFixed(3))];
+            return [...this.values.yvalues.map(v => parseFloat(v).toFixed(3))];
         }
         else {
             let text = [];
-            for(let i = 0; i < this.length; i++) {
-                text.push(`${this.template.levels[i].toFixed(3)} (${this.yvalues[i].toFixed(3)})`)
+            for(let i = 0; i < this.values.length; i++) {
+                text.push(`${this.template.levels[i].toFixed(3)} (${this.values.yvalues[i].toFixed(3)})`)
             }
             return text;
         }
@@ -260,11 +269,11 @@ class Fibonacci extends ChartGraphic {
 
     // Control Area
     mousemove_control(c) {
-        let y = this.ydrag;
+        let y = this.values.ydrag;
         super.mousemove_control(c);
-        if(!isNaN(y) && !isNaN(this.ydrag)) {
-            let deltaY = this.ydrag - y;
-            this.yvalues = this.yvalues.map(yv => yv += deltaY);
+        if(!isNaN(y) && !isNaN(this.values.ydrag)) {
+            let deltaY = this.values.ydrag - y;
+            this.values.yvalues = this.values.yvalues.map(yv => yv += deltaY);
         }
         this.update_option();
     }
@@ -273,11 +282,11 @@ class Fibonacci extends ChartGraphic {
     mousemove_control_start(c) {
         super.mousemove_control_start(c);
 
-        if(!isNaN(this.ydrag)) {
-            this.yvalues = this.yvalues.map( (yv,i) => {
-                this.ydelta[Const.DELTA_INIT_ID] = (this.yend - this.ystart);
-                let corr = this.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
-                this.ydelta[Const.DELTA_END_ID] = (corr - this.yend);
+        if(!isNaN(this.values.ydrag)) {
+            this.values.yvalues = this.values.yvalues.map( (yv,i) => {
+                this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
+                let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
+                this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);
                 return corr;
             });
         }
@@ -288,11 +297,11 @@ class Fibonacci extends ChartGraphic {
     mousemove_control_end(c) {
         super.mousemove_control_end(c);
         
-        if(!isNaN(this.ydrag)) {
-            this.yvalues = this.yvalues.map( (yv,i) => {
-                this.ydelta[Const.DELTA_INIT_ID] = (this.yend - this.ystart);
-                let corr = this.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
-                this.ydelta[Const.DELTA_END_ID] = (corr - this.yend);
+        if(!isNaN(this.values.ydrag)) {
+            this.values.yvalues = this.values.yvalues.map( (yv,i) => {
+                this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
+                let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
+                this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);
                 return corr;
             });
         }
@@ -309,6 +318,7 @@ class Fibonacci extends ChartGraphic {
         let params = this[1];
         let chart = params.chart;
         let template = params.template;
+        let timeFrame = params.timeFrame;
         let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
         let graphic = {}
         graphic[Const.HASH_ID] = new Date().valueOf();
@@ -326,15 +336,16 @@ class Fibonacci extends ChartGraphic {
             graphic[Const.RET_LEVELS_ID][l] = y;
         });
 
-        let ref = new Fibonacci({graphic, template});
+        let ref = new Fibonacci({graphic, template, timeFrame});
         $(document).trigger(ChartGraphic.EVENT_PLOT, [ref]);
+        ref.select();
 
         // TODO FORZAR EVENTO MOUSEDOWN END CONTROL
         // ref.mousedown_control_end(e);
         // Fibonacci.move_end(e, {chart, template});
         ref.disable_chart_move();
-        ref.xdrag = x;
-        ref.ydrag = y;
+        ref.values.xdrag = x;
+        ref.values.ydrag = y;
         chart.getZr().on('mousedown', Fibonacci.pick_end, ref);
         chart.getZr().on('mousemove', ref.mousemove_control_end, ref);
 

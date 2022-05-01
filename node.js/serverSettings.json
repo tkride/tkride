@@ -72,9 +72,11 @@
     "interface_msg_processing": "Processing broker action:",
     "interface_msg_error_processing_action": "ERROR processing broker action:",
     "interface_msg_error_broker_not_exist": "ERROR cannot find broker:",
-
+    
     "db_msg_connecting": "Connecting to DDBB...",
     "db_msg_connection_success": "DDBB Connection Success.",
     "db_msg_connection_error": "DDBB Connection Error.",
-    "db_msg_empty_query_error": "DDBB Empty query ignored."
+    "db_msg_empty_query_error": "DDBB Empty query ignored.",
+
+    "interface_brokers_client_path": "www/static/js/app/broker-api"
 }

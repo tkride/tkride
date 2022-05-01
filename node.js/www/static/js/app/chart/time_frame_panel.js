@@ -9,11 +9,14 @@ class TimeFrame {
     static EVENT_DISABLE = 'time-frame-disable';
     static PANEL = '#chart-time-frame-panel';
     static ELEMENT_INPUT = '#chart-time-frame-panel-input';
+
+    static EVENT_TIME_FRAME_CHANGED = 'event-time-frame-panel-time-frame-changed';
     
     //----------------------------- PROPERTIES -----------------------------
     // Working time frame
-    #time_frame = Time.TIME_FRAMES[parseInt(Time.TIME_FRAMES.length/2)];
-    #new_time = null;
+    // #time_frame = Time.TIME_FRAMES[parseInt(Time.TIME_FRAMES.length/2)];
+    #time_frame;
+    #new_time;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -92,7 +95,7 @@ class TimeFrame {
             this.#disable();
             if((!this.#time_frame) || (this.#time_frame != this.#new_time)) {
                 this.#time_frame = this.#new_time;
-                $(document).trigger(TickerFilter.EVENT_LOAD_HISTORIC);
+                $(document).trigger(TimeFrame.EVENT_TIME_FRAME_CHANGED, this.#time_frame);
             }
         }
         else {
