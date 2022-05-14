@@ -125,7 +125,8 @@ class MenuMovs {
     #close_menu() {
         if($(MenuMovs.MENU).is(':visible')) {
             $(MenuMovs.MENU).toggle();
-            $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_HOVERABLE_ICON_SELECTED);
+            // $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
             this.#options.active = false;
         }
     }
@@ -155,7 +156,8 @@ class MenuMovs {
                 }
                 that.#options.active = !that.#options.active;
                 $(MenuMovs.MENU).toggle();
-                $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_HOVERABLE_ICON_SELECTED);
+                // $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_HOVERABLE_ICON_SELECTED);
+                $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
                 $(document).trigger(MenuMovs.EVENT_SHOW_MOVEMENTS, that.options);
             });
             console.log('Movs menu initialized OK.');
@@ -175,7 +177,7 @@ class MenuMovs {
 
     get_active_label() { return $(MenuMovs.ACTIVE).text(); }
 
-    set_active_label(active) { $(MenuMovs.ACTIVE).text(active[Const.ID_ID] + ' ' + active[Const.MARCO_ID] + ' ' + active[Const.BROKER_ID]); }
+    set_active_label(active) { $(MenuMovs.ACTIVE).text(active[Const.ID_ID] + ' ' + active[Const.TIME_FRAME_ID] + ' ' + active[Const.BROKER_ID]); }
 
     get_spinner_value() { return $(MenuMovs.LEVEL_MAX).spinner(MenuMovs.SPINNER_VALUE); }
 

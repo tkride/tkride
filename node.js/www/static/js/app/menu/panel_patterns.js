@@ -138,9 +138,9 @@ class PanelPatterns {
                 this.#enable_explorer();
             }
             $(PanelPatterns.ELEMENT_PATTERNS_SECTION_VISUALIZATION).children().removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-            $(PanelPatterns.ELEMENT_PATTERNS_SECTION_VISUALIZATION).children().addClass(Const.CLASS_HOVERABLE_ICON);
+            // $(PanelPatterns.ELEMENT_PATTERNS_SECTION_VISUALIZATION).children().addClass(Const.CLASS_HOVERABLE_ICON);
             if(mode) {
-                $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED + ' ' + Const.CLASS_HOVERABLE_ICON);
+                $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED); // + ' ' + Const.CLASS_HOVERABLE_ICON);
             }
             if(mode != PanelPatterns.TEXT_SELECTION) {
                 this.#hide_visualization_selection();
@@ -288,7 +288,7 @@ class PanelPatterns {
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
         this.#visual_conf.mode = PanelPatterns.TEXT_ONLY_CURRENT;
-        $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + this.#visual_conf.mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED + ' ' + Const.CLASS_HOVERABLE_ICON);
+        $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + this.#visual_conf.mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED); // + ' ' + Const.CLASS_HOVERABLE_ICON);
         this.#hide_visualization_selection();
     }
 

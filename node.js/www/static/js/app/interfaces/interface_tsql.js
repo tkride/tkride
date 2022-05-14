@@ -139,7 +139,7 @@ class InterfaceTSQL {
         return new Promise( (resolve, reject) => {
             var rawData;
             try {
-                let timeFrame = (this.#TSQL.MARCO_ID in request) ? request[this.#TSQL.MARCO_ID] : '';
+                let timeFrame = (this.#TSQL.TIME_FRAME_ID in request) ? request[this.#TSQL.TIME_FRAME_ID] : '';
                 let from = (this.#TSQL.DESDE_ID in request) ? request[this.#TSQL.DESDE_ID] : '';
                 let interval = (this.#TSQL.INTERVALO_ID in request) ? request[this.#TSQL.INTERVALO_ID] : '';
                 // let interval = (this.#TSQL.INTERVALO in request) ? request[this.#TSQL.INTERVALO] : '';

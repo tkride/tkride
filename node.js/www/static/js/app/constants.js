@@ -1,6 +1,5 @@
 /**file: constants.js */
 
-
 class Const {
     // static ROOT_URL = "http://tapsproject.net:8080/";
     static ROOT_URL = "http://tkride.com:8081/";
@@ -112,7 +111,6 @@ class Const {
     static MOVIMIENTOS_ID = 'MOVIMIENTOS';
     static RETROCESOS_ID = 'RETROCESOS';
     static SIGUIENTE_ID = 'SIGUIENTE';
-    static MARCO_ID = 'MARCO';
 
     //static TIMESTAMP_ID = 'timestamp'; // Minúsculas; es una etiqueta utilizada por los datos descargados; y habría que convertilo contínuamente
     // LISTA DICCIONARIO
@@ -179,12 +177,13 @@ class Const {
     static EVENT_CHART_CTRL_CREATED = 'chart-ctrl-created';
     static EVENT_TERMINAL_CREATED = 'terminal-created';
     static EVENT_CLOSE = 'event-close';
+    static EVENT_CANCELED = 'event-cancelled';
 
     // CLASS CONTROLS
     static CLASS_DISABLED = 'disabled';
     static CLASS_HOVERABLE_CLOSE = 'hoverable-close';
     static CLASS_HOVERABLE_ICON = 'hoverable-icon';
-    static CLASS_HOVERABLE_ICON_SELECTED = 'hoverable-icon-selected';
+    static CLASS_HOVERABLE_ICON_SELECTED = 'selected';
     static CLASS_BUTTON_GENERAL = 'button-general';
     static CLASS_BUTTON_SLIM = 'button-general slim';
     static CLASS_HOVERABLE_TEXT = 'hoverable-text';
@@ -214,8 +213,15 @@ class Const {
     static CLASS_ICON_WHATSAPP = 'lni lni-whatsapp';
     static CLASS_ICON_EMAIL = 'lni lni-envelope';
     static CLASS_ICON_ALARM = 'lni lni-alarm';
-    static CLASS_ICON_LOCK = 'lni lni-lock';
-    static CLASS_ICON_UNLOCK = 'lni lni-unlock';
+    // static CLASS_ICON_LOCK = 'lni lni-lock';
+    // static CLASS_ICON_UNLOCK = 'lni lni-unlock';
+    static CLASS_ICON_LOCK = 'bi bi-lock';
+    static CLASS_ICON_UNLOCK = 'bi bi-unlock';
+    static CLASS_ICON_RECTANGLE = 'bi bi-bounding-box-circles';
+    static CLASS_ICON_MAGNET = 'bi bi-magnet';
+    static CLASS_ICON_CAMERA = 'bi bi-camera';
+
+    static ELEMENT_ID_PERSIST_MODE = '#persist-mode';
 
     static CLASS_BACK_POINTS = 'points';
 
@@ -244,6 +250,7 @@ class Const {
     }
 
     static ACTIVE_ID = 'active';
+    // static TIME_FRAME_ID = 'timeFrame';
     static TIME_FRAME_ID = 'timeFrame';
     static START_TIME_ID = 'startTime';
     static END_TIME_ID = 'endTime';
@@ -324,15 +331,21 @@ class Const {
     static FILTER_INTERVAL = 2;
 
     // NAMES
+    static CHART_COMPONENT_ID = 'CHART_COMPONENT';
+    static ALERT_COMPONENT_ID = 'ALERT_COMPONENT';
     static CHART_GRAPHIC_ID = 'CHART_GRAPH';
     static FIBO_RET_ID = 'FIBO_RET';
     static TREND_LINE_ID = 'TREND_LINE';
+    static RECTANGLE_ID = 'RECTANGLE';
 
     // TREND LINE
     static DELTA_X_ID = 'deltax';
     static DELTA_Y_ID = 'deltay';
     static SLOPE_ID = 'slope';
     static ANGLE_ID = 'angle';
+
+    // RECTANGLE GRAPHIC
+    static TEXT_ID = 'text';
 
     // CANDLES INDEX
     static IDX_CANDLE_TIME = 0;
@@ -387,6 +400,23 @@ class Const {
     static EVENT_DDBB_DELETE_MODEL = 'event-ddbb-delete-model';
     static EVENT_DDBB_SAVE_MODEL = 'event-ddbb-save-model';
     static EVENT_UPDATE_MODEL = 'event-update-model';
+}
+
+class Conf {
+    static GRAPHIC_CONTROLS = {};
+    //  = {
+    //     [Fibonacci.NAME]: MenuFibonacci,
+    //     [TrendLine.NAME]: MenuTrendLine,
+    //     [RectangleGraphic.NAME]: MenuRectangleGraphic,
+    // }
+
+    static getGraphicControlsNames() {
+        return Object.keys(Conf.GRAPHIC_CONTROLS);
+    }
+
+    static getGraphicControlsMenu(g) {
+        return Conf.GRAPHIC_CONTROLS[g] || {};
+    }
 }
 
 
@@ -515,7 +545,7 @@ class Time {
     static FORMAT_STR = 'YYYY-MM-DD HH:mm:ss';
     static FORMAT_FILE = 'YYYY_MM_DD_HHmmss';
 
-    static convert_to_seconds(units) {
+    static convertToSeconds(units) {
         let units_in = units.replace(/[0-9]/g, '');
         let value = units.replace(/[a-zA-Z]/g, '');
         let seconds_unit = Time.INTERVAL_TO_SECONDS[units_in];
@@ -527,16 +557,16 @@ class Time {
     static getTimeQueries = ({timeFrame, from, startTime, endTime, querySize}) => {
         try {
             let timeQueries = [];
-            let timeFrameMs = Time.convert_to_seconds(timeFrame) * 1000;
+            let timeFrameMs = Time.convertToSeconds(timeFrame) * 1000;
             if(from) {
                 // get start time form range
-                let msQuery = Time.convert_to_seconds(from) * 1000;
+                let msQuery = Time.convertToSeconds(from) * 1000;
                 startTime = Date.now() - msQuery;
                 endTime = Date.now();
             }
             else {
                 // 4 Months by default, y no start time provided
-                if(!startTime) { startTime = new Date(new Date().getTime() - Time.convert_to_seconds('4M')); }
+                if(!startTime) { startTime = new Date(new Date().getTime() - Time.convertToSeconds('4M')); }
                 else { startTime = Date.parse(startTime); }
 
                 if(!endTime) endTime = Date.now();
@@ -567,6 +597,36 @@ class Time {
         catch(err) {
             console.error(err);
         }
+    }
+
+    static getCountdown({ finalTime, initTime = Date.now()}) {
+        let d2 = new Date(finalTime);
+        let d1 = new Date(initTime);
+        
+        let secondsRemain = (d2 - d1);
+        let m = secondsRemain / (Time.MS_IN_SECONDS * Time.S_IN_MINUTE);
+        let msInHour = Time.S_IN_HOUR * Time.MS_IN_SECONDS;
+        let timeRemain  = '';
+        if(m < Time.MINUTES_IN_HOUR) {
+            timeRemain = moment(secondsRemain).format('mm:ss');
+        }
+        else if(m < Time.MINUTES_IN_DAY) {
+            timeRemain = moment(secondsRemain - msInHour).format('HH:mm:ss');
+        }
+        else {
+            if(m < Time.MINUTES_IN_MONTH) {
+                timeRemain = moment(secondsRemain - msInHour).format('DD-HH:mm').replace('-', 'd ');
+                timeRemain = timeRemain.replace(/^[0]/, '');
+            }
+            else {
+                timeRemain = moment(secondsRemain - msInHour).format('MM/DD-HH')
+                .replace('/', 'M ')
+                .replace('-', 'd ');
+                timeRemain = timeRemain.replace(/^[0]/, '');
+            }
+        }
+
+        return timeRemain;
     }
 
     static convert_units(units) {

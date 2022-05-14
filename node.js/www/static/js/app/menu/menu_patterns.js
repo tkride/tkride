@@ -305,6 +305,7 @@ class MenuPatterns {
                                         event: MenuPatterns.EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED,
                                         header: { arrow: true },
                                         css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
+                                        parent: this.#display.control,
                                     });
         stored_patterns.controls.each( (i, c) => name.control.append(c) );
         $(document).on(MenuPatterns.EVENT_PATTERNS_MENU_STORED_PATTERN_SELECTED, (e, ret_name) => {
@@ -323,6 +324,7 @@ class MenuPatterns {
                                             event: MenuPatterns.EVENT_TYPE_SELECTED,
                                             header: { selected: true },
                                             css: { container: { 'font-size': '1em', 'font-weight': '400' } },
+                                            parent: this.#display.control,
                                         });
         types_combobox.controls.each( (i, c) => types_container.append(c) );
         // Append control element to display
@@ -349,6 +351,7 @@ class MenuPatterns {
                                             class: Const.CLASS_MENU_FIELD,
                                             header: { selected: true, label: { text: 'Buscar en resultado', position: Const.LABEL_POSITION_BEFORE} },
                                             css: { items: { 'font-size': '0.8em', 'font-weight': '400', left: '-50%' } },
+                                            parent: this.#display.control,
                                         });
         searchin_combobox.controls.each( (i, c) => this.#display.append_content(c) );
         
@@ -465,6 +468,7 @@ class MenuPatterns {
             class: Const.CLASS_MENU_FIELD,
             header: { selected: true, label: { text: 'Datos fuente de niveles', position: Const.LABEL_POSITION_BEFORE } },
             css: { items: { 'font-size': '0.8em', 'font-weight': '400' } },
+            parent: ret_content,
         });
         levels_data_source.controls.each( (i, c) => ret_content.append(c) );
 

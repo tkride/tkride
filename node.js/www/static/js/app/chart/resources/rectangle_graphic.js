@@ -1,35 +1,32 @@
-/** trend_line.js */
+/** rectangle.js */
 
-class TrendLine extends GraphicComponent {
+class RectangleGraphic extends GraphicComponent {
 
-    static NAME = 'TrendLine';
+    static NAME = 'RectangleGraphic';
 
     // CONSTANTS
     static LINE_WIDTH = ChartComponent.YEND + 1; // 6
-    static LINE_TYPE = TrendLine.LINE_WIDTH + 1;
-    static COLOR = TrendLine.LINE_TYPE + 1;
-    static TEXT_SHOW = TrendLine.COLOR + 1;
-    static TEXT = TrendLine.TEXT_SHOW + 1;
-    static SLOPE = TrendLine.TEXT + 1; // 11
-    
+    static LINE_TYPE = RectangleGraphic.LINE_WIDTH + 1;
+    static COLOR = RectangleGraphic.LINE_TYPE + 1;
+    static FILL = RectangleGraphic.COLOR + 1;
+    static TEXT_SHOW = RectangleGraphic.FILL + 1;
+    static TEXT = RectangleGraphic.TEXT_SHOW + 1;
+
 
     // PROPERTIES
-    // width;
-    // height;
+
     length = 0;
     values = {
         ...this.values,
-        xdelta: {},
-        ydelta: {},
-        slope: 0,
-        angle: 0,
         trend: 0,
+        text: '',
     };
 
     template = {
         ...this.template,
-        type: 'TrendLine',
+        type: 'RectangleGraphic',
         // colors: [],
+        fill: '#AA552244',
         opacity: 100,
         // lineWidth: 2,
         // lineType: Const.LINE_SOLID,
@@ -52,11 +49,7 @@ class TrendLine extends GraphicComponent {
 
             this.template = { ...this.template, ...template };
             
-            this.values.slope = graphic[Const.SLOPE_ID];
-            this.values.angle = graphic[Const.ANGLE_ID];
             this.values.trend = Const.TREND_STR[graphic[Const.TREND_ID]];
-            this.values.xdelta = graphic[Const.DELTA_X_ID];
-            this.values.ydelta = graphic[Const.DELTA_Y_ID];
 
             let opacity_hex = this.template.opacity.toString(16).toUpperCase().padStart(2, '0');
             if(this.template.colors.length == 0) {
@@ -75,63 +68,46 @@ class TrendLine extends GraphicComponent {
         if (param.context.rendered) {
             return;
         }
-        
+
         super.render(param, api);
 
-        // let trend = api.value(TrendLine.TREND);
         let xstart = this.graphic.xstart;
         let xend = this.graphic.xend;
         let ystart = this.graphic.ystart;
         let yend = this.graphic.yend;
                 
-        let line_width =  api.value(TrendLine.LINE_WIDTH) * 0.3;
-        let line_type =  api.value(TrendLine.LINE_TYPE);
-        let line_dash = TrendLine.LINE_TYPE_PATTERN[line_type];
-        let stroke = api.value(TrendLine.COLOR);
+        let line_width =  api.value(RectangleGraphic.LINE_WIDTH) * 0.3;
+        let line_type =  api.value(RectangleGraphic.LINE_TYPE);
+        let line_dash = RectangleGraphic.LINE_TYPE_PATTERN[line_type];
+        let stroke = api.value(RectangleGraphic.COLOR);
+        let fill = api.value(RectangleGraphic.FILL);
 
-        let showText = api.value(TrendLine.TEXT_SHOW);
-        let text =  api.value(TrendLine.TEXT);
-        // let slope =  api.value(TrendLine.SLOPE);
-        let height = 10;
-        let dy = -(yend - ystart);
-        let dx = (xend - xstart);
-        let width = Math.sqrt((dx**2) + (dy**2));
-        let slope = dy / dx;
-        let angle = Math.atan(slope);
+        let showText = api.value(RectangleGraphic.TEXT_SHOW);
+        let text =  api.value(RectangleGraphic.TEXT);
+        let width = (xend - xstart);
+        let height = (yend - ystart);
         
         this.children.push([
             {
-                type: 'line',
-                id: `${name}_TREND_LINE_LINE_${text}`,
-                name: `${name}_TREND_LINE_LINE_${text}`,
-                shape: {
-                    x1: xstart,
-                    y1: ystart,
-                    x2: xend,
-                    y2: yend,
-                },
-                style: {
-                    stroke: stroke,
-                    lineWidth: line_width,
-                    lineDash: line_dash,
-                },
-            },
-            {
                 type: 'rect',
-                id: `${name}_TREND_LINE_HOLDER_${text}`,
-                name: `${name}_TREND_LINE_HOLDER_${text}`,
+                id: `${name}_RECTANGLE_${text}`,
+                name: `${name}_RECTANGLE_${text}`,
                 x: xstart,
-                y: ystart + 2,
-                rotation: angle,
-                invisible: true,
+                y: ystart,
+                cursor: 'crosshair',
                 shape: {
                     x: 0,
-                    y: -(height/2),
+                    y: 0,
                     width: width,
                     height: height,
                 },
-                style: { fill: '#FF0000' }
-            }]
+                style: {
+                    stroke: stroke,
+                    fill: fill,
+                    lineWidth: line_width,
+                    lineDash: line_dash,
+                },
+            },]
         );
 
         if(showText) {
@@ -143,7 +119,7 @@ class TrendLine extends GraphicComponent {
                 y: ystart - 10,
                 style: {
                     fill: stroke,
-                    text: `${(angle*(180/Math.PI)).toFixed(2)}º`,
+                    text: text,
                 },
             });
         }
@@ -163,9 +139,9 @@ class TrendLine extends GraphicComponent {
             this.template.lineWidth,
             this.template.lineType,
             this.template.colors[0],
+            this.template.fill,
             this.template.textShow,
             text,
-            this.values.slope,
         ];
         // let text = this.get_text();
         // for(let i=0; i<this.yvalues.length; i++) {
@@ -195,16 +171,7 @@ class TrendLine extends GraphicComponent {
     }
 
     get_text() {
-        if(this.template.textInfo == '%') {
-            return parseFloat(this.values.slope).toFixed(2)*100+'%';
-        }
-        else if(this.template.textInfo == 'value') {
-            return parseFloat(this.values.angle).toFixed(2)+'º';
-        }
-        else {
-            let text = `${this.values.slope.toFixed(3)*100}% (${this.values.angle.toFixed(3)})`;
-            return text;
-        }
+        return this.values.text;
     }
     
     setTemplate(template) {
@@ -233,8 +200,6 @@ class TrendLine extends GraphicComponent {
             this.values.ydelta = (this.values.yend - this.values.ystart);
         }
 
-        this.values.slope = (this.values.ydelta / this.values.xdelta);
-        this.values.angle = Math.atan(this.values.slope) * (180/Math.PI);
         this.values.trend = Math.sign(this.values.ydelta) * Math.sign(this.values.xdelta);
         this.update_option();
     }
@@ -251,24 +216,49 @@ class TrendLine extends GraphicComponent {
             this.values.ydelta = (this.values.yend - this.values.ystart);
         }
         
-        this.values.slope = (this.values.ydelta / this.values.xdelta);
-        this.values.angle = Math.atan(this.values.slope) * (180/Math.PI);
         this.values.trend = Math.sign(this.values.ydelta) * Math.sign(this.values.xdelta);
         this.update_option();
     }
-
 
 
     // BUILD GRAPHIC CONTROL -------------------------------------------------------------------------------
 
     static grabData({graphic, template, x, y}) {
         super.grabData({graphic, template, x, y});
-
-        graphic[Const.ID_ID] =  `${Const.TREND_LINE_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
-        graphic[Const.DELTA_X_ID] = 0;
-        graphic[Const.DELTA_Y_ID] = 0;
-        graphic[Const.SLOPE_ID] = 0;
-        graphic[Const.ANGLE_ID] = 0;
+        graphic[Const.ID_ID] =  `${Const.RECTANGLE_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
+        graphic[Const.TEXT_ID] = '';
     }
+
+    // static pick_start(e) {
+    //     let params = this[1];
+    //     let chart = params.chart;
+    //     let template = params.template;
+    //     let timeFrame = params.timeFrame;
+    //     let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
+    //     let graphic = {}
+    //     graphic[Const.HASH_ID] = new Date().valueOf();
+    //     graphic[Const.ID_ID] =  `${Const.RECTANGLE_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
+    //     graphic[Const.INIT_ID] = new TimePrice(x, y);
+    //     graphic[Const.END_ID] = new TimePrice(x, y);
+    //     graphic[Const.TEXT_ID] = '';
+    //     graphic[Const.TIMESTAMP_ID] = graphic[Const.INIT_ID].time;
+
+    //     let ref = new RectangleGraphic({graphic, template, timeFrame});
+    //     $(document).trigger(ChartComponent.EVENT_PLOT, [ref]);
+    //     ref.select();
+
+    //     ref.disable_chart_move();
+    //     ref.values.xdrag = x;
+    //     ref.values.ydrag = y;
+    //     chart.getZr().on('mouseup', GraphicComponent.pick_end, ref);
+    //     chart.getZr().on('mousemove', ref.mousemove_control_end, ref);
+
+    //     chart.getZr().off('mouseup', RectangleGraphic.pick_start);
+    //     ChartComponent.building_graphic = false;
+        
+    //     $(document).on(Const.EVENT_CLOSE, (e) => {
+    //         GraphicComponent.pick_end.apply(ref, [e, Const.EVENT_CLOSE]);
+    //     });
+    // }
 }
 

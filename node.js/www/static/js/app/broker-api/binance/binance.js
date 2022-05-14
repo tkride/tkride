@@ -139,28 +139,48 @@ class Binance {
         });
     }
 
-    openWebSocket({query, callback, modelKey, chart }) {
-        let id = query[Const.ACTIVE_ID];
-        let timeFrame = query[Const.TIME_FRAME_ID];
-        this.webSockets[`${id}_${timeFrame}`] = new WebSocket(`wss://${Binance.STREAM}:${Binance.STREAM_PORT}/ws/${id.toLowerCase()}@kline_${timeFrame}`);
-        this.webSockets[`${id}_${timeFrame}`].onmessage = e => {
+    // openWebSocket({query, callback, modelKey, chart }) {
+    openWebSocket({id, active, timeFrame, callback }) {
+        // if(this.webSockets[`${active}_${timeFrame}`]) {
+        //     this.webSockets[`${active}_${timeFrame}`].count++;
+        // }
+        if(this.webSockets[id]) {
+            this.webSockets[id].count++;
+        }
+        else {
+            // this.webSockets[`${active}_${timeFrame}`] = {
+            this.webSockets[id] = {
+                object: new WebSocket(`wss://${Binance.STREAM}:${Binance.STREAM_PORT}/ws/${active.toLowerCase()}@kline_${timeFrame}`),
+                count: 1
+            };
+        }
+
+        // this.webSockets[`${active}_${timeFrame}`].object.onmessage = e => {
+        this.webSockets[id].object.onmessage = e => {
             let data = this.#formatStreamData(JSON.parse(e.data));
             if(typeof callback == "function") {
-                callback({query, modelKey, data, chart});
+                // console.log(new Date().toLocaleString());
+                callback({id, data});
             }
         }
     }
 
-    closeWebSocket({id, timeFrame, webSocketId}) {
-        webSocketId = (webSocketId) ? webSocketId : `${id}_${timeFrame}`;
-        this.webSockets[webSocketId].close();
+    closeWebSocket({id, active, timeFrame}) {
+        id = (id) ? id : `${active}_${timeFrame}`;
+        if(this.webSockets[id]) {
+            if(--this.webSockets[id].count == 0) {
+                this.webSockets[id].object.close();
+                delete this.webSockets[id];
+            }
+        }
     }
 }
 
 
 // var ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
-var ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_5m');
-ws.onmessage = e => {
-    console.log(e.data);
-}
+// var ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_5m');
+// ws.onmessage = e => {
+//     // console.log(e.data);
+//     console.log(new Date().toLocaleString());
+// }
 

@@ -94,21 +94,17 @@ class ModelChart {
             }
 
             if(rawData.append) {
-                // let firstValue = this.#ohlc_data.data_y.map(v => v[1]).indexOf( v => v[1] != undefined);
-                // this.#ohlc_data.data_y.splice(firstValue, 1);
-                // let lastValue =  this.#ohlc_data.data_y.indexOf( v => v[1] != undefined, firstValue+1);
-                // this.#ohlc_data.data_y.splice(lastValue, 1, data_y);
-                let lastCandle = this.#ohlc_data.data_y.map(v => v[0]).indexOf(data_y[0][0]);
-                if(lastCandle === -1) {
-                    // lastCandle = this.#ohlc_data.data_y.map(v => v[0]).indexOf(max_x);
-                    // let firstCandle = this.#ohlc_data.data_y.map(v => v[0]).indexOf(max_x);
-                    // this.#ohlc_data.data_y.shift();
-                    // this.#ohlc_data.data_y.push(...data_y);
-                    this.#ohlc_data.data_y.splice(this.#ohlc_data.firstCandle, 1);
-                    this.#ohlc_data.data_y.splice(this.#ohlc_data.lastCandle, 1, ...data_y);
+                let lastCandleIndex = this.#ohlc_data.data_y.map(v => v[0]).indexOf(data_y[0][0]);
+                if(lastCandleIndex > this.#ohlc_data.lastCandleIndex) {
+                    // Deletes first unused candle
+                    this.#ohlc_data.data_y.shift();
+                    // Fills first valid candle width empty data
+                    let firstCandleIndex = this.#ohlc_data.data_y[this.#ohlc_data.firstCandle];
+                    firstCandleIndex = [firstCandleIndex[ChartView.ECHARTS_TIMESTAMP], undefined, undefined, undefined, undefined];
+                    this.#ohlc_data.data_y.splice(this.#ohlc_data.lastCandleIndex+1, 1, ...data_y);
                 }
                 else {
-                    this.#ohlc_data.data_y.splice(lastCandle, 1, ...data_y);
+                    this.#ohlc_data.data_y.splice(lastCandleIndex, 1, ...data_y);
                 }
 
                 this.#ohlc_data.volume.shift();
@@ -136,7 +132,7 @@ class ModelChart {
                 // Insert dates at beginning
                 data_y.splice(0, 0, ...dates_arr);
                 let firstCandle = dates_arr.length;
-                let lastCandle = data_y.length - 1;
+                let lastCandleIndex = data_y.length - 1;
 
 
                 limit_date = Time.add_value(data_y[data_y.length - 1][Const.IDX_CANDLE_TIME], span_len, query.timeFrame);
@@ -162,7 +158,7 @@ class ModelChart {
                     max_x: max_x,
                     min_x: min_x,
                     firstCandle: firstCandle,
-                    lastCandle: lastCandle,
+                    lastCandleIndex: lastCandleIndex,
                 };
                 this.#id = this.#ohlc_data.name;
                 this.#name = this.#ohlc_data.name;
@@ -188,12 +184,8 @@ class ModelChart {
         let min_x = '';
         
         try {
-            if(rawData === undefined) {
-                throw ('No valid candles (OHLC) data received.');
-            }
-
             if(!rawData) {
-                throw('No valid JSON data received from server.');
+                throw ('No valid candles (OHLC) data received.');
             }
 
             // Convert from array of dicts to array
@@ -233,7 +225,7 @@ class ModelChart {
             max_x = data_y[data_y.length-1][0];
 
             //Fill with empty data to let move start and end beyond limits
-            // let tframe = Time.convert_units(rawData[Const.MARCO_ID][0]);
+            // let tframe = Time.convert_units(rawData[Const.TIME_FRAME_ID][0]);
             // let tframe = Time.convert_units(query.interval);
             let span_len = 200;
 

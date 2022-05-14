@@ -195,6 +195,7 @@ class Retracements extends Analysis {
                         // let search_remain = search_source.slice(i);
                         // TODO ENCONTRAR EL MOVIMIENTO ACTUAL EN LA FUENTE
                         // let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[Const.CORRECTION_ID].time);
+                        // TODO XXX until AQUI NO TIENE VALOR (y lanza excepcion) SI SE BUSCA EN "CORRECCION" => SOLUCIONAR
                         let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[until].time);
                         let mov_remain = mov_source.slice(idx_mov);
                         let res_it = Retracements.process_iteration({

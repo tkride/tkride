@@ -39,7 +39,7 @@ class TickerFilter {
         $.each(this.#brokers.filter_tickers(this.#currFilter), function(broker, tickers) {
             $.each(tickers, function() {
                     if(Object.keys(that.first).length == 0) {
-                        that.first = { [Const.BROKER_ID]:broker, [Const.ID_ID]:this } //, [Const.MARCO_ID]: that.currentTimeFrame };
+                        that.first = { [Const.BROKER_ID]:broker, [Const.ID_ID]:this } //, [Const.TIME_FRAME_ID]: that.currentTimeFrame };
                     }
                     var li_ticker = $("<li />", { class: 'chart-filter-result-ticker', text: this });
                     var li_broker = $("<li />", { class: 'chart-filter-result-broker', text: broker });

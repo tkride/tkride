@@ -85,27 +85,68 @@ input {
     display: block;
 }
 
-/* --------------------------------- SIDE MENU --------------------------------- */
+/* --------------------------------- ICONS --------------------------------- */
 
-.side-menu {
-    width: 3.5vw;
-    height: 100vh;
-    right: 0;
-    border-left: solid;
-    border-color:  inherit;
-    background-color: inherit;
+.icon {
+    font-size: 1.4em;
+    font-weight: lighter;
+}
+
+/* --------------------------------- ICONS EFFECTS --------------------------------- */
+
+.hoverable-text {
+    color:var(--font-color);
+}
+
+.hoverable-text:hover {
+    color: white; /*var(--selected);*/
+    /* background-color: var(--hover-back); */
     cursor: pointer;
-    position: absolute;
-    z-index: var(--z-menu);
 }
 
-.side-menu > * {
-    font-size: 1.8em;
-    margin-left: 0.25em;
+.hoverable-text-selected {
+    color: var(--selected);
 }
 
-.side-menu *:first-child {
-    margin-top: 0.5em;
+.hoverable-icon {
+    padding: 4px;
+}
+
+.hoverable-icon:hover {
+    border-radius: 3px;
+    background-color: var(--hover-back);
+}
+
+.hoverable-icon.selected {
+    background-color:var(--selected);
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.hoverable-close {
+    padding: 4px;
+    border-radius: 5px;
+}
+
+.hoverable-close:hover {
+    color: white;
+    background-color: var(--close);
+}
+
+.disabled {
+    color: gray;
+    cursor: not-allowed;
+}
+
+.ui-tooltip.ui-widget-content {
+    font-family: var(--font);
+    font-size: 90%;
+    font-weight: 500;
+    color: var(--font-color);
+    /* background-color: #222222AD; */
+    background-color: var(--back);
+    box-shadow: none;
+    border-color: #000000;
 }
 
 /* --------------------------------- GENERAL, EFFECTS --------------------------------- */
@@ -285,53 +326,82 @@ input[type="radio"]:checked + label {
     z-index: var(--z-menu);
 }
 
+/* --------------------------------- SIDE MENU --------------------------------- */
+
+.right-menu {
+    right: 0;
+    top: 0;
+    width: 50px;
+    height: 100vh;
+    border-left: solid;
+    border-color: var(--border-color);
+    cursor: pointer;
+    position: absolute;
+    z-index: var(--z-menu-over);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-content: center;
+    align-items: center;
+}
+
+.right-menu > * {
+    /* font-size: 1.5em; */
+    margin: 5px 0px;
+    position: relative;
+    /* display: flex; */
+    /* justify-content: center; */
+    /* margin-left: 0.25em; */
+}
+
+.right-menu *:first-child {
+    margin-top: 10px;
+}
+
 /* --------------------------------- FOOTER MENU --------------------------------- */
 
 #footer {
-    height: 40px; /*6vh;*/
+    height: 40px;
     width: 100vw;
     bottom: 0vh;
     left: 0vw;
-    position: absolute;
     border-top: solid;
     border-bottom: solid;
     border-color: var(--border-color);
     background-color: var(--back);
-    display: inline-block;
+
+    position: relative;
+    
+    display: inline-flex;
+    align-content: center;
+    align-items: center;
+    justify-content: flex-start;
+    justify-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
 }
 
-#footer-menu {
+.footer-menu {
     height: 100%;
     border-right: 1px solid var(--border-color);
-    padding-right: 1em;
-    padding-left: 1em;
-    display: inline-block;
     cursor: pointer;
 }
 
-#footer-menu > * {
-    margin-top: 0.12em;
-    font-size: 1.5em;
+.footer-menu-item:first-child {
+    margin-left: 10px;
 }
 
-.footer-menu-item:last-child {
-    margin-right: 0.5em;
-}
-
-#footer-menu-options {
+.footer-menu-options {
     border-right: 1px solid var(--border-color);
-    display: inline-flex;
 }
 
-#footer-status {
+.footer-status {
     width: 50vw;
-    height: 2.5em; /*100%;*/
-    /* border: 1px solid var(--border-invisible); */
+    height: 2.5em;
     border-radius: 20px;
     font-size: 1em;
     color: var(--font-color);
     text-align: center;
-    /* background-color: var(--back); */
     opacity: 0.4;
     left: 25vw;
     bottom: 80px;
@@ -339,7 +409,7 @@ input[type="radio"]:checked + label {
     display: inline-block;
 }
 
-#footer-status > * {
+.footer-status > * {
     margin-top: 0.75em;
 }
 
@@ -348,14 +418,52 @@ input[type="radio"]:checked + label {
 }
 
 .footer-status-error {
-    /* color: var(--error); */
     background-color: var(--error);
+    color: var(--menu-back)
 }
 
 /* --------------------------------- FOOTER MENU MOVS MENU --------------------------------- */
 
+#show-movs-menu {
+    height: 100%;
+    margin: 10px 5px;
+    position: relative;
+    display: flex;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+}
+
+#show-movs-menu > * {
+    margin-right: 1em;
+}
+
+#show-movs-menu:first-child {
+    margin-left: 20px;
+}
+
+#show-movs-menu-level-selector {
+    width: 5em;
+}
+
+#show-movs-menu-level-max {
+    font-size: 90%;
+    width: 1.5em;
+    height: 0.4em;
+}
+
+/* #show-movs-menu-level-selector .ui-slider .ui-slider-handle {
+    width:2em;
+    left:-.6em;
+    text-decoration:none;
+    text-align:center;
+} */
+
+/* --------------------------------- FOOTER MENU MOVS MENU --------------------------------- */
+
 .menu-title {
-    font-size: 120%;/*20px;*/
+    font-size: 120%;
     color: inherit;
     height: 10%;
     width: 100%;
@@ -445,100 +553,6 @@ input[type=radio] {
     background-color: var(--hover-back);
     border: 3px solid var(--back);
 }
-
-/* --------------------------------- FOOTER MENU MOVS MENU --------------------------------- */
-
-#show-movs-menu {
-    height: 100%;
-    display: inline-flex;
-}
-
-#show-movs-menu > * {
-    margin-right: 1em;
-    position: relative;
-    bottom: 0.4em;
-}
-
-#show-movs-menu:first-child {
-    margin-left: 1em;
-    margin-top: 0.5em;
-}
-
-#show-movs-menu-level-selector {
-    width: 5em;
-}
-
-#show-movs-menu-level-max {
-    font-size: 90%;
-    width: 1.5em;
-    height: 0.4em;
-}
-
-/* #show-movs-menu-level-selector .ui-slider .ui-slider-handle {
-    width:2em;
-    left:-.6em;
-    text-decoration:none;
-    text-align:center;
-} */
-
-/* --------------------------------- FOOTER MENU ICONS EFFECTS --------------------------------- */
-
-.hoverable-text {
-    color:var(--font-color);
-}
-
-.hoverable-text:hover {
-    color: white; /*var(--selected);*/
-    /* background-color: var(--hover-back); */
-    cursor: pointer;
-}
-
-.hoverable-text-selected {
-    color: var(--selected);
-}
-
-.hoverable-icon {
-    padding: 4px;
-}
-
-.hoverable-icon:hover {
-    /* border-radius: 0.15em; */
-    border-radius: 3px; /*0 5px 0 5px;*/
-    background-color: var(--hover-back);
-}
-
-.hoverable-icon-selected {
-    background-color:var(--selected);
-    /* border-radius: 0.15em; */
-    border-radius: 3px; /*5px 0 5px 0;*/
-    padding: 4px;
-}
-
-.hoverable-close {
-    padding: 4px;
-    border-radius: 5px;
-}
-
-.hoverable-close:hover {
-    color: white;
-    background-color: var(--close);
-}
-
-.disabled {
-    color: gray;
-    cursor: not-allowed;
-}
-
-.ui-tooltip.ui-widget-content {
-    font-family: var(--font);
-    font-size: 90%;
-    font-weight: 500;
-    color: var(--font-color);
-    background-color: #222222AD;/*var(--back);*/    
-    box-shadow: none;
-    border-color: #000000;
-}
-
 
 /* --------------------------------- CUSTOM CHECKBOX --------------------------------- */
 

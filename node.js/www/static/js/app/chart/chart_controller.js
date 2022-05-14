@@ -40,7 +40,7 @@ class ChartController {
     static DEFAULT_ACTIVE = {
         [Const.ID_ID]:'BTCUSDT',
         [Const.BROKER_ID]:'binance',
-        [Const.MARCO_ID]:'2h',
+        [Const.TIME_FRAME_ID]:'2h',
     }
 
     //----------------------------- PROPERTIES -----------------------------
@@ -57,28 +57,24 @@ class ChartController {
     #view;
     //Brokers manager
     #brokers;
+    // Ticker filter
+    #ticker_filter;
+    // Time frame
+    #time_frame;
     // Chart layout structure as array
-    #chart_frames = {};
-    // Active chart
-    #activeChart = null;
-    //Number of chart frame
+    #chartFrames = {};
+    // Number of chart frames
     #n_frames = 1;
     #chart_layout = [];
-    // Working time frame
-    // currentTimeFrame = Time.TIME_FRAMES[parseInt(Time.TIME_FRAMES.length/2)];
-    // Working active
-    currActive = null;
-    currId = null;
-    //Interface TSQL Controller
+    // Active chart
+    #activeChartId = 0;
+    // Interface TSQL Controller
     interface;
     interface_ddbb;
     session_info;
     user;
     login_timestamp;
-    //Ticker filter
-    #ticker_filter;
-    //Time frame
-    #time_frame;
+
     #menus = [];
     #key_config;
     #control_settings;
@@ -96,23 +92,33 @@ class ChartController {
             [Const.TENDENCIA_ID]: this.#process_patterns_trend,
             [Const.SIGUIENTE_ID]: this.#process_patterns_next,
         }
+
+        Conf.GRAPHIC_CONTROLS = {
+            [Fibonacci.NAME]: MenuFibonacci,
+            [TrendLine.NAME]: MenuTrendLine,
+            [RectangleGraphic.NAME]: MenuRectangleGraphic,
+            [CircleGraphic.NAME]: MenuCircleGraphic,
+            [AlertComponent.NAME]: MenuAlertComponent,
+        }
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
-    #update_chart_header() {
-        if(this.currActive) {
-            $(ChartController.ELEMENT_CHART_TITLE + this.#activeChart.id).text(this.currActive[Const.ID_ID] + ' (' + this.currActive[Const.BROKER_ID] + ')');
+    #update_chart_header(chartInfo) {
+        let active = chartInfo.active;
+        if(active) {
+            $(ChartController.ELEMENT_CHART_TITLE + chartInfo.id).text(active[Const.ID_ID] + ' (' + active[Const.BROKER_ID] + ')');
         }
         // $(document).trigger(ChartController.EVENT_TIME_FRAME_CHANGED, this.#time_frame.time_frame);
-        if($(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).length > 0) {
-            $(ChartController.ELEMENT_TIME_FRAME +  this.#activeChart.id).data('Dropdown').selected = this.currActive[Const.MARCO_ID];
+        if($(ChartController.ELEMENT_TIME_FRAME +  chartInfo.id).length > 0) {
+            $(ChartController.ELEMENT_TIME_FRAME +  chartInfo.id).data('Dropdown').selected = active[Const.TIME_FRAME_ID];
         }
     }
 
     #process_patterns_ret(ops, that) {
         return new Promise((resolve, reject) => {
-            let model_key = that.current_model_key;
+            // let model_key = that.activeChart.modelKey; // TODO XXX PASAR CHART
+            let model_key = ops.model_key;
             // let result = that.#chart_models[model_key].get_pattern_result(ops[Const.ID_ID]);
             let result = that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]];
             let in_memory = false;
@@ -172,130 +178,148 @@ class ChartController {
     #process_patterns_next(ops, that) {
 
     }
-
     
     //----------------------------- EVENTS LOAD HISTORIC -----------------------------
+// TODO SOLO CARGAR EL HISTORICO EN EL FRAME INDICADO, CREAR FRAME AFUERA
+    eventLoadHistoric(chartInfo) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => resolve(this.eventLoadHistoricAsync(chartInfo)), 0);
+        });
+    }
 
-    eventLoadHistoric({idFrame, active, timeFrame, eventId}) {
-        var that = this;
+    eventLoadHistoricAsync(chartInfo) {
         let clearChart = false;
-        this.currActive = this.currActive || {};
 
-        // Time frame
-        if(timeFrame) {
-            this.currActive[Const.MARCO_ID] = timeFrame;
-        }
-
-        // Active
-        if(active) {
-            // Deletes chart and graphic controls
-            try {
-                let series_to_del = Object.keys(this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.GRAPHICS_ID]);
-                series_to_del.push(this.currActive[Const.ID_ID]);
-                this.#view.clear_chart(this.active_chart, series_to_del);
-                this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.GRAPHICS_ID] = {};
-                this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.CHART_ID] = {};
-                // this.#activeChart = undefined; // TODO HAY QUE GESTIONAR EL LAYOUT ANTES DE PODER ELIMINAR LA GRAFICA ANTERIOR
+        // Deletes chart and graphic controls
+        try {
+            let seriesToDel = [];
+            // If active changed in this frame, delete previous plots
+            if(chartInfo.prevActive) {
+                if(chartInfo.prevActive[Const.ID_ID] != chartInfo.active[Const.ID_ID]) {
+                    seriesToDel = Object.keys(this.#view.chart_tree[chartInfo.chart.id][Const.GRAPHICS_ID]);
+                    this.#view.chart_tree[chartInfo.chart.id][Const.GRAPHICS_ID] = {};
+                }
+                seriesToDel.push(chartInfo.prevActive[Const.ID_ID]);
             }
-            catch(err) { /* If not exists, chart tree creation is managed in later chart creation. */ }
-
-            // Replace with new active
-            this.currActive = { ...this.currActive, ...active};
-            clearChart = true;
+            if(seriesToDel.length) {
+                this.#view.clear_chart(chartInfo.chart, seriesToDel);
+            }
         }
+        catch(err) { /* If not exists, chart tree creation is managed in later chart creation. */ }
+
+
+        // Replace with new active settigns
+        clearChart = true;
         
-        if(!this.currActive) {
-            console.error('Selecciona un activo.');
-            this.writeStatus({error:'Selecciona un activo.'});
-            return;
-        }
-
-        if(!this.currActive[Const.MARCO_ID]) {
-            console.error('Selecciona un marco temporal.');
+        if(Object.keys(chartInfo.active).length == 0) {
+            let errMsg = 'ERROR: activo no especificado.';
+            console.error(errMsg);
+            this.writeStatus({error: errMsg});
             return;
         }
 
         return new Promise( (resolve, reject) => {
             // Status notification
-            // this.writeStatus({progress:'Cargando información del activo...', value:0, max:1, loading:1 });
             this.writeStatus({info:'Cargando información del activo...', loading:1 });
 
             // Get initial date time
             let end_time = Time.now(Time.FORMAT_STR);
-            // this.currActive[Const.MARCO_ID] = this.#time_frame.time_frame;
-            // let init_time = Time.subtract_value(end_time, 100000, this.currActive[Const.MARCO_ID]).format(Time.FORMAT_STR);
-            let init_time = Time.subtract_value(end_time, 150, this.currActive[Const.MARCO_ID]).format(Time.FORMAT_STR);
+            // let init_time = Time.subtract_value(end_time, 100000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
+            let init_time = Time.subtract_value(end_time, 150, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
 
-            // let query = { [this.#TSQL.ID_ID]:this.currActive[this.#TSQL.ID_ID],
-            //             [this.#TSQL.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
-            //             [this.#TSQL.MARCO_ID]:this.currActive[Const.MARCO_ID],
-            //             [this.#TSQL.INTERVALO_ID]:init_time, // + this.#TSQL.PARAM_SEPARATOR + end_time,
-            let query = { [Const.ACTIVE_ID]:this.currActive[this.#TSQL.ID_ID],
-                        [Const.BROKER_ID]:this.currActive[this.#TSQL.BROKER_ID],
-                        [Const.TIME_FRAME_ID]:this.currActive[Const.MARCO_ID],
+            let query = { [Const.ACTIVE_ID]:chartInfo.active[Const.ID_ID],
+                        [Const.BROKER_ID]:chartInfo.active[Const.BROKER_ID],
+                        [Const.TIME_FRAME_ID]:chartInfo.active[Const.TIME_FRAME_ID],
                         [Const.START_TIME_ID]:init_time, // + this.#TSQL.PARAM_SEPARATOR + end_time,
             };
 
-            if(this.#activeChart == null) {
-                let id_chart = this.create_chart({id: idFrame, place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
-                this.#chart_frames[id_chart][Const.ACTIVE_ID] = this.currActive;
-            }
-            
             // Updates time frame dropdown and chart title
-            try { this.#update_chart_header(); }
+            try { this.#update_chart_header(chartInfo); }
             catch(err) { console.error(err); }
 
+            // Stops web socket data update, if exists
+            if(chartInfo.prevModelKey && chartInfo.prevActive) {
+                this.#brokers.brokers[chartInfo.prevActive[Const.BROKER_ID]].closeWebSocket({id: chartInfo.prevModelKey});
+            }
             // Plot chart
-            this.active_chart.showLoading(ChartView.SHOW_LOADING_OPS);
-            this.plot_historical(query, this.active_chart, null, clearChart)
+            this.plotHistorical({query, chart: chartInfo.chart, modelKey: chartInfo.modelKey, clear: clearChart})
             .then(() => {
                 // Updates menu movs options
-                this.#menus[MenuMovs.NAME].update_active(this.current_active, this.active_chart_id);
+                this.#menus[MenuMovs.NAME].update_active(chartInfo.active, chartInfo.id);
                 
-    //TODO GUARDAR MODELO DE DATOS FUENTE, NO SOLO 'CHART MODEL'
-                if(!this.#models[that.current_model_key]) this.#models[that.current_model_key] = new DataModel();
-                this.#models[that.current_model_key][Const.MOVS_ID] = new Movements(that.#chart_models[that.current_model_key].ohlc, that.#menus[MenuMovs.NAME].level_max, that.current_model_key);
+                //TODO GUARDAR MODELO DE DATOS FUENTE, NO SOLO 'CHART MODEL'
+                if(!this.#models[chartInfo.modelKey]) this.#models[chartInfo.modelKey] = new DataModel();
+                this.#models[chartInfo.modelKey][Const.MOVS_ID] = new Movements(this.#chart_models[chartInfo.modelKey].ohlc, this.#menus[MenuMovs.NAME].level_max, chartInfo.modelKey);
 
                 console.time('Split movs');
-                let ret = this.#chart_models[that.current_model_key].split_movements_data(this.#models[that.current_model_key][Const.MOVS_ID]);
+                let ret = this.#chart_models[chartInfo.modelKey].split_movements_data(this.#models[chartInfo.modelKey][Const.MOVS_ID]);
                 console.timeEnd('Split movs');
                 
                 this.writeStatus({info:'Movimientos cargados.', timeout: 2500});
                 $(MenuMovs.MENU_ICON).removeClass(Const.CLASS_DISABLED);
 
                 //Update graphic controls for time frame changes
-                let graphics = Object.values(this.#view.chart_tree[this.active_chart[Const.ID_ID]][Const.GRAPHICS_ID]);
+                let graphics = Object.values(this.#view.chart_tree[chartInfo.chart.id][Const.GRAPHICS_ID]);
                 if(graphics.length) {
-                    graphics.forEach(g => g.set_time_frame(this.currActive[Const.MARCO_ID]));
-                    // this.#view.draw_graphic_control(graphics, this.active_chart);
+                    graphics.forEach(g => g.set_time_frame(chartInfo.active[Const.TIME_FRAME_ID]));
                 }
-                
-                // Returns event or promise according to caller
-                if(eventId) $(document).trigger(eventId);
-                resolve(this.currActive);
-                // return new Promise( (resolve, reject) => resolve(this.currActive));
-                // else return new Promise( resolve => resolve(this.currActive));
+
+                this.addChartSelector({id: chartInfo.id, chart: chartInfo.chart});
+                this.createActiveStream(chartInfo);
+                resolve(chartInfo.active);
             })
-            .catch( (err) => new Promise( (resolve, reject) => {
-                                            let msg = 'Error cargando los datos del activo:' + (eventId) ? eventId : '';
-                                            console.error(msg);
-                                            reject(msg);
-                                        })
-            );
+            .catch( (err) => {
+                let msg = 'Error cargando los datos del activo.';
+                console.error(msg);
+                reject(msg);
+            });
         });
-        // $(document).on(plot_eventId, e => { if(eventId) $(document).trigger(eventId); });
     }
 
+    addChartSelector({id, chart}) {
+        chart.setOption({
+            series: [{
+                id: id,
+                name: id,
+                type: 'custom',
+                data: [0, 0],
+                renderItem: (param, api) => {
+                    let children = [{
+                        type: 'rect',
+                        id: id,
+                        name: id,
+                        invisible: true,
+                        cursor: 'crosshair',
+                        x: 0,
+                        y: 0,
+                        shape: {
+                            width: api.getWidth(),
+                            height: api.getHeight() ,
+                        },
+                        // style: { fill: 'rgba(255,0,0,0.5)', }
+                    }];
+
+                    let graphic = {
+                        type: 'group',
+                        id: id,
+                        name: id,
+                        cursor: 'crosshair',
+                        children: children,
+                        x: 0,
+                        y: 0,
+                        z: 120,
+                    }
+
+                    return graphic;
+                },
+            }]
+        });
+        chart.on('mousedown', { seriesId: id }, (e) => {
+            this.selectChart({ id: e.seriesId });
+        });
+    }
 
     //----------------------------- EVENTS SET TIME FRAME -----------------------------
-
-    set_time_frame(timeFrame) {
-        // this.#time_frame.time_frame = timeFrame;
-        if((!this.currActive[Const.MARCO_ID]) || (this.currActive[Const.MARCO_ID] != timeFrame)) {
-            this.currActive[Const.MARCO_ID] = timeFrame;
-            $(document).trigger(TickerFilter.EVENT_LOAD_HISTORIC);
-        }
-    }
 
     bind_keys_time_frame(e) {
         var that = this;
@@ -315,8 +339,8 @@ class ChartController {
         
         if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL]) {
             $(document).on(ControlSettings.EVENT_CHART_ZOOM_HORIZONTAL, (e, key) => {
-                if(that.active_chart) {
-                    that.active_chart.setOption(ChartView.CHART_ZOOM_X_ENABLED);
+                if(that.activeChart.chart) {
+                    that.activeChart.chart.setOption(ChartView.CHART_ZOOM_X_ENABLED);
                 }
                 e.stopPropagation();
                 e.preventDefault();
@@ -328,9 +352,9 @@ class ChartController {
                 let data_zoom = that.get_chart_option('dataZoom');
                 let data_zoom_y = data_zoom.filter(dz => { if (dz) return dz.id == ChartView.DATA_ZOOM_Y_INSIDE_ID; });
                 if(data_zoom_y.length == 0) {
-                    that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_Y_INSIDE ] });
+                    that.activeChart.chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_Y_INSIDE ] });
                 }
-                that.active_chart.setOption(ChartView.CHART_ZOOM_X_DISABLED);
+                that.activeChart.chart.setOption(ChartView.CHART_ZOOM_X_DISABLED);
                 e.stopPropagation();
                 e.preventDefault();
             });
@@ -345,7 +369,7 @@ class ChartController {
         }
         
         if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_WHEEL_MOVE]) {
-            $(document).on(ControlSettings.EVENT_CHART_WHEEL_MOVE, (e, key) => that.active_chart.setOption(ChartView.CHART_ZOOM_X_DISABLED));
+            $(document).on(ControlSettings.EVENT_CHART_WHEEL_MOVE, (e, key) => that.activeChart.chart.setOption(ChartView.CHART_ZOOM_X_DISABLED));
         }
 
         if(!$._data(document, 'events')[ControlSettings.EVENT_CHART_WHEEL_MOVE_END]) {
@@ -356,13 +380,11 @@ class ChartController {
             $(document).on(ControlSettings.EVENT_CHART_AUTO_SCALE, (e, key) => {
                 //TODO HAY QUE GUARDAR LA CONF DE ZOOM COMPLETA EN CTES, Y QUITAR LA PARTE DE ZOOM Y (yAxisIndex) PARA QUE HAGA AUTOSCALE EN Y
                 console.log('AUTOSCALE');
-                // var id = KeyTicker(that.current_active) + '_' + that.#activeChart.id;
-                // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
-                let model_key = that.current_model_key;
+                let model_key = this.activeChart.modelKey;
                 let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
                 let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
-                that.active_chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
-                that.active_chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER/*, ChartView.DATA_ZOOM_X_SLIDER*/ ] }, { replaceMerge: ['dataZoom']} );
+                that.activeChart.chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
+                that.activeChart.chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER/*, ChartView.DATA_ZOOM_X_SLIDER*/ ] }, { replaceMerge: ['dataZoom']} );
                 console.log(that.get_chart_option('yAxis'));
                 console.log(that.get_chart_option('dataZoom'));
             });
@@ -382,8 +404,11 @@ class ChartController {
         if(!$._data(document, 'events')[ControlSettings.EVENT_ADD_CHART]) {
             $(document).on(ChartController.EVENT_ADD_CHART, (e, ops) => {
                 console.log('EVENT_ADD_CHART');
-                this.create_chart({col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW });
-                this.eventLoadHistoric({active:this.currActive});
+                let id = this.create_chart({place: {col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+                let prevActive = this.activeChart.active;
+                this.selectChart({id})
+                this.updateChartActive(this.activeChart, this.activeChart.active || prevActive);
+                this.eventLoadHistoric(this.activeChart);
             });
         }
     }
@@ -396,73 +421,86 @@ class ChartController {
         if(!this.#menus[PanelPatterns.NAME]) { this.#menus[PanelPatterns.NAME] = new PanelPatterns(this.#models); }
         if(!this.#key_config) { this.#key_config = new KeyConfig(); }
         if(!this.#control_settings) { this.#control_settings = new ControlSettings(this.#key_config); }
-        if(!this.#menus[Fibonacci.NAME]) {
-            this.#MENUS_ICON_GRAPHIC[Fibonacci.NAME] = MenuFibonacci.MENU_ICON;
-            this.#models.templates = this.#models.templates || {};
-            this.#models.templates[Fibonacci.NAME] = this.#models.templates[Fibonacci.NAME] || {};
-            this.#menus[Fibonacci.NAME] = new MenuFibonacci(this.#models);
-        }
 
-        $(document).on(ChartGraphic.EVENT_SELECTED, (e, params) => {
+        $(Const.ELEMENT_ID_PERSIST_MODE).on('click', (e) => {
+            this.persist_tool = !this.persist_tool;
+            $(e.target).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            // // Manages cancel operation
+            // if(this.persist_tool) {
+            //     $(document).on(Const.EVENT_CLOSE, (e) => $(Const.ELEMENT_ID_PERSIST_MODE).trigger('click'));
+            // }
+            // else {
+            //     $(document).off(Const.EVENT_CLOSE);
+            // }
+        });
+
+
+        // Creates graphic controls menus
+        Conf.getGraphicControlsNames().forEach( g => {
+            if(!this.#menus[g]) {
+                let menuClass = Conf.getGraphicControlsMenu(g);
+                this.#MENUS_ICON_GRAPHIC[g] = menuClass.MENU_ICON;
+                this.#models.templates = this.#models.templates || {};
+                this.#models.templates[g] = this.#models.templates[g] || {};
+                this.#menus[g] = new menuClass(this.#models);
+            }
+        });
+        
+        // Declare create event
+        $(document).on(ChartComponent.EVENT_CREATE, (e, graphicClass) => {
+            let conf = (this.#menus[graphicClass.NAME]) ? this.#menus[graphicClass.NAME].prev_template : {};
+            $(document).trigger(Const.EVENT_CLOSE);
+            graphicClass.create({ chart: this.activeChart.chart, template: conf, timeFrame: this.activeChart.active[Const.TIME_FRAME_ID] });
+        });
+        
+        $(document).on(ChartComponent.EVENT_SELECTED, (e, params) => {
             let menu_name = params.constructor.name;
             if(this.#menus[menu_name]) {
+                $(document).trigger(Const.EVENT_UPDATE_MODEL, [menu_name]);
                 this.#menus[menu_name].show_float(params);
             }
         });
 
-        $(document).on(ChartGraphic.EVENT_UNSELECTED, (e, params) => {
-            let menu_name = '';
-            if(params && params.constructor && params.constructor.name) {
-                menu_name = params.constructor.name;
-            }
+        $(document).on(ChartComponent.EVENT_UNSELECTED, (e, params) => {
+            let menu_name = params.constructor.name;
             if(this.#menus[menu_name]) {
                 this.#menus[menu_name].hide_float();
                 this.#menus[menu_name].hide();
-            }
-        });
-
-// TODO HACER ESTE EVENTO GENERICO PARA TODOS LOS CONTROLES  GRAFICOS (CAMBIAR NOMBRE), LLAMAR A CADA 'BUILDER' SEGUN DICCIONARIO?
-        $(document).on(Fibonacci.EVENT_CREATE, (e, params) => {
-            let conf = this.#menus[Fibonacci.NAME].prev_template;
-            Fibonacci.create({ chart: this.active_chart, template: conf, timeFrame: this.current_active[Const.MARCO_ID] });
-        });
-
-        $(document).on(TrendLine.EVENT_CREATE, (e, params) => {
-            let conf = {};//this.#menus[TrendLine.NAME].prev_template;
-            TrendLine.create({ chart: this.active_chart, template: conf, timeFrame: this.current_active[Const.MARCO_ID] });
-        });
-
-        $(document).on(ChartGraphic.EVENT_PLOT, (e, fibos) => {
-            this.#view.draw_graphic_control(fibos, this.active_chart);
-        });
-
-        $(document).on(ChartGraphic.EVENT_CREATED, (e, type) => {
-            if(!this.persist_tool) {
-                let icon = this.#MENUS_ICON_GRAPHIC[type];
-                if(icon) {
-                    $(icon).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
-                    $(icon).addClass(Const.CLASS_HOVERABLE_ICON);
-                }
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             }
         });
 
-        $(document).on(MenuFibonacci.EVENT_OPEN_SETTINGS, (e, params) => {
-            this.#menus[Fibonacci.NAME].show(params);
+        $(document).on(ChartComponent.EVENT_PLOT, (e, components) => {
+            this.#view.draw_chart_component(components, this.activeChart.chart);
         });
 
-        // TODO PASAR EL EVENTO FUENTE COMO PARAMETRO DE ENTRADA, Y HACER UN EVENTO REMOVE GENERICO
-        $(document).on(MenuFibonacci.EVENT_REMOVE, (e, fibo) => {
-            this.throw_trash(fibo, MenuFibonacci.EVENT_REMOVE);
-            this.#view.clear_chart(this.active_chart, [fibo[Const.ID_ID]]);
+        $(document).on(ChartComponent.EVENT_CREATED, (e, type, param) => {
+            if((!this.persist_tool) || (param == Const.EVENT_CANCELED)) {
+                let icon = this.#MENUS_ICON_GRAPHIC[type];
+                if(icon) {
+                    $(icon).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                }
+                $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
+            }
+            else {
+                let graphicClass = eval(type);
+                let conf = (this.#menus[graphicClass.NAME]) ? this.#menus[graphicClass.NAME].prev_template : {};
+                graphicClass.create({ chart: this.activeChart.chart, template: conf, timeFrame: this.activeChart.active[Const.TIME_FRAME_ID] });
+            }
+        });
+            
+        $(document).on(MenuChartGraphic.EVENT_OPEN_SETTINGS, (e, params) => {
+            let menu_name = params.constructor.name;
+            if(this.#menus[menu_name]) {
+                $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
+                this.#menus[menu_name].show(params);
+            }
         });
 
-        // $(document).on(MenuFibonacci.EVENT_MENU_CLOSE, (e, menu_name) => {
-        //     if(this.#menus[menu_name]) {
-        //         this.#menus[menu_name].hide_float();
-        //         this.#menus[menu_name].hide();
-        //     }
-        // });
+        $(document).on(MenuChartGraphic.EVENT_REMOVE, (e, graphic) => {
+            this.throw_trash(graphic, MenuChartGraphic.EVENT_REMOVE);
+            this.#view.clear_chart(this.activeChart.chart, [graphic[Const.ID_ID]]);
+        });
     }
 
     #init_interfaces() {
@@ -565,7 +603,9 @@ class ChartController {
             
             // Create templates model
             this.templates_dao = new TemplatesDAO(this.interface_ddbb, this.#models);
-            this.#EVENT_SOURCE[MenuFibonacci.NAME] = [this.templates_dao, MenuFibonacci.TITLE];
+            this.#EVENT_SOURCE[Fibonacci.NAME] = [this.templates_dao, MenuFibonacci.TITLE];
+            this.#EVENT_SOURCE[TrendLine.NAME] = [this.templates_dao, MenuTrendLine.TITLE];
+            this.#EVENT_SOURCE[TrendLine.NAME] = [this.templates_dao, MenuRectangleGraphic.TITLE];
 
             // Creates all option menus
             this.#create_menus();
@@ -632,7 +672,7 @@ class ChartController {
                 if(show_rets) { }
                 else {
                     // let series_to_del = [];
-                    // that.#view.clear_chart(that.active_chart, series_to_del);
+                    // that.#view.clear_chart(that.activeChart.chart, series_to_del);
                 }
             });
 
@@ -640,8 +680,7 @@ class ChartController {
             //TODO REFACTORIZAR CONTENIDO A METODO
             $(document).on(MenuMovs.EVENT_SHOW_MOVEMENTS, (e, opt) => {
                 console.log('CONTROLLER EVENT SHOW MOVEMENTS', e, opt);
-                // let model_key = that.generate_model_key(that.currActive, that.#activeChart.id);
-                let model_key = that.current_model_key;
+                let model_key = this.activeChart.modelKey;
                 let series_to_del = [];
                 if(that.#chart_models[model_key].movs) {
                     series_to_del = Object.keys(that.#chart_models[model_key].movs).map(k => that.#chart_models[model_key].movs[k].id);
@@ -653,27 +692,27 @@ class ChartController {
                         let level_max = opt[Const.MAXIMOS_ID][Const.NIVEL_ID];
                         let level_selected = opt[Const.NIVEL_ID];
                         console.log(level_max, that.#chart_models);
-                        that.#view.clear_chart(that.active_chart, series_to_del);
-                        that.#view.plot_movements(this.#chart_models[id].movs[level_selected-1], that.active_chart);
+                        that.#view.clear_chart(that.activeChart.chart, series_to_del);
+                        that.#view.plot_movements(this.#chart_models[id].movs[level_selected-1], that.activeChart.chart);
                         
                         // //TODO CONTROLAR LOS ERRORES, PARA DEVOLVER UN ERROR EN SECCION DE ESTADO, SI NO HAY DATOS DEL SERVIDOR, TAMBIEN CONTROLAR OTRAS VARIABLES COMO LEVEL_SELECTED, ETC
                         // that.load_movements(id, level_selected, level_max)
                         // .then(res => {
-                        //     that.#view.clear_chart(that.active_chart, series_to_del);
-                        //     that.#view.plot_movements(res, that.active_chart);
+                        //     that.#view.clear_chart(that.activeChart.chart, series_to_del);
+                        //     that.#view.plot_movements(res, that.activeChart.chart);
                         // })
                         // .catch( (error) => {
                         //     console.error('Error loading movements: ', error);
-                        //     that.#view.clear_chart(that.active_chart, series_to_del);
+                        //     that.#view.clear_chart(that.activeChart.chart, series_to_del);
                         // });
                     }
                     catch(err) {
                         console.error('Error loading movements: ', error);
-                        that.#view.clear_chart(that.active_chart, series_to_del);
+                        that.#view.clear_chart(that.activeChart.chart, series_to_del);
                     }
                 }
                 else {
-                    that.#view.clear_chart(that.active_chart, series_to_del);
+                    that.#view.clear_chart(that.activeChart.chart, series_to_del);
                 }
             });
 
@@ -681,7 +720,7 @@ class ChartController {
             $(document).on(MenuPatterns.EVENT_SHOW_PATTERNS, function(e, query) {
                 let start_time = 0;
                 that.writeStatus({info:'Buscando coincidencias...', loading:1});
-                query.model_key = that.current_model_key;
+                query.model_key = that.activeChart.modelKey;
                 start_time = performance.now();
                 if(that.#patterns_cb[query[Const.TIPO_PARAM_ID]]) {
                     that.#patterns_cb[query[Const.TIPO_PARAM_ID]](query, that)
@@ -713,42 +752,53 @@ class ChartController {
                 let series_to_del = [];
                 if(prev) series_to_del.push(...prev);
                 // Forces deletion for previous plots (need to be here, data may be empty, and therefore won t enter in next forEach loop)
-                that.#view.clear_chart(that.active_chart, series_to_del);
+                that.#view.clear_chart(that.activeChart.chart, series_to_del);
 
                 series_to_del = [];
                 Object.keys(pattern).forEach(k => {
-                    if(that.#models[that.current_model_key].patternresults[pattern[k][Const.ID_ID]].data[pattern[k].level]) {
-                        series_to_del.push(that.#models[that.current_model_key].patternresults[pattern[k][Const.ID_ID]][Const.ID_ID]);
+                    if(that.#models[this.activeChart.modelKey].patternresults[pattern[k][Const.ID_ID]].data[pattern[k].level]) {
+                        series_to_del.push(that.#models[this.activeChart.modelKey].patternresults[pattern[k][Const.ID_ID]][Const.ID_ID]);
                     }
                 });
                 
-                that.#view.clear_chart(that.active_chart, series_to_del);
+                that.#view.clear_chart(that.activeChart.chart, series_to_del);
 
-                if(zoom) that.#view.zoom_chart(zoom, that.active_chart);
+                if(zoom) that.#view.zoom_chart(zoom, that.activeChart.chart);
 
                 let ret_plot = that.#view.format_retracements(pattern);
-                that.#view.plot_retracements(ret_plot, that.active_chart);
+                that.#view.plot_retracements(ret_plot, that.activeChart.chart);
                 // let fibo_ret = that.#view.format_fibo_retracement_data(pattern);
-                // that.#view.draw_graphic_control(ret_plot, fibo_ret, query, that.active_chart);
+                // that.#view.draw_chart_component(ret_plot, fibo_ret, query, that.activeChart.chart);
                 let fibos = [];
                 Object.values(pattern).forEach(p => {
                     if(Object.keys(p[Const.DATA_ID]).length) {
                         Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach(r => {
                             // fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }}) );
-                            fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}`, opacity: 30 }, timeFrame: that.currActive[Const.MARCO_ID]}) );
+                            fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}`, opacity: 30 }, timeFrame: that.activeChart.active[Const.TIME_FRAME_ID]}) );
                         });
                     }
                 });
-                that.#view.draw_graphic_control(fibos, that.active_chart);
+                that.#view.draw_chart_component(fibos, that.activeChart.chart);
             });
 
             // Handles event to load candles historic
-            $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => that.eventLoadHistoric({active}));
-            
-            $(document).on(TimeFrame.EVENT_LOAD_HISTORIC, (e, timeFrame) => that.eventLoadHistoric({timeFrame}));
+            $(document).on(TickerFilter.EVENT_LOAD_HISTORIC, (e, active) => {
+                this.updateChartActive(this.activeChart, active);
+                this.eventLoadHistoric(this.activeChart);
+            });
 
-            // Time Frame header //TODO CAMBIAR
-            // this.#build_header();
+            // Handles event active chart time frame changed from keyboard
+            $(document).on(TimeFrame.EVENT_TIME_FRAME_CHANGED, (e, timeFrame) =>  {
+                this.updateChartTimeFrame(this.activeChart, timeFrame);
+                this.eventLoadHistoric(this.activeChart);
+            });
+
+            $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, timeFrame, id, el) => {
+                if(this.#chartFrames[id]) {
+                    this.updateChartTimeFrame(this.#chartFrames[id], timeFrame);
+                    this.eventLoadHistoric(this.#chartFrames[id]);
+                }
+            });
 
             // $(document).on(MenuPatterns.EVENT_DDBB_LOAD_USER_PATTERNS, (e) => {
             //     this.patterns_dao.load()
@@ -783,7 +833,6 @@ class ChartController {
         }
     }
     
-
     // TRASH MANAGEMENT
     // TODO TRASH GUARDAR EN BBDD PARA RECUPERAR HISTORIAL
     throw_trash(item, op) {
@@ -810,8 +859,6 @@ class ChartController {
 
     get chart_models() { return this.#chart_models; }
 
-    get current_model_key() { return this.generate_model_key(this.currActive, ''); } //this.#activeChart.id); }
-
     get_level_max(id) { return this.#chart_models[id].max.level_max; }
     
     get_level_selected(id) { return this.#chart_models[id].max.level_selected; }
@@ -820,33 +867,27 @@ class ChartController {
 
     get interface() { return this.interface; }
 
-    get active_chart() { return this.#chart_frames[this.#activeChart.id].chart; }
-    
-    get active_chart_id() { return this.#activeChart.id; }
+    set activeChart(chartInfo) {
+        if(chartInfo.id) {
+            this.updateChartActive(this.#chartFrames[chartInfo.id], chartInfo.active);
+        }
+        this.#activeChartId = chartInfo.id;
+    }
 
+    get activeChart() { return this.#chartFrames[this.#activeChartId]; }
+    
     get patterns() { return this.#chart_models.patterns; }
 
-    // set_active_chart(chart) { this.#activeChart = chart; }
-
     get_chart_option(...options) {
-        if(this.active_chart) {
+        if(this.activeChart.chart) {
             let ops_str = '.' + options.join('.');
-            ops_str = 'this.active_chart.getOption()' + ops_str;
+            ops_str = 'this.activeChart.chart.getOption()' + ops_str;
             let res = eval(ops_str);
             return res;
         }
         else {
             return null;
         }
-    }
-
-    get current_active() { return this.currActive; }
-
-    get current_active_desc() {
-        let desc = this.currActive[Const.ID_ID];
-        desc += ' ' + this.currActive[Const.MARCO_ID];
-        desc += ' ' + this.currActive[Const.BROKER_ID];
-        return desc;
     }
 
     get ticker_filter() { return this.#ticker_filter; }
@@ -860,18 +901,37 @@ class ChartController {
     get control_settings() { return this.#control_settings; }
 
     //----------------------------- INTERFACE METHODS -----------------------------
+
     send_query(query, cb, error=null, async=true, timeout, url) {
         this.interface.send_query(query, cb, error, async, timeout, url);
     }
 
     //----------------------------- CHART METHODS -----------------------------
 
-    generate_model_key(active, chart_id) {
-        let model_key = KeyTicker(active) + chart_id;
+    generate_model_key({active, chartId}) {
+        let model_key = KeyTicker(active) + chartId;
         return model_key;
     }
     
-    generate_layout(place, id) {
+    updateChartActive(chartInfo, newActive) {
+        chartInfo.prevModelKey = chartInfo.modelKey;
+        chartInfo.prevActive = chartInfo.active;
+        chartInfo.active = { ...chartInfo.active, ...newActive };
+        if(Object.keys(chartInfo.active).length == 0) {
+            chartInfo.active = undefined;
+        }
+        if(chartInfo.active) {
+            chartInfo.modelKey = this.generate_model_key({active: chartInfo.active, chartId: chartInfo.chart.id});
+        }
+    }
+
+    updateChartTimeFrame(chartInfo, timeFrame) {
+        let newActive = JSON.parse(JSON.stringify(chartInfo.active));
+        newActive[Const.TIME_FRAME_ID] = timeFrame;
+        this.updateChartActive(chartInfo, newActive);
+    }
+
+    generate_layout({id, place}) {
         let row = 0;
         let frame = $('<div />',
                     { 'id':id, class: ChartController.CLASS_CHART_LAYOUT });
@@ -908,22 +968,29 @@ class ChartController {
         });
 
         // Updates all charts sizes to new layout
-        let charts = Object.keys(this.#chart_frames);
-        charts.forEach( c => this.#chart_frames[c].chart.resize());
+        let charts = Object.keys(this.#chartFrames);
+        charts.forEach( c => this.#chartFrames[c].chart.resize());
 
         return frame;
     }
 
     create_chart({id, place}) {
-        var that = this;
         try {
             id = id || this.#n_frames + '_' + Date.now();
-            let frame = this.generate_layout(place, id);
-            // TODO GUARDAR EL ARBOL EN LA VISTA?
-            this.#chart_frames[id] = this.#view.create_chart({ id: id, num: this.#n_frames, frame: frame })
+            let frame = this.generate_layout({id, place});
+            let chart = this.#view.create_chart({ id: id, frame: frame })
+            this.#create_header({id, frame});
+
+            // Stores chart information in array
+            this.#chartFrames[id] = {
+                id: id,
+                num: this.#n_frames,
+                frame: frame,
+                chart: chart
+            };
+
+            // Increase number of total frames
             this.#n_frames++;
-            this.#activeChart = this.#chart_frames[id];
-            this.#create_header();
             return id;
         }
         catch(error) {
@@ -932,57 +999,59 @@ class ChartController {
         return null;
     }
 
-    #create_header() {
-        let id = this.#activeChart.id;
+    selectChart({id}) {
+        if(!this.activeChart) {
+            this.activeChart = this.#chartFrames[id];
+        }
+        else if((this.#chartFrames[id]) && (id != this.activeChart.chart.id)) {
+            let currentActiveFrame = this.#chartFrames[this.activeChart.chart.id].frame;
+            $(currentActiveFrame).removeClass(ChartView.CLASS_CHART_SELECTED);
+            this.activeChart = this.#chartFrames[id];
+            $(this.#chartFrames[id].frame).addClass(ChartView.CLASS_CHART_SELECTED);
+        }
+    }
+
+    #create_header({id, frame}) {
         let title_el = $('<div>', {
             id: ChartController.ID_CHART_TITLE + id,
             class: ChartController.CLASS_CHART_TITLE + ' ' + Const.CLASS_HOVERABLE_ICON,
-            // text: this.currActive[Const.ID_ID] + ' ' + this.currActive[Const.BROKER_ID],
         });
 
-        this.#chart_frames[id].frame.append(title_el);
+        frame.append(title_el);
         $(ChartController.ELEMENT_CHART_TITLE + id).on('click', e => {
             e.stopPropagation();
             $(document).trigger(TickerFilter.EVENT_ENABLE);
         });
 
-        this.#update_chart_header();
+        // this.#update_chart_header();
 
         let time_frame_el = $('<div>', {
             id: ChartController.TIME_FRAME_ID + id + '-container',
-            class: ChartController.CLASS_CHART_TIME_FRAME, // + ' ' + Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_BUTTON_GENERAL,
+            class: ChartController.CLASS_CHART_TIME_FRAME,
         });
-        this.#chart_frames[id].frame.append(time_frame_el);
+        // this.#chartFrames[id].frame.append(time_frame_el);
+        frame.append(time_frame_el);
 
          //TODO PUEDE QUE LOS MARCOS TEMPORALES CAMBIEN DE UN BROKER A OTRO EN EL FUTURO
         let time_frame_dropdown = new Dropdown( {
                                                   id: ChartController.TIME_FRAME_ID + id,
                                                   items: Time.TIME_FRAMES,
                                                   event: ChartController.EVENT_TIME_FRAME_CHANGED,
-                                                  header: { selected: true }
+                                                  header: { selected: true },
+                                                  parent: frame
                                                 });
                                                 
         time_frame_dropdown.controls.each( (i, c) => time_frame_el.append(c) );
 
-        $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, timeFrame, el) => this.eventLoadHistoric({timeFrame}) );
-
-        $(document).on(TimeFrame.EVENT_TIME_FRAME_CHANGED, (e, timeFrame) =>  this.eventLoadHistoric({timeFrame}) );
+        // $(document).on(ChartController.EVENT_TIME_FRAME_CHANGED, (e, timeFrame, id, el) => {
+        //     if(this.#chartFrames[id]) {
+        //         this.updateChartTimeFrame(this.#chartFrames[id], timeFrame);
+        //         this.eventLoadHistoric(this.#chartFrames[id]);
+        //     }
+        // });
     }
 
-    plot_candles(data, chart=null, clear=true) {
-        if(chart == null) {
-            chart = this.active_chart;
-        }
-        return this.#view.plot_candles(data, chart, clear);
-    }
-
-    updateCandles({query, modelKey, data, chart}) {
-        let dataOhlc = this.#chart_models[modelKey].splitOhlcData({ query, data, append: true });
-
-        this.#view.updateCandles({ data: dataOhlc, chart });
-    }
-
-    zoom_chart_default(data) {
+    zoom_chart_default(data, chart) {
         let price_arr_max = [];
         let sub_data = data.data_y.filter(p => p[Const.IDX_CANDLE_OPEN] != undefined);
         sub_data.map((p, i) => {
@@ -1005,33 +1074,36 @@ class ChartController {
         let zoom = {
             startValue: {x: dateMin, y:priceMin},
             endValue: { x: dateMax, y:priceMax},
-            margin: {x: /*3.5*/1, y: 5}, //Margin values %
+            margin: {x: /*3.5*/5, y: 5}, //Margin values %
         };
         if(zoom) {
-            this.#view.zoom_chart(zoom, this.active_chart);
+            this.#view.zoom_chart(zoom, chart);
         }
     }
 
-    load_historical(request, model_key = null) {
-        var that = this;
+    loadHistorical({query, modelKey = null}) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => resolve(this.loadHistoricalAsync({query, modelKey})), 0);
+        });
+    }
+
+    loadHistoricalAsync({query, modelKey = null}) {
         return new Promise( (resolve, reject) => {
-            // model_key = this.generate_model_key(request, this.#activeChart.id);
-            model_key = this.current_model_key;
             console.time('historic');
-            let id = request[Const.ACTIVE_ID];
-            let broker = request[Const.BROKER_ID].toLowerCase();
-            let timeFrame = request[Const.TIME_FRAME_ID];
-            let startTime = request[Const.START_TIME_ID];
-            let endTime = request[Const.END_TIME_ID];
+            let id = query[Const.ACTIVE_ID];
+            let broker = query[Const.BROKER_ID].toLowerCase();
+            let timeFrame = query[Const.TIME_FRAME_ID];
+            let startTime = query[Const.START_TIME_ID];
+            let endTime = query[Const.END_TIME_ID];
             // this.interface.load_historical(request, false)
             this.#brokers.brokers[broker].getHistoric({ id, timeFrame, startTime, endTime })
             .then(rawData => {
                     let model = new ModelChart();
-                    that.#chart_models[model_key] = model;
-                    that.#chart_models[model_key].splitOhlcData({query:request, data: rawData});
-                    // that.#chart_models[model_key].split_ohlc_data(rawData);
+                    this.#chart_models[modelKey] = model;
+                    this.#chart_models[modelKey].splitOhlcData({query:query, data: rawData});
+                    // this.#chart_models[model_key].split_ohlc_data(rawData);
                     console.timeEnd('historic');
-                    resolve(that.#chart_models[model_key].ohlc);
+                    resolve(this.#chart_models[modelKey].ohlc);
             })
             .catch( error => {
                 console.timeEnd('historic');
@@ -1040,32 +1112,31 @@ class ChartController {
         });
     }
     
-    create_stream(query, chart) {
+    // createActiveStream(query, chart) {
+    createActiveStream(chartInfo) {
+        let query = chartInfo.active;
+        let chart = chartInfo.chart;
         let broker = query[Const.BROKER_ID].toLowerCase();
-        this.#brokers.brokers[broker].openWebSocket({query, callback: this.updateCandles.bind(this), modelKey: this.current_model_key, chart});
-        // var that = this;
-        // setInterval(() => {
-            // let end_time = Time.now(Time.FORMAT_STR);
-            // let init_time = Time.subtract_value(end_time, 1, this.currActive[this.#TSQL.MARCO_ID]).format(Time.FORMAT_STR);
-            // query[Const.START_TIME_ID] = init_time;
-            // this.load_historical(query)
-            // .then(data => this.#view.update_candles({data, chart}))
-            // .catch(err => console.error(err));
-        // }, 1000);
+        let id = chartInfo.modelKey;
+        let active = query[Const.ID_ID];
+        let timeFrame = query[Const.TIME_FRAME_ID];
+        
+        function updateCandles({id, data}) {
+            let dataOhlc = this.#chart_models[id].splitOhlcData({ query, data, append: true });
+            this.#view.updateCandles({ data: dataOhlc, chart });
+            setTimeout(() => this.#view.updatePriceCursor({ query, data: dataOhlc, chart }), 10);
+        }
+        this.#brokers.brokers[broker].openWebSocket({id, active, timeFrame, callback: updateCandles.bind(this)});
     }
     
-    plot_historical(request, chart, model_key = null, clear=true) {
-        var that = this;
+    plotHistorical({query, chart, modelKey = null, clear=true}) {
         return new Promise( (resolve, reject) => {
-            this.load_historical(request, model_key)
-            .then( data => that.plot_candles(data, chart, clear) )
-            .then( data => that.zoom_chart_default(data) )
-            .then( data => that.active_chart.hideLoading())
-            // .then( () => this.#brokers.brokers[broker].openWebSocket({query: request, callback: this.updateCandles.apply(chart), modelKey: that.current_model_key}))
-            .then( data => {
-                that.create_stream(request, chart);
-                return data;
-            })
+            chart.showLoading(ChartView.SHOW_LOADING_OPS);
+            this.loadHistorical({query, modelKey})
+            .then( data => this.#view.plot_candles(data, chart, clear) )
+            .then( data => this.#view.plotPriceCursor({query, data, chart}) )
+            .then( data => this.zoom_chart_default(data, chart) )
+            .then( data => chart.hideLoading())
             .then( data => resolve(data))
             .catch( data => {
                 console.error('Error loading active:', data);
@@ -1118,10 +1189,10 @@ class ChartController {
         // Save current session
         let session = {};
         let resource = {};
-        Object.keys(that.#chart_frames).forEach( ch => {
-            // console.log(that.#chart_frames[ch]);
+        Object.keys(that.#chartFrames).forEach( ch => {
+            // console.log(that.#chartFrames[ch]);
             session[ch] = {};
-            session[ch] = that.#chart_frames[ch][Const.ACTIVE_ID];
+            session[ch] = that.#chartFrames[ch][Const.ACTIVE_ID];
             resource[ch] = {};
             Object.keys(that.#view.chart_tree[ch][Const.GRAPHICS_ID]).forEach(g => {
                 resource[ch][g] = that.#view.chart_tree[ch][Const.GRAPHICS_ID][g].serialize();
@@ -1154,36 +1225,45 @@ class ChartController {
         
         if(framesId.length) {
             framesId.forEach(id => {
-                loadResults.push(this.eventLoadHistoric({ idFrame: id, active: frames[id] }));
+                // TODO METODO GENRAL DE GESTION DE NUEVO CHART
+                // TODO CREAR EL FRAME
+                // TODO DETERNER WEB SOCKET SI ES NECESARIO (SI YA HAY ACTIVO EN FRAME CREADO)
+                // TODO PROCESAR CARGA DE HISTORICO (AGREGAR ACTIVO EN this.#chartFrames[id_frame])
+                // TODO AGREGAR MARCO AL FRAME
+                // TODO CREAR WEB SOCKET
+                this.create_chart({id: id, place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+                this.selectChart({id});
+                this.updateChartActive(this.activeChart, frames[id] || ChartController.DEFAULT_ACTIVE);
+                loadResults.push(this.eventLoadHistoric(this.activeChart));
+            });
+            
+            Promise.allSettled(loadResults)
+            .then(res => {
+                Object.keys(resources).forEach(frameId => {
+                    let graphicsSerialized = Object.values(resources[frameId]);
+                    if(graphicsSerialized.length > 0) {
+                        let graphics = [];
+                        graphicsSerialized.forEach( g => {
+                            try { graphics.push(ChartComponent.deserialize(g)); }
+                            catch(error) { console.error(`Error deserializing graphic control: ${error}`); }
+                        });
+                        this.#view.draw_chart_component(graphics, this.#chartFrames[frameId].chart);
+                    }
+                });
+            })
+            .catch(error => {
+                let errMsg = `Error restoring preivous session: ${error}`;
+                console.error(errMsg);
+                this.writeStatus({error: errMsg});
             });
         }
         // If no session loaded
         else {
-            if((this.currActive == undefined) || (this.currActive == {})) {
-                this.currActive = ChartController.DEFAULT_ACTIVE;
-            }
-            loadResults.push(this.eventLoadHistoric({}));    
+            let id = this.create_chart({place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+            this.selectChart({id});
+            this.updateChartActive(this.activeChart, this.activeChart.active || ChartController.DEFAULT_ACTIVE);
+            loadResults.push(this.eventLoadHistoric(this.activeChart));
         }
-        
-        Promise.allSettled(loadResults)
-        .then(res => {
-            if(Object.keys(resources).length > 0) {
-                let frameId = Object.keys(resources)[0];
-                let graphicsSerialized = Object.values(resources[frameId]);
-                let graphics = [];
-                graphicsSerialized.forEach( g => {
-                    try { graphics.push(ChartGraphic.deserialize(g)); }
-                    catch(error) { console.error(`Error deserializing graphic control: ${error}`); }
-                });
-                // this.#view.draw_graphic_control(graphics, this.active_chart);
-                this.#view.draw_graphic_control(graphics, this.#chart_frames[frameId].chart);
-            }
-        })
-        .catch(error => {
-            let errMsg = `Error restoring preivous session: ${error}`;
-            console.error(errMsg);
-            this.writeStatus({error: errMsg});
-        });
     }
 
 

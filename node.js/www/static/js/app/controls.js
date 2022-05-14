@@ -39,6 +39,7 @@ class Dropdown {
     #items_cont;
     #class;
     #select_unknown = false
+    parent;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -56,6 +57,8 @@ class Dropdown {
         let items;
 
         params = params || {};
+
+        this.parent = params.parent;
 
         // Let force select unknown items
         if(params.select_unknown) { this.#select_unknown = (params.select_unknown == true) ? true : false; }
@@ -234,10 +237,10 @@ class Dropdown {
             $(it_el).on('click', e => {
                 if(this.#header.selected.enabled) this.selected = it;
                 if(this.#event_name) {
-                    $(document).trigger(this.#event_name, [it, e]);
+                    $(document).trigger(this.#event_name, [it, (this.parent) ? this.parent[0].id : this.parent, e]);
                     e.stopPropagation();
                 }
-                else if(this.#callback) this.#callback(it, e);
+                else if(this.#callback) this.#callback(it, (this.parent) ? this.parent[0].id : this.parent, e);
             });
         });
 
@@ -259,7 +262,7 @@ class Dropdown {
         if(this.#header.selected.control) {
             this.#header.selected.control.text(this.#header.selected.text);
         }
-        else {
+        else if(this.#items.includes(selected) == false) {
             console.log(`WARNING: No existe el elemento ${selected} en la lista.`);
         }
     }
@@ -1009,12 +1012,14 @@ class Display {
  * @param label Set a label for input control: { text | class | position | css }
  * @param input Set input control properties: { text | class | css | placeholder }
  * @param event Get/Set event/callback. Object with {name} and {callback function} .
- * @param event.name Get/Set event name.
- * @param event.callback Get/Set callback method.
+ * @param event Set event name.
  * @param text Get/Set the content of input control.
  * @param placeholder Get/Set a placeholder for input control.
  * @param label_text Get/Set label text.
-*/
+ */
+
+// * @param event.name Get/Set event name.
+// * @param event.callback Get/Set callback method.
 
 class Inputbox {
     
@@ -1028,7 +1033,7 @@ class Inputbox {
     #label = { enabled: false };
     #input = {};
     #container = {};
-    #event;
+    event;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -1091,6 +1096,12 @@ class Inputbox {
         
         // Add current object information to DOM element
         this.#container.control.data('Inputbox', this)
+
+        this.#input.control.on('change', (e) => {
+            if(this.event) {
+                $(document).trigger(this.event, [this.text, e]);
+            }
+        });
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
@@ -1119,12 +1130,14 @@ class Inputbox {
             this.#label.text = params.label.text;
         }
 
-        // If custom event provided
-        if(params.event) {
-            this.#event.name = params.event.name;
-            this.#event.callback = params.event.callback;
-            $(document).on(this.#event.name, (e) => this.#event.callback(e));
-        }
+        // // If custom event provided
+        // if(params.event) {
+        //     this.#event.name = params.event.name;
+        //     this.#event.callback = params.event.callback;
+        //     $(document).on(this.#event.name, (e) => this.#event.callback(e));
+        // }
+
+        this.event = params.event;
 
         this.#create_control();
     }
@@ -1171,8 +1184,8 @@ class Inputbox {
     set control(control) { this.#container.control = control; }
 
     // Event
-    get event() { return this.#event; }
-    set event(event) { this.#event = event; }
+    get event() { return this.event; }
+    set event(event) { this.event = event; }
 } // Inputbox
 
 
@@ -1332,6 +1345,7 @@ class Slider {
     #label;
     #input_range;
     #output;
+    event;
     id;
     min;
     max;
@@ -1340,6 +1354,7 @@ class Slider {
     css;
     class;
     show_output;
+    units;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -1412,7 +1427,10 @@ class Slider {
         this.#input_range.on('change', e => {
             this.value = this.#input_range.val();
             if(this.show_output) {
-                this.#output.text(this.value);
+                this.#output.text(this.value + this.units);
+            }
+            if(this.event) {
+                $(document).trigger(this.event, [this.value, e]);
             }
         });
 
@@ -1433,6 +1451,8 @@ class Slider {
         this.css = params.css;
         this.label = params.label;
         this.show_output = params.show_output;
+        this.event = params.event;
+        this.units = params.units || '';
         this.#create_control();
     }
 
@@ -1445,6 +1465,8 @@ class Slider {
             this.#output.text(this.value);
         }
     }
+
+    set event(event) { this.event = event; }
 } // Slider
 
 
@@ -1471,6 +1493,7 @@ class Checkbox {
     css;
     class;
     side;
+    event;
     // color;
 
     //----------------------------- CONSTRUCTOR -----------------------------
@@ -1501,6 +1524,12 @@ class Checkbox {
 
         this.control.append(this.#input, this.#checkmark);
         this.control.data('Checkbox', this);
+
+        this.#input.on('change', (e) => {
+            if(this.event) {
+                $(document).trigger(this.event, [this.checked, e]);
+            }
+        });
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
@@ -1520,6 +1549,7 @@ class Checkbox {
         this.css = params.css;
         this.class = params.class;
         this.side = params.side || 'right';
+        this.event = params.event;
         // this.color = params.color;
         this.#create_control();
     }

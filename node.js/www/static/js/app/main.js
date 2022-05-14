@@ -37,15 +37,6 @@ $(document).ready(function() {
         else reject(null);
     });
 
-    // const load_default = (ctrl) => new Promise((resolve, reject) => {
-    //     if(ctrl) {
-    //         let eventId = 'load_default' + Date.now();
-    //         ctrl.eventLoadHistoric({eventId});
-    //         $(document).on(eventId, e => resolve(ctrl));
-    //     }
-    //     else reject(null);
-    // });
-
     const chart_created = (ctrl) => new Promise((resolve, reject) => {
         if(ctrl) {
             $(window).trigger(Const.EVENT_CHART_CTRL_CREATED);
@@ -58,7 +49,6 @@ $(document).ready(function() {
     create_controller()
         // .then(resp => init_controller(resp, brokers_list, that.headers))
         .then(resp => init_controller(resp))
-        // .then(resp => load_default(resp))
         .then(resp => chart_created(resp))
         .catch(resp => console.error('Error al crear el controlador'));
     

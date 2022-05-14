@@ -1,11 +1,11 @@
 /** fibonacci.js */
 
-class Fibonacci extends ChartGraphic {
+class Fibonacci extends GraphicComponent {
 
     static NAME = 'Fibonacci';
 
     // CONSTANTS
-    static LINE_WIDTH = ChartGraphic.YEND + 1; // 6
+    static LINE_WIDTH = ChartComponent.YEND + 1; // 6
     static LINE_TYPE = Fibonacci.LINE_WIDTH + 1;
     static TEXT_SHOW = Fibonacci.LINE_TYPE + 1;
     static NUM_VALUES = Fibonacci.TEXT_SHOW + 1;
@@ -16,15 +16,6 @@ class Fibonacci extends ChartGraphic {
     static TEXT = 1;
     static STROKE = 2;
     static FILL = 3;
-    
-    static LINE_TYPE_PATTERN = {
-        [Const.LINE_SOLID]: [1, 0],
-        [Const.LINE_DASH]: [4, 4],
-        [Const.LINE_DOT]: [1, 1],
-    }
-
-    static EVENT_CREATE = 'event-fibonacci-control-create';
-    
 
     // PROPERTIES
 
@@ -42,12 +33,13 @@ class Fibonacci extends ChartGraphic {
     template = {
         ...this.template,
         type: 'Fibonacci',
-        colors: [],
-        lineWidth: 1,
-        lineType: Const.LINE_SOLID,
-        textShow: true,
-        textSide: 'right',
-        textInfo: '%',
+        // colors: [],
+        // opacity: 30,
+        // lineWidth: 1,
+        // lineType: Const.LINE_SOLID,
+        // textShow: true,
+        // textSide: 'right',
+        // textInfo: '%',
     };
 
     // Render and dynamic control values
@@ -108,19 +100,25 @@ class Fibonacci extends ChartGraphic {
             }
         }
 
-        if(this.fillColor.length < this.values.length) {
-            this.fillColor = [];
-            for(let i = 0; i < this.values.length; i++) {
-                let opacity_hex = this.template.opacity.toString(16).toUpperCase().padStart(2,'0');
-                this.fillColor.push(`${this.template.colors[i]}${opacity_hex}`);
-            }
-        }
+        this.defineFillColor();
 
         // Fill data
         this.update_data();
     }
 
+    defineFillColor() {
+        this.fillColor = [];
+        let opacity_hex = this.template.opacity.toString(16).toUpperCase().padStart(2, '0');
+        for (let i = 0; i < this.values.length; i++) {
+            this.fillColor.push(`${this.template.colors[i]}${opacity_hex}`);
+        }
+    }
+
     render(param, api) {
+        if (param.context.rendered) {
+            return;
+        }
+
         super.render(param, api);
 
         // let trend = api.value(Fibonacci.TREND);
@@ -214,6 +212,8 @@ class Fibonacci extends ChartGraphic {
 
         this.graphic.children = [].concat(...this.children);
 
+        param.context.rendered = true;
+
         return this.graphic;
     }
     
@@ -231,7 +231,7 @@ class Fibonacci extends ChartGraphic {
     set_option(chart) {
         super.set_option(chart);
 
-        let yenc = [ChartGraphic.YSTART, ChartGraphic.YEND].concat(...this.values.yvalues.map( (el, i) => Fibonacci.YVALUES + (i*4)));
+        let yenc = [ChartComponent.YSTART, ChartComponent.YEND].concat(...this.values.yvalues.map( (el, i) => Fibonacci.YVALUES + (i*4)));
         chart.setOption({ 
             series: [{
                 id: this[Const.ID_ID],
@@ -239,7 +239,7 @@ class Fibonacci extends ChartGraphic {
                 type: 'custom',
                 renderItem: this.render.bind(this),
                 encode: {
-                    x: [ChartGraphic.XSTART, ChartGraphic.XEND],
+                    x: [ChartComponent.XSTART, ChartComponent.XEND],
                     y: yenc,
                 },
                 data: this.data,
@@ -259,10 +259,17 @@ class Fibonacci extends ChartGraphic {
         else {
             let text = [];
             for(let i = 0; i < this.values.length; i++) {
-                text.push(`${this.template.levels[i].toFixed(3)} (${this.values.yvalues[i].toFixed(3)})`)
+                text.push(`${parseFloat(this.template.levels[i]).toFixed(3)} (${parseFloat(this.values.yvalues[i]).toFixed(3)})`)
             }
             return text;
         }
+    }
+
+    setTemplate(template) {
+        super.setTemplate(template);
+        this.defineFillColor();
+        this.values.yvalues = this.calculateYValues();
+        this.update_option();
     }
 
     //CONTROL HANDLERS EVENTS ---------------------------------------------------------
@@ -283,12 +290,13 @@ class Fibonacci extends ChartGraphic {
         super.mousemove_control_start(c);
 
         if(!isNaN(this.values.ydrag)) {
-            this.values.yvalues = this.values.yvalues.map( (yv,i) => {
-                this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
-                let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
-                this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);
-                return corr;
-            });
+            this.values.yvalues = this.calculateYValues();
+            // this.values.yvalues = this.values.yvalues.map( (yv,i) => {
+            //     this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
+            //     let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
+            //     this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);
+            //     return corr;
+            // });
         }
         this.update_option();
     }
@@ -298,66 +306,39 @@ class Fibonacci extends ChartGraphic {
         super.mousemove_control_end(c);
         
         if(!isNaN(this.values.ydrag)) {
-            this.values.yvalues = this.values.yvalues.map( (yv,i) => {
-                this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
-                let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * this.template.levels[i]);
-                this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);
-                return corr;
-            });
+            this.values.yvalues = this.calculateYValues();
         }
         this.update_option();
     }
 
+    calculateYValues() {
+        let yvalues = this.template.levels.map((level) => {
+            this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
+            let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * level);
+            this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);
+            return corr;
+        });
+        return yvalues;
+    }
 
 
     // BUILD GRAPHIC CONTROL -------------------------------------------------------------------------------
 //TODO LOS MENUS TAMBIEN TIENEN QUE SER ESCALABLES, EXTENDER CLASES BASE
 //TODO MENU FLOTANTE AGREGA SETTINGS PROPIOS, EL MENU EXTENDIDO, PROPIEDADES
 
-    static pick_start(e) {
-        let params = this[1];
-        let chart = params.chart;
-        let template = params.template;
-        let timeFrame = params.timeFrame;
-        let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
-        let graphic = {}
-        graphic[Const.HASH_ID] = new Date().valueOf();
+    static grabData({graphic, template, x, y}) {
+        super.grabData({graphic, template, x, y});
+
         graphic[Const.ID_ID] =  `${Const.FIBO_RET_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
-        graphic[Const.INIT_ID] = new TimePrice(x, y);
-        graphic[Const.END_ID] = new TimePrice(x, y);
         graphic[Const.CORRECTION_ID] = new TimePrice(x, y);
         graphic[Const.DELTA_INIT_ID] = 0;
         graphic[Const.DELTA_END_ID] = 0;
         graphic[Const.RET_ID] = 0;
-        graphic[Const.TIMESTAMP_ID] = graphic[Const.INIT_ID].time;
         
         graphic[Const.RET_LEVELS_ID] = {};
         template[Const.RET_LEVELS_ID].forEach(l => {
             graphic[Const.RET_LEVELS_ID][l] = y;
         });
-
-        let ref = new Fibonacci({graphic, template, timeFrame});
-        $(document).trigger(ChartGraphic.EVENT_PLOT, [ref]);
-        ref.select();
-
-        // TODO FORZAR EVENTO MOUSEDOWN END CONTROL
-        // ref.mousedown_control_end(e);
-        // Fibonacci.move_end(e, {chart, template});
-        ref.disable_chart_move();
-        ref.values.xdrag = x;
-        ref.values.ydrag = y;
-        chart.getZr().on('mousedown', Fibonacci.pick_end, ref);
-        chart.getZr().on('mousemove', ref.mousemove_control_end, ref);
-
-        chart.getZr().off('mousedown', Fibonacci.pick_start);
-        ChartGraphic.building_graphic = false;
-    }
-
-    static pick_end(e) {
-        $(document).trigger(ChartGraphic.EVENT_CREATED, [Fibonacci.NAME]);
-        this.chart.getZr().off('mousemove', this.mousemove_control_end);
-        this.chart.getZr().off('mousedown', Fibonacci.pick_end);
-        this.enable_chart_move();
     }
 }
 

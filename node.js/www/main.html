@@ -20,7 +20,7 @@
         <script src="/static/js/extern/keyboard.js"></script>
         <!-- <script src="/static/js/extern/jquery.mousewheel-min.js"></script> -->
         <!-- <script src="/static/js/extern/echarts.min.js"></script> -->
-        <script src="/static/js/extern/echarts/echarts.min.js"></script>
+        <script src="/static/js/extern/echarts/echarts.js"></script>
         <!-- <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script> -->
         <!-- <script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script> -->
         
@@ -53,35 +53,50 @@
                     <input id="chart-time-frame-panel-input" class="input-border-ok" autocomplete="off"></input>
                 </div>
             </div>
+
+            <!-- Side Right Menu -->
+            <div id="right">
+                <div class="right-menu">
+                    <i id="magnet" class="disabled icon hoverable-icon bi bi-magnet"></i>
+                    <i id="persist-mode" class="disabled icon hoverable-icon bi bi-pencil"></i>
+                    <i id="alert-component" class="disabled icon hoverable-icon bi bi-bell"></i>
+                </div>
+            </div>
+
             <!-- Footer Menu -->
             <div id="footer">
-                <div id="footer-menu">
-                    <!-- <div id="terminal-open" class="disabled hoverable-icon lni lni-display-alt" title='Abrir consola de depuración'></div> -->
-                    <!-- <div id='stock-filter' class="hoverable-icon material-icons-outlined" title='Filtro de activos'>filter_alt</div> -->
-                    <!-- <div id='time-frame' class="hoverable-icon material-icons-outlined" title='Configuración del marco temporal'>schedule</div> -->
-                    <div id="show-movs" class="disabled hoverable-icon lni lni-stats-up"></div>
-                    <div id="patterns" class="disabled hoverable-icon lni lni-pencil-alt"></div>
-                    <div id="patterns-results" class="disabled hoverable-icon lni lni-keyword-research"></div>
-                    <div id="user-settings" class="disabled hoverable-icon lni lni-cog"></div>
-                    <div id="fibonacci-retracement" class="disabled hoverable-icon lni lni-list"></div>
-                    <div id="trend-line" class="disabled hoverable-icon lni lni-arrow-top-right"></div>
+                <div class="footer-menu">
+                    <div id="show-movs" class="disabled icon hoverable-icon lni lni-stats-up"></div>
+                    <div id="patterns" class="disabled icon hoverable-icon lni lni-pencil-alt"></div>
+                    <div id="patterns-results" class="disabled icon hoverable-icon lni lni-keyword-research"></div>
+                    <div id="user-settings" class="disabled icon hoverable-icon lni lni-cog"></div>
+                    <div id="fibonacci-retracement" class="disabled icon hoverable-icon lni lni-list"></div>
+                    <!-- <i id="fibonacci-retracement" class="disabled icon hoverable-icon bi bi-list"></i> -->
+                    <!-- <div id="trend-line" class="disabled icon hoverable-icon lni lni-arrow-top-right"></div> -->
+                    <i id="trend-line" class="disabled icon hoverable-icon bi bi-slash-lg"></i>
+                    <i id="rectangle-graphic" class="disabled icon hoverable-icon bi bi-bounding-box-circles"></i>
+                    <i id="circle-graphic" class="disabled icon hoverable-icon bi bi-circle"></i>
                 </div>
-                <div id="footer-menu-options"></div>
-                <div id="footer-status">
-                    <div id='footer-status-content'></div>
-                    <div id='footer-status-loading' class='loader'></div>
+                
+                <!-- Movements Menu -->
+                <div id="show-movs-menu">
+                    <div id="show-movs-menu-active"></div>
+                    <div id="show-movs-menu-level-selected"></div>
+                    <div id="show-movs-menu-level-selector"></div>
+                    <input id="show-movs-menu-level-max">
+                </div>
+                
+                <div class="footer-menu-options">
+                </div>
+
+                <div class="footer-status">
+                    <div class='footer-status-content'></div>
+                    <div class='footer-status-loading' class='loader'></div>
                     <!-- <div id='footer-status-progress'><div> -->
                 </div>
             </div>
         </div>
 
-        <!-- Movements Menu -->
-        <div id="show-movs-menu">
-            <div id="show-movs-menu-active"></div>
-            <div id="show-movs-menu-level-selected"></div>
-            <div id="show-movs-menu-level-selector"></div>
-            <input id="show-movs-menu-level-max">
-        </div>
     
         <!-- Patterns Results -->
         <div id='patterns-results-panel' class='menu-body scroll-custom'>
@@ -104,11 +119,11 @@
                 <div id='patterns-results-selected' class='dropdown hoverable-icon button-general lni lni-chevron-down' data-source='this.#selection_id' data-event='event-patterns-results-visualization-selection'></div>
             </div>
             
-            <!-- <div id='patterns-results-section-handler-explorer-title' class='patterns-results-section-handler'> -->
-                <!-- Explorador -->
-                <!-- <span id='patterns-results-section-handler-explorer' class='patterns-results-section-handler-icon hoverable-icon lni lni-chevron-up'></span> -->
-                <!-- <span id='patterns-results-section-handler-explorer-close' class='patterns-results-section-handler-close hoverable-close lni lni-close'></span> -->
-            <!-- </div> -->
+            <!-- <div id='patterns-results-section-handler-explorer-title' class='patterns-results-section-handler'>
+                Explorador
+                <span id='patterns-results-section-handler-explorer' class='patterns-results-section-handler-icon hoverable-icon lni lni-chevron-up'></span>
+                <span id='patterns-results-section-handler-explorer-close' class='patterns-results-section-handler-close hoverable-close lni lni-close'></span>
+            </div> -->
 
             <div id='patterns-results-section-explorer'>
                 <div id='patterns-results-section-explorer-show-ok-count'></div>
@@ -133,38 +148,30 @@
         </div>
 
         <!-- Add chart icon -->
-        <!-- <div id="add-chart-icon"><span class="hoverable-text lni lni-circle-plus"></span></div> -->
-
-        <!-- Terminal -->
-        <!-- <div id="terminal" class="transparent-back" style="left: 135px; top: 129px;">
-            <div id="terminal-handle" class="transparent-back" style="cursor: default;">
-                <i id="terminal-handle-close" class="material-icons ">close</i>
-                <i id="terminal-handle-max" class="material-icons-outlined">check_box_outline_blank</i>
-                <i id="terminal-handle-min" class="material-icons-outlined">minimize</i>
-                <p>Term</p>
-            </div>
-            <div class="terminal transparent-back" style="display: block;">
-            <div id="respuesta" class="transparent-back"></div>
-            <span>$ </span><span class="clone transparent-back"></span><span class="blink" style="visibility: hidden;"></span>
-            <input id="user" class="transparent-back" type="text" size="2" value="" autocomplete="off">
-            </div>
-        </div> -->
+        <div id="add-chart-icon"><span class="hoverable-text lni lni-circle-plus"></span></div>
 
         <!-- Loads main.js -->
-        <!-- <script src="/static/js/terminal_custom/dom-drag.js"></script> -->
-        <!-- <script src="/static/js/terminal_custom/views.js"></script> -->
         <script src="/static/js/app/constants.js"></script>
         <script src="/static/js/app/time/moment-with-locales.min.js"></script>
         <script src="/static/js/app/ajax_worker.js"></script>
         <script src="/static/js/app/ajax.js"></script>
         <script src="/static/js/app/brokers.js"></script>
 
-        <script src="/static/js/app/chart/resources/chart_resources.js"></script>
+        <script src="/static/js/app/chart/resources/chart_component.js"></script>
+        <script src="/static/js/app/chart/resources/alert_component.js"></script>
+        <script src="/static/js/app/chart/resources/graphic_component.js"></script>
         <script src="/static/js/app/chart/resources/fibonacci.js"></script>
         <script src="/static/js/app/chart/resources/trend_line.js"></script>
+        <script src="/static/js/app/chart/resources/rectangle_graphic.js"></script>
+        <script src="/static/js/app/chart/resources/circle_graphic.js"></script>
 
         <script src="/static/js/app/menu/panel_patterns.js"></script>
+        <script src="/static/js/app/menu/menu_chart_graphic.js"></script>
+        <script src="/static/js/app/menu/menu_alert_component.js"></script>
         <script src="/static/js/app/menu/menu_fibonacci.js"></script>
+        <script src="/static/js/app/menu/menu_trend_line.js"></script>
+        <script src="/static/js/app/menu/menu_rectangle_graphic.js"></script>
+        <script src="/static/js/app/menu/menu_circle_graphic.js"></script>
         <script src="/static/js/app/menu/menu_patterns.js"></script>
         <script src="/static/js/app/menu/menu_movs.js"></script>
         <script src="/static/js/app/menu/menu_settings.js"></script>
@@ -194,8 +201,6 @@
         <script src="/static/js/app/interfaces/interface_tsql.js"></script>
         <script src="/static/js/app/interfaces/interface_ddbb.js"></script>
 
-        <!-- <script src="/static/js/app/terminal.js"></script> -->
-        
         <script src="/static/js/app/event_controller.js"></script>
         <script src="/static/js/app/chart/chart_controller.js"></script>
         

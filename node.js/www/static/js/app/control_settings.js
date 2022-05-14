@@ -6,8 +6,8 @@ function Key(...k) {
 }
 
 function KeyTicker(active, ...k) {
-    // let id = Key(active[Const.ID_ID], active[Const.BROKER_ID], active[Const.MARCO_ID], (temp_mark) ? Date.now():'');
-    let id = Key(active[Const.ID_ID], active[Const.BROKER_ID], active[Const.MARCO_ID], ...k);
+    // let id = Key(active[Const.ID_ID], active[Const.BROKER_ID], active[Const.TIME_FRAME_ID], (temp_mark) ? Date.now():'');
+    let id = Key(active[Const.ID_ID], active[Const.BROKER_ID], active[Const.TIME_FRAME_ID], ...k);
     return id;
 }
 

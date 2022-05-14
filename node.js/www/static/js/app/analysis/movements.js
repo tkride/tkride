@@ -72,6 +72,9 @@ class MaxRelative {
         if(max_data[0][Const.IDX_MAX_MAX] > max_data[1][Const.IDX_MAX_MAX]) {
             max.push([max_data[0][Const.IDX_MAX_TIMESTAMP], max_data[0][Const.IDX_MAX_MAX], null]);
         }
+        else {
+            max.push([max_data[1][Const.IDX_MAX_TIMESTAMP], max_data[1][Const.IDX_MAX_MAX], null]);
+        }
 
         // Iterate over all values
         max_data.slice(1,-1).map( (curr, i) => {
@@ -87,6 +90,9 @@ class MaxRelative {
         if(max_data[max_data.length-1][Const.IDX_MAX_MAX] > max_data[max_data.length-2][Const.IDX_MAX_MAX]) {
             max.push([max_data[max_data.length-1][Const.IDX_MAX_TIMESTAMP], max_data[max_data.length-1][Const.IDX_MAX_MAX], null]);
         }
+        else {
+            max.push([max_data[max_data.length-2][Const.IDX_MAX_TIMESTAMP], max_data[max_data.length-2][Const.IDX_MAX_MAX], null]);
+        }
         
         // Extract relative minimum
         let min = [];
@@ -97,6 +103,9 @@ class MaxRelative {
         //First values
         if(min_data[0][Const.IDX_MAX_MIN] < min_data[1][Const.IDX_MAX_MIN]) {
             min.push([min_data[0][Const.IDX_MAX_TIMESTAMP], null, min_data[0][Const.IDX_MAX_MIN]]);
+        }
+        else {
+            min.push([min_data[1][Const.IDX_MAX_TIMESTAMP], null, min_data[1][Const.IDX_MAX_MIN]]);
         }
 
         // Iterate over all values
@@ -111,6 +120,9 @@ class MaxRelative {
         //Last value
         if(min_data[min_data.length-1][Const.IDX_MAX_MIN] < min_data[min_data.length-2][Const.IDX_MAX_MIN]) {
             min.push([min_data[min_data.length-1][Const.IDX_MAX_TIMESTAMP], null, min_data[min_data.length-1][Const.IDX_MAX_MIN]]);
+        }
+        else {
+            min.push([min_data[min_data.length-2][Const.IDX_MAX_TIMESTAMP], null, min_data[min_data.length-2][Const.IDX_MAX_MIN]]);
         }
 
         console.timeEnd('new');

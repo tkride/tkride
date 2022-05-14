@@ -99,7 +99,7 @@ class InterfaceTQS {
         return new Promise( (resolve, reject) => {
             var rawData;
             try {
-                let timeFrame = (Const.MARCO_ID in request) ? request[Const.MARCO_ID] : '';
+                let timeFrame = (Const.TIME_FRAME_ID in request) ? request[Const.TIME_FRAME_ID] : '';
                 let from = (Const.DESDE_ID in request) ? request[Const.DESDE_ID] : '';
                 let interval = (Const.INTERVALO_ID in request) ? request[Const.INTERVALO_ID] : '';
                 if((from == '') && (interval == '')) {
