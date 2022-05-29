@@ -46,6 +46,6 @@ addEventListener('message', e => {
         request.send();
     }
     
-console.log('REQUEST: ', request, 'URL: ', data.url);
+// console.log('REQUEST: ', request, 'URL: ', data.url);
 
 }, true); //false);

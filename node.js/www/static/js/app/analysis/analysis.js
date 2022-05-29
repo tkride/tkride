@@ -28,9 +28,12 @@ class Analysis {
 
     //----------------------------- PROPERTIES -----------------------------
 
+    data;
+
     //----------------------------- CONSTRUCTOR -----------------------------
 
-    constructor() {
+    constructor(data) {
+        this.data = data;
     }
 
     //----------------------------- PRIVATE METHODS -----------------------------
@@ -64,6 +67,7 @@ class Analysis {
         return ret;
     }
 
+
     static parse_request(request) {
         var ret;
         try {
@@ -76,6 +80,32 @@ class Analysis {
         return ret;
     }
 
+
+    static prepareData() {
+
+    }
+
+
+    static iterate({data, ops}) {
+        while( (item = Analisys.next({data, index})) != undefined) {
+            Analisys.checkStop(item, ops);
+            Analisys.checkStop({item, ops});
+            Analisys.validate({item, ops});
+        }
+        Analisys.report({finalResult});
+    }
+
+    static next({data, index}) {
+        return data[index];
+    }
+
+    static checkStop({item, ops}) {
+
+    }
+
+    static report({finalResult}) {
+
+    }
     
     /**
      * append_hash: Appends hash count identificator, to family results.

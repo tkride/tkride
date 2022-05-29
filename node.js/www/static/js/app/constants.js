@@ -38,7 +38,7 @@ class Const {
     static TIPO_PARAM_ID = 'TIPO_PARAM';
 
     // ACTIVO = VALORES
-    static BROKER_ID = 'BROKER';
+    static BROKER_ID = 'broker';
     // static TICKER_ID = 'TICKER'
     static ID_ID = 'ID';
     static JSON_ID = 'JSON';
@@ -188,6 +188,7 @@ class Const {
     static CLASS_BUTTON_SLIM = 'button-general slim';
     static CLASS_HOVERABLE_TEXT = 'hoverable-text';
     static CLASS_HOVERABLE_TEXT_SELECTED = 'hoverable-text-selected';
+    // static CLASS_HOVERABLE_TEXT_SELECTED = 'selected';
     static CLASS_TEXT_INPUT = 'text-input';
     static CLASS_MENU_FIELD = 'menu-field';
     static CLASS_MENU_INPUT_SHORT = 'input-short';
@@ -198,6 +199,7 @@ class Const {
     // CLASS ICONS
     static CLASS_ICON_ARROW_DOWN = 'lni lni-chevron-down';
     static CLASS_ICON_ADD = 'lni lni-circle-plus';
+    static CLASS_ICON_MINUS = 'lni lni-circle-minus';
     static CLASS_ICON_DELETE = 'lni lni-cross-circle';
     static CLASS_ICON_SAVE = 'lni lni-save';
     static CLASS_ICON_CLEAR = 'lni lni-eraser';
@@ -222,6 +224,7 @@ class Const {
     static CLASS_ICON_CAMERA = 'bi bi-camera';
 
     static ELEMENT_ID_PERSIST_MODE = '#persist-mode';
+    static ELEMENT_ID_MAGNET_MODE = '#magnet-mode';
 
     static CLASS_BACK_POINTS = 'points';
 
@@ -383,7 +386,7 @@ class Const {
     static DEFAULT_LOAD_HISTORIC_TIMEOUT = 20 * 1000;
 
     // SESSION
-    static AUTOSAVE_SESSION_TIME = (0.5 * 60 * 1000); //30 seconds 
+    static AUTOSAVE_SESSION_TIME = (10 * 1000); //10 seconds 
 
     static CHART_ID = 'chart';
     static CHART_INFO_ID = 'chart_info';
@@ -565,8 +568,8 @@ class Time {
                 endTime = Date.now();
             }
             else {
-                // 4 Months by default, y no start time provided
-                if(!startTime) { startTime = new Date(new Date().getTime() - Time.convertToSeconds('4M')); }
+                // 4 Months by default, if no start time provided
+                if(!startTime) { startTime = new Date(new Date().getTime() - Time.convertToSeconds('4M')).getTime(); }
                 else { startTime = Date.parse(startTime); }
 
                 if(!endTime) endTime = Date.now();

@@ -107,6 +107,11 @@ th, td {
     padding: 0.2em 1em;
 }
 
+th:first-child.selected {
+    background-color: var(--selected);
+    color: var(--text-hover);
+}
+/* 
 th:first-child {
     border-radius: 10px 0 0 0;
     padding: 0.3em;
@@ -118,7 +123,7 @@ th:last-child {
 
 tr:last-child td:first-child {
     border-radius: 0 0 0 10px;
-}
+} */
 
 /* --------------------------------- DISPLAY --------------------------------- */
 
@@ -134,7 +139,7 @@ tr:last-child td:first-child {
     top: 12.5vh;
     position: absolute;
     display: none;
-    opacity: 0.9;
+    /* opacity: 0.9; */
     z-index: var(--z-panel);
     /* overflow-y: auto; */
     /* overflow-x: hidden !important; */

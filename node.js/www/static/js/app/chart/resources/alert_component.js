@@ -35,7 +35,7 @@ class AlertComponent extends ChartComponent {
         // textInfo: '%',
     };
 
-    constructor({graphic, template, timeFrame, serialized}) {
+    constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
             super({serialized});
             this.values = serialized.values;
@@ -45,7 +45,7 @@ class AlertComponent extends ChartComponent {
             graphic = graphic || {};
             graphic = Object.assign({}, graphic);
 
-            super({graphic: graphic, template, timeFrame });
+            super({graphic: graphic, template, timeFrame, magnetMode });
 
             this.template = { ...this.template, ...template };
             
@@ -203,7 +203,7 @@ class AlertComponent extends ChartComponent {
         // super.set_option(chart);
 
         chart.setOption({ 
-            series: [{
+            series: {
                 id: this[Const.ID_ID],
                 name: this[Const.ID_ID],
                 type: 'custom',
@@ -215,7 +215,7 @@ class AlertComponent extends ChartComponent {
                 data: this.data,
                 // clip: true,
                 z: this.settings.z_level,
-            }],
+            },
         });
     }
 

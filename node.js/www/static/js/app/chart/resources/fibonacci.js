@@ -47,7 +47,7 @@ class Fibonacci extends GraphicComponent {
     yvalues_chart = [];
     fillColor = [];
 
-    constructor({graphic, template, timeFrame, serialized}) {
+    constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
             super({serialized});
             this.values = serialized.values;
@@ -73,7 +73,7 @@ class Fibonacci extends GraphicComponent {
                 });
             }
 
-            super({graphic: graphic, template, timeFrame });
+            super({graphic: graphic, template, timeFrame, magnetMode });
 
             this.template = { ...this.template, ...template };
 
@@ -88,10 +88,9 @@ class Fibonacci extends GraphicComponent {
                 [Const.DELTA_INIT_ID]: graphic[Const.DELTA_INIT_ID],
                 [Const.DELTA_END_ID]: graphic[Const.DELTA_END_ID]
             };
-            this.values.length = this.template.levels.length;
 
-            if(this.template.colors.length < this.values.length) {
-                for(let i = this.template.colors.length; i < this.values.length; i++) {
+            if(this.template.colors.length < this.template.levels.length) {
+                for(let i = this.template.colors.length; i < this.template.levels.length; i++) {
                     let r = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
                     let g = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
                     let b = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
@@ -109,7 +108,7 @@ class Fibonacci extends GraphicComponent {
     defineFillColor() {
         this.fillColor = [];
         let opacity_hex = this.template.opacity.toString(16).toUpperCase().padStart(2, '0');
-        for (let i = 0; i < this.values.length; i++) {
+        for (let i = 0; i < this.template.levels.length; i++) {
             this.fillColor.push(`${this.template.colors[i]}${opacity_hex}`);
         }
     }
@@ -258,7 +257,7 @@ class Fibonacci extends GraphicComponent {
         }
         else {
             let text = [];
-            for(let i = 0; i < this.values.length; i++) {
+            for(let i = 0; i < this.template.levels.length; i++) {
                 text.push(`${parseFloat(this.template.levels[i]).toFixed(3)} (${parseFloat(this.values.yvalues[i]).toFixed(3)})`)
             }
             return text;
@@ -313,6 +312,7 @@ class Fibonacci extends GraphicComponent {
 
     calculateYValues() {
         let yvalues = this.template.levels.map((level) => {
+            level = (typeof level == 'string') ? parseFloat(level.replace(/[^.0-9]/g, '')) : level;
             this.ydelta[Const.DELTA_INIT_ID] = (this.values.yend - this.values.ystart);
             let corr = this.values.yend - (this.ydelta[Const.DELTA_INIT_ID] * level);
             this.ydelta[Const.DELTA_END_ID] = (corr - this.values.yend);

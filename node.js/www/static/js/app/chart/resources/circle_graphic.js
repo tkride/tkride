@@ -35,7 +35,7 @@ class CircleGraphic extends GraphicComponent {
         // textInfo: '%',
     };
 
-    constructor({graphic, template, timeFrame, serialized}) {
+    constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
             super({serialized});
             this.values = serialized.values;
@@ -45,7 +45,7 @@ class CircleGraphic extends GraphicComponent {
             graphic = graphic || {};
             graphic = Object.assign({}, graphic);
 
-            super({graphic: graphic, template, timeFrame });
+            super({graphic: graphic, template, timeFrame, magnetMode });
 
             this.template = { ...this.template, ...template };
             

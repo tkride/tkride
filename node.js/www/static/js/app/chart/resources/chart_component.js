@@ -82,6 +82,7 @@ class ChartComponent {
         blocked: false,
         selected: false,
         showControls: false,
+        magnetMode: false,
     };
 
     // Render
@@ -101,7 +102,7 @@ class ChartComponent {
     mouseout_cb;
     last_update = 0;
 
-    constructor({graphic, template, timeFrame, serialized}) {
+    constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
             this.ID = serialized.ID;
             this.values = serialized.values;
@@ -112,22 +113,21 @@ class ChartComponent {
         else {
             if(timeFrame) {
                 this.values.time_frame = Time.convertToSeconds(timeFrame)*Time.MS_IN_SECONDS;
-                // this.values.time_frame = timeFrame;
+            }
+
+            if(magnetMode) {
+                this.controlStatus.magnetMode = magnetMode;
             }
 
             this[Const.ID_ID] = (graphic[Const.ID_ID] != undefined) ?
                                         graphic[Const.ID_ID] :
                                         `${Const.CHART_GRAPHIC_ID}${(template.name) ? '_' + template.name:''}_${graphic[Const.HASH_ID]}`;
-            // this.name = template.name;
             this.values.xstart = graphic[Const.INIT_ID].time;
             // this.values.xend = graphic[Const.END_ID].time;
             this.values.xend = (graphic[Const.CORRECTION_ID] != undefined) ? graphic[Const.CORRECTION_ID].time : graphic[Const.END_ID].time;
-            // if(this.values.xstart > this.values.xend) { [this.values.xstart, this.values.xend] = [this.values.xend, this.values.xstart]; }
             this.values.ystart = graphic[Const.INIT_ID].price;
             this.values.yend = graphic[Const.END_ID].price;
-            // if(this.values.ystart > this.values.yend) { [this.values.ystart, this.values.yend] = [this.values.yend, this.values.ystart];}
             this.settings.draggable = (template.draggable != undefined) ? template.draggable : true;
-            // this.that = this;
         }
 
         this.MOUSEDOWN_CONTROL = {
@@ -189,11 +189,11 @@ class ChartComponent {
             this.last_update = performance.now();
             this.update_data();
             this.chart.setOption({ series:
-                [{
+                {
                     id: this[Const.ID_ID],
                     data: this.data,
                     z: this.settings.z_level,
-                }]
+                }
             });
         }
     }
@@ -256,7 +256,11 @@ class ChartComponent {
         return this.graphic;
     }
 
-    set_time_frame(time_frame) {
+    setMagnetMode(magnetMode) {
+        this.controlStatus.magnetMode = magnetMode;
+    }
+
+    setTimeFrame(time_frame) {
         this.values.time_frame = Time.convertToSeconds(time_frame)*Time.MS_IN_SECONDS;
         // this.values.time_frame = time_frame;
     }
@@ -264,9 +268,9 @@ class ChartComponent {
     setTemplate(template) {
         if(template) {
             // TODO WORKAROUND HASTA DEFINIR CONTROLES PARA COLORES
-            let colors = this.template.colors;
+            // let colors = this.template.colors;
             this.template = { ...this.template, ...template };
-            this.template.colors = colors;
+            // this.template.colors = colors;
         }
     }
     
@@ -437,12 +441,25 @@ class ChartComponent {
         $(document).trigger(ChartComponent.EVENT_CREATED, [this.NAME, Const.EVENT_CANCELED]);
     }
 
-    static create({chart, template, timeFrame}) {
+    static create({chart, template, timeFrame, magnetMode}) {
         $(document).on(Const.EVENT_CLOSE, (e) => this.cancelCreate(chart));
         if(ChartComponent.building_graphic == false) {
             ChartComponent.building_graphic = true;
-            chart.getZr().on('mouseup', this.pick_start, [this, {chart, template, timeFrame}]);
+            chart.getZr().on('mouseup', this.pick_start, [this, {chart, template, timeFrame, magnetMode}]);
         }
+    }
+
+    static pickClosestPoint({data, x, y}) {
+        try {
+            let d = data.filter( v => v[ChartView.ECHARTS_TIMESTAMP] <= x).reduce( (a,b) => a > b ? a : b);
+            let time = d[ChartView.ECHARTS_TIMESTAMP];
+            let price = (y > d[ChartView.ECHARTS_HIGHT]) ? d[ChartView.ECHARTS_HIGHT] : d[ChartView.ECHARTS_LOW];
+            return {time, price};
+        }
+        catch(error) {
+            console.error(error);
+        }
+        return { time: x, price: y};
     }
 
     static grabData({graphic, template, x, y}) {
@@ -460,9 +477,19 @@ class ChartComponent {
         let chart = params.chart;
         let template = params.template;
         let timeFrame = params.timeFrame;
-        let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
-
+        let magnetMode = params.magnetMode;
         let graphic = {};
+        let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
+        
+        if(magnetMode) {
+            // let data = chart.getOption().series[0].data;
+            let series = chart.getOption().series.filter( s => s.id.includes('_CURSOR'))[0];
+            let active = series.id.replace('_CURSOR', '');
+            let data = chart.getOption().series.filter( s => s.id == active)[0].data;
+            let {time, price} = ChartComponent.pickClosestPoint({data, x, y});
+            [x, y] = [(time) ? time : x, (price) ? price : y];
+        }
+
         this[0].grabData({graphic, template, x, y});
 
         let ref = new this[0]({graphic, template, timeFrame});

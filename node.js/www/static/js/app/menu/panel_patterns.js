@@ -434,7 +434,7 @@ class PanelPatterns {
                         let trend = Const.TREND_VAL[this.trend];
                         let curr_query = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name][Const.QUERY_ID];
 
-                        data_plot[name] = Object.assign(new Retracement(), this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name]);
+                        data_plot[name] = Object.assign(new RetracementData(), this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name]);
                         // If showing multiple results, son data (ex:PHY) should be always OK data (instead NOK (ex:TARGETS)) ...
                         // ... we search NOK in previous valid results, not previous NOK results
                         let current_result_data = this.result_data;
@@ -488,8 +488,6 @@ class PanelPatterns {
                     let priceMax = [].concat(...data_plot[this.#current_name].data[this.level]
                                                             .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
                                                 .reduce( (a,b) => a > b ? a : b);
-                    // dateMin = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.INIT_ID].time)).reduce((a, b) => a < b ? a : b);
-                    // dateMax = [].concat(...data_plot[this.#current_name].data[this.level].map(t => t[Const.CORRECTION_ID].time)).reduce((a, b) => a > b ? a : b);
                     let dateMin = Object.values(data_plot).map( r => (r.data[this.level]) ?
                                                     r.data[this.level].map(t => t[Const.INIT_ID].time) : undefined)
                                                     .filter( d => d != undefined);
@@ -501,8 +499,7 @@ class PanelPatterns {
                     this.#visual_conf.zoom = {
                         startValue: {x: dateMin, y:priceMin},
                         endValue: { x: dateMax, y:priceMax},
-                        margin: {x: 40, y: 75}, //Margin values [x:candles, y:% (max-min)]
-                        // margin: {x: 60, y: 300}, //Margin values [x:candles, y:% (max-min)]
+                        margin: {x: 400, y: 400}, //Margin values [x:candles, y:% (max-min)]
                         onlyValid: [true, true]
                     };
                 }
@@ -717,7 +714,7 @@ class PanelPatterns {
             let table_data = this.#format_stats_data(data);
             this.#tables[name] = new Table({ data: table_data, title: PanelPatterns.ID_PATTERNS_RESULTS_STATS_TABLE, css: { 'font-size':'0.85em'} });
             $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_STATS_TABLE).append(this.#tables[name].table);
-            $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_TABLE_NAME).addClass(Const.CLASS_HOVERABLE_TEXT);
+            $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_TABLE_NAME).addClass(`${Const.CLASS_HOVERABLE_TEXT}`); // ${Const.CLASS_HOVERABLE_ICON}`);
             this.#current_name = name;
         }
     }

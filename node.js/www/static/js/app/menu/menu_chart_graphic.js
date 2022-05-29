@@ -30,6 +30,10 @@ class MenuChartGraphic {
     static ELEMENT_ID_MENU_TEMPLATE_NAME = '#menu-template-name-';
     static ID_MENU_OPACITY_LABEL = 'menu-opacity-label-';
     static ELEMENT_ID_MENU_OPACITY_LABEL = '#menu-opacity-label-';
+
+    // XXX
+    static COLOR_PICKER = 'color-picker-';
+
     static ID_MENU_OPACITY = 'menu-opacity-';
     static ELEMENT_ID_MENU_OPACITY = '#menu-opacity-';
     static ID_MENU_LINE_WIDTH = 'menu-line-width-';
@@ -385,8 +389,8 @@ class MenuChartGraphic {
             select_unknown: true,
             class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
             css: {
-                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
-                container: { 'background-color': 'var(--color-invisible)', height: '1.35em', padding: '0.5em 0.3em', },
+                // items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
+                container: { 'background-color': 'var(--color-invisible)' },//, height: '1.35em', padding: '0.5em 0.3em', },
             },
             parent: this.menuFloat.control,
         });
@@ -397,7 +401,6 @@ class MenuChartGraphic {
         // Append control element to floating menu
         // this.#stored_templates_float.controls.prop('title', MenuChartGraphic.TEMPLATES_TITLE);
         this.menuFloat.append_content(this.storedTemplatesFloat.controls);
- 
     }
 
     createMenu() {
@@ -411,7 +414,7 @@ class MenuChartGraphic {
             left:'30%',
             draggable: true,
             // new_classes: 'scroll-custom',
-            overflow: false,
+            // overflow: false,
             // width: '300px',
             close_cb: this.hide.bind(this),
         });
@@ -455,7 +458,6 @@ class MenuChartGraphic {
 
         // Append control element to display
         this.menu.append_content(this.inputName.control);
-
 
         // Opacity
         let opacity_label_container = $('<div>', {

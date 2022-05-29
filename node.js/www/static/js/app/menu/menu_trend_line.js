@@ -65,6 +65,7 @@ class MenuTrendLine extends MenuChartGraphic {
         textSide: 'right',
         textInfo: '%',
     };
+
     template = {
         name: '',
         type: TrendLine.NAME,
@@ -78,6 +79,8 @@ class MenuTrendLine extends MenuChartGraphic {
         textInfo: '%',
     }
 
+    // colorPicker = { ...this.colorPicker };
+
     //----------------------------- CONSTRUCTOR -----------------------------
 
     constructor(models) {
@@ -90,6 +93,7 @@ class MenuTrendLine extends MenuChartGraphic {
         try {
             config = config || MenuTrendLine.EMPTY_FORM;
             super.loadControlsValues(config);
+            this.colorPicker.color = this.template.colors[0];
         }
         catch(error) {
             console.error(error);
@@ -124,6 +128,20 @@ class MenuTrendLine extends MenuChartGraphic {
 
     createMenu() {
         super.createMenu();
+
+        // Color picker
+        this.colorPicker = new ColorPicker({
+            id: `${MenuChartGraphic.COLOR_PICKER}${this.name}`,
+            classControl: Const.CLASS_MENU_FIELD,
+            label: { text: 'Color' },
+            color: this.template.colors[0],
+            callback: color => {
+                this.template.colors = [color];
+                this.ref.setTemplate(this.template);
+            },
+        });
+        this.menu.append_content(this.colorPicker.control);
+        this.colorPicker.init();
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------

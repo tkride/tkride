@@ -6,18 +6,22 @@
 /* --------------------------------- ROOT VARS --------------------------------- */
 :root {
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --back: #1f232d;
+    /* --back: #1f232d; */
+    /* --back: #101010; */
+    --back: #1d1c1c;
     --font-size-title: 1.1em;
     --font-size-handle: 0.85em;
     --font-weight-title: 500;/*bold;*/
     /* --font-color: #b0b2bd; */
-    --font-color: #b0b3bc; /*#c2c2c2;*/
-    --menu-back: #1f232d;
+    --font-color: #9a9a9b; /*#b0b3bc; */
+    --menu-back: #101010; /*#1f232d;*/
     
     --input-border-color: #504f4f;
-    --border-color: #2b2e38; /*#353535;*/
+    /* --border-color: #2b2e38; */
+    /* --border-color: #1d1c1c; */
+    --border-color: #101010;
     --border-invisible: black;
-    --border-radius: 6px; /*10px;*/
+    --border-radius: 0px; /*6px;*/
     --border-width: 1px;
     --border-style: solid;
 
@@ -27,6 +31,8 @@
     --error: #fc0100;
     --button-back: #353535;
     --selected: #2962ff;
+    /* --selected: #094771; */
+    /* --selected: #007acc; */
     
     --hover-back: #52525242;
     --text-hover: white;
@@ -40,6 +46,24 @@
     --z-panel-top: 302;
 
 }
+
+
+/* --------------------------------- COLOR PICKER --------------------------------- */
+.color-picker {
+    background-color: var(--back);
+}
+
+.level-control-container-fibonacci {
+    /* display: block; */
+    /* margin-left: 1em; */
+    position: relative;
+}
+
+.level-control-container-fibonacci > * {
+    display: inline-block;
+    margin: 0 0em 0.5em 1em;
+}
+
 
 /* --------------------------------- MAIN LAYOUT --------------------------------- */
 body {
@@ -109,18 +133,19 @@ input {
 }
 
 .hoverable-icon {
-    padding: 4px;
+    padding: 8px;
 }
 
 .hoverable-icon:hover {
-    border-radius: 3px;
+    /* border-radius: 3px; */
+    border-radius: var(--border-radius);
     background-color: var(--hover-back);
 }
 
 .hoverable-icon.selected {
     background-color:var(--selected);
-    border-radius: 3px;
-    padding: 4px;
+    border-radius: var(--border-radius);
+    /* padding: 8px; */
 }
 
 .hoverable-close {
@@ -146,7 +171,7 @@ input {
     /* background-color: #222222AD; */
     background-color: var(--back);
     box-shadow: none;
-    border-color: #000000;
+    border-color: var(--border-invisible);
 }
 
 /* --------------------------------- GENERAL, EFFECTS --------------------------------- */
@@ -334,7 +359,7 @@ input[type="radio"]:checked + label {
     width: 50px;
     height: 100vh;
     border-left: solid;
-    border-color: var(--border-color);
+    border-color: var(--color-invisible);
     cursor: pointer;
     position: absolute;
     z-index: var(--z-menu-over);
@@ -346,12 +371,7 @@ input[type="radio"]:checked + label {
 }
 
 .right-menu > * {
-    /* font-size: 1.5em; */
-    margin: 5px 0px;
-    position: relative;
-    /* display: flex; */
-    /* justify-content: center; */
-    /* margin-left: 0.25em; */
+    margin-bottom: 2px;
 }
 
 .right-menu *:first-child {
@@ -367,7 +387,7 @@ input[type="radio"]:checked + label {
     left: 0vw;
     border-top: solid;
     border-bottom: solid;
-    border-color: var(--border-color);
+    border-color: var(--color-invisible);
     background-color: var(--back);
 
     position: relative;
@@ -383,8 +403,15 @@ input[type="radio"]:checked + label {
 
 .footer-menu {
     height: 100%;
-    border-right: 1px solid var(--border-color);
+    /* border-right: 1px solid var(--border-color); */
+    border-color: var(--color-invisible);
     cursor: pointer;
+}
+
+.footer-menu > * {
+    height: 100%;
+    cursor: pointer;
+    display: inline-block;
 }
 
 .footer-menu-item:first-child {
@@ -492,6 +519,7 @@ input[type=radio] {
     font-size: 120%;
     margin: 1em 1em 1em 1em;
     display: block;
+    position: relative;
 }
 
 .menu-field > * {
@@ -528,7 +556,8 @@ input[type=radio] {
 }
 
 .scroll-custom {
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--hover-back) var(--back);
     left: 0;

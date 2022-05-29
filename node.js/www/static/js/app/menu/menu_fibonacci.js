@@ -26,6 +26,9 @@ class MenuFibonacci extends MenuChartGraphic {
     static ELEMENT_ID_MENU_RET_VALUES_LABEL = '#menu-ret-values-label-Fibonacci';
     static ID_MENU_RET_VALUES = 'menu-ret-values-Fibonacci';
     static ELEMENT_ID_MENU_RET_VALUES = '#menu-ret_values-Fibonacci';
+
+    static CLASS_LEVEL_CONTROL_CONTAINER = 'level-control-container-fibonacci';
+    static LEVEL_CONTROL_NAME = 'level-control-';
     
     //Events
     // static EVENT_MENU_CLOSE = 'event-menu-close-Fibonacci';
@@ -85,15 +88,28 @@ class MenuFibonacci extends MenuChartGraphic {
         super(models);
     }
 
-    //----------------------------- PRIVATE METHODS -----------------------------
+    //----------------------------- PUBLIC METHODS -----------------------------
 
     loadControlsValues(config) {
         try {
-            config = config || MenuFibonacci.EMPTY_FORM;
-            super.loadControlsValues(config);
-            this.retValues.text = (this.template.levels.length > 0) ?
-                                        this.template.levels.reduce( (s, l) => s+','+l)
-                                        : '';
+            let lastConfigStr;
+            let configStr;
+            if(this.lastConfig
+                && ( Object.keys(this.lastConfig).length == Object.keys(config).length )
+            ) {
+                lastConfigStr = JSON.stringify(Object.entries(this.lastConfig).sort());
+                configStr = JSON.stringify(Object.entries(config).sort());
+            }
+
+            if( (!lastConfigStr) || ( lastConfigStr != configStr) ) {
+                config = config || MenuFibonacci.EMPTY_FORM;
+                super.loadControlsValues(config);
+                // this.retValues.text = (this.template.levels.length > 0) ?
+                //                             this.template.levels.reduce( (s, l) => s+','+l)
+                //                             : '';
+                this.createLevelControls();
+                this.lastConfig = config;
+            }
         }
         catch(error) {
             console.error(error);
@@ -103,8 +119,17 @@ class MenuFibonacci extends MenuChartGraphic {
     readControlsValues() {
         try {
             super.readControlsValues();
-            let levels = this.retValues.text.split(',');
-            this.template[Const.RET_LEVELS_ID] = levels;
+            // let levels = this.retValues.text.split(',');
+            // this.template[Const.RET_LEVELS_ID] = levels;
+            if(this.inputColors.length) {
+                this.template.levels = [];
+                this.template.color = [];
+
+                this.inputColors.forEach( (ic,i) => {
+                    this.template.levels.push(ic.inputBox.text);
+                    this.template.color.push(ic.colorPicker.color);
+                });
+            }
             return this.template;
         }
         catch(error) {
@@ -141,37 +166,122 @@ class MenuFibonacci extends MenuChartGraphic {
     createMenu() {
         super.createMenu();
 
-        let ret_label_container = $('<div>', {
+        let retLabelContainer = $('<div>', {
             css: { 'display': 'block', margin: '0 0 0 1em', },
                     // class: Const.CLASS_MENU_FIELD,
         });
-        let ret_label = $('<p>', {
+        let retLabel = $('<p>', {
             id: MenuFibonacci.ID_MENU_RET_VALUES_LABEL,
             class: Const.CLASS_MENU_FIELD,
             text: 'Valores retroceso',
         });
-        ret_label_container.append(ret_label);
-        // Append control element to display
-        this.menu.append_content(ret_label_container);
+        retLabelContainer.append(retLabel);
         
-        // Add retracement values
-        this.retValues = new Inputbox({
-            id: MenuFibonacci.ID_MENU_RET_VALUES,
-            event: MenuFibonacci.EVENT_RET_VALUES_CHANGED,
-            container: { class: Const.CLASS_MENU_FIELD, tooltip: 'Valores de retroceso de fibonacci (ej: 0.23, 0.382, >0.618). Admite operadores > y <.)' },
-            input: { css: {'min-width': '13.5em' },  placeholder: 'Valores retroceso Fibonacci  ' }
+        let levelAdd = $('<div>', {
+            class: `${Const.CLASS_ICON_ADD}`,
         });
-        // Append control element to display
-        this.menu.append_content(this.retValues.control);
+        retLabelContainer.append(levelAdd);
 
-        $(document).on(MenuFibonacci.EVENT_RET_VALUES_CHANGED, (e, retracements) => {
-            retracements = retracements.split(',');
-            this.template.levels = retracements;
-            this.ref.setTemplate(this.template);
+        let levelRemove = $('<div>', {
+            class: `${Const.CLASS_ICON_MINUS}`,
+        });
+        retLabelContainer.append(levelRemove);
+
+        // Append control element to display
+        this.menu.append_content(retLabelContainer);
+
+        levelAdd.on('click', e => {
+            this.template.levels.push( this.template.levels.at(-1) || 1);
+            this.inputColors.push(this.addLevelControl(this.template.levels.at(-1), this.template.levels.length-1));
+        })
+
+        levelRemove.on('click', e => {
+            this.template.levels.pop();
+            this.template.colors.pop();
+            this.inputColors.pop();
+            let childs = this.levelControlLines.at(-1).children();
+            if(childs.length > 1) {
+                this.menu.remove(childs[childs.length-1]);
+                this.levelControlLines.at(-1).remove(childs[childs.length-1]);
+            }
+            else {
+                this.menu.remove(this.levelControlLines.at(-1)[0]);
+                this.levelControlLines.pop();
+            }
+        })
+
+        this.createLevelControls();
+
+        // // Add retracement values
+        // this.retValues = new Inputbox({
+        //     id: MenuFibonacci.ID_MENU_RET_VALUES,
+        //     event: MenuFibonacci.EVENT_RET_VALUES_CHANGED,
+        //     container: { class: Const.CLASS_MENU_FIELD, tooltip: 'Valores de retroceso de fibonacci (ej: 0.23, 0.382, >0.618). Admite operadores > y <.)' },
+        //     input: { css: {'min-width': '13.5em' },  placeholder: 'Valores retroceso Fibonacci  ' }
+        // });
+        // // Append control element to display
+        // this.menu.append_content(this.retValues.control);
+
+        // $(document).on(MenuFibonacci.EVENT_RET_VALUES_CHANGED, (e, retracements) => {
+        //     retracements = retracements.split(',');
+        //     this.template.levels = retracements;
+        //     this.ref.setTemplate(this.template);
+        // });
+    }
+
+    createLevelControls() {
+        this.template.levels = this.template.levels || [];
+        
+        if(this.levelControlLines && this.levelControlLines.length) {
+            this.levelControlLines.forEach( c => this.menu.remove(c) );
+        }
+        
+        this.levelControlLines = [];
+        this.lastLevelSide = false;
+        this.inputColors = [];
+        this.template.levels.forEach( (level, i) => {
+            this.inputColors.push(this.addLevelControl(level, i));
         });
     }
 
-    //----------------------------- PUBLIC METHODS -----------------------------
+    addLevelControl(level, i) {
+        let lc = new InputColor({
+            id: `${MenuFibonacci.LEVEL_CONTROL_NAME}${level}-${i}`,
+            // classControl: Const.CLASS_MENU_FIELD,
+            input: {
+                input: { text: level },
+                callback: text => {
+                    this.template.levels[i] = text;
+                    this.ref.setTemplate(this.template);
+                },
+                limit: text => text.replace(/[^.0-9]/g, ''),
+            },
+            colorPicker: {
+                color: this.template.colors[i],
+                callback: color => {
+                    this.template.colors[i] = color || this.template.color.at(-1);
+                    this.ref.setTemplate(this.template);
+                }
+            }
+        });
+
+        // Control created at left
+        if(!this.lastLevelSide) {
+            this.levelControlLines.push($('<div>', {
+            class: `${MenuFibonacci.CLASS_LEVEL_CONTROL_CONTAINER} ${Const.CLASS_MENU_FIELD}`,
+            }));
+            this.menu.append_content(this.levelControlLines.at(-1));
+        }
+
+        // Control created at right
+        this.levelControlLines.at(-1).append(lc.control);
+        lc.init();
+        this.lastLevelSide = !this.lastLevelSide;
+
+        return lc;
+    }
+
+    //----------------------------- INIT METHOD -----------------------------
 
     init() {
         $(MenuFibonacci.MENU_ICON).prop('title', MenuFibonacci.TITLE);

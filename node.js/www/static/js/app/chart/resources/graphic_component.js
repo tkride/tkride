@@ -10,12 +10,12 @@ class GraphicComponent extends ChartComponent {
 
     // CONSTRUCTOR
 
-    constructor({graphic, template, timeFrame, serialized}) {
+    constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
             super({serialized});
         }
         else {
-            super({graphic: graphic, template, timeFrame });
+            super({graphic: graphic, template, timeFrame, magnetMode });
         }
 
         this.MOUSEDOWN_CONTROL = {
@@ -61,7 +61,7 @@ class GraphicComponent extends ChartComponent {
 
     set_option(chart) {
         chart.setOption({ 
-            series: [
+            series:
                 {
                     id: this[Const.ID_ID]+'_LABEL',
                     name: this[Const.ID_ID]+'_LABEL',
@@ -74,7 +74,6 @@ class GraphicComponent extends ChartComponent {
                     data: this.data,
                     z: this.settings.z_level,
                 }
-            ],
         });
     }
 
@@ -167,17 +166,18 @@ class GraphicComponent extends ChartComponent {
         // let _rect = this.chart._coordSysMgr._coordinateSystems[0].model.coordinateSystem._axesMap.y[0].grid._rect;
         let yAxisX = param.coordSys.width + param.coordSys.x;
         let xAxisY = param.coordSys.height + param.coordSys.y;
+        let width = api.getWidth() - yAxisX;
 
         children.push(...[
             {
                 type: 'rect',
                 id: `${name}_YAXIS_BACK`,
                 name: `${name}_YAXIS_BACK`,
-                x: yAxisX, //this.chart.getWidth() - 65,
+                x: yAxisX,
                 y: yend + 10,
                 invisible: (selected) ? false : true,
                 shape: {
-                    width: 70,
+                    width: width, //70,
                     height: (ystart - yend) - 20,
                 },
                 style: {
@@ -186,15 +186,17 @@ class GraphicComponent extends ChartComponent {
             },
             this.get_axis_label({
                 name: name+'_YSTART_',
-                x: yAxisX, //this.chart.getWidth() - 65,
+                x: yAxisX,
                 y: ystart,
+                width: width,
                 invisible: (selected) ? false : true,
                 text: `${price_start}`.substring(0, 7)}),
 
             this.get_axis_label({
                 name: name+'_YEND_',
-                x: yAxisX, //this.chart.getWidth() - 65,
+                x: yAxisX,
                 y: yend,
+                width: width,
                 invisible: (selected) ? false : true,
                 text: `${price_end}`.substring(0, 7)}),
             {
@@ -242,6 +244,7 @@ class GraphicComponent extends ChartComponent {
             ystart: ystart,
             yend: yend,
             z: ChartComponent.Z_LEVEL_UNSELECTED,
+            zlevel: 1,
         }
 
         param.context.rendered = true;
@@ -290,9 +293,9 @@ class GraphicComponent extends ChartComponent {
         }];
     } //get_control_handler
 
-    get_axis_label({ name, x, y, z, invisible, text, fontSize }) {
+    get_axis_label({ name, x, y, z, width, invisible, text, fontSize}) {
         fontSize = (fontSize) ? fontSize : 15;
-        let width = (text.length*(fontSize/1.8)) + 10;
+        width = width ? width : (text.length*(fontSize/1.8)) + 15;
         return [
             {
                 type: 'rect',
@@ -332,61 +335,6 @@ class GraphicComponent extends ChartComponent {
 
     //CONTROL HANDLERS EVENTS ---------------------------------------------------------
 
-    // Mousedown management
-    // mousedown_control_management(c) {
-    //     if(c.event.target.parent.name == this[Const.ID_ID]) {
-    //         let func = this.MOUSEDOWN_CONTROL[c.event.target.name] || this.MOUSEDOWN_DEFAULT;
-    //         if(typeof func == 'function') {
-    //             func.call(this, c);
-    //         }
-    //     }
-    // }
-    
-    // Control Area
-    // mousedown_control(c) {
-    //     console.log(this[Const.ID_ID], ': control');
-    //     [this.values.xdrag, this.values.ydrag] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
-
-    //     if(this.controlStatus.selected == false) {
-    //         this.select();
-    //     }
-    //     if(!this.controlStatus.blocked && this.settings.draggable) {
-    //         this.disable_chart_move();
-    //         this.chart.getZr().on('mousemove', this.mousemove_control, this);
-    //         this.chart.getZr().on('mouseup', this.mouseup_control, this);
-    //     }
-    //     if(this.constructor.name == GraphicComponent.NAME) {
-    //         this.update_option();
-    //     }
-    // }
-    
-    // mousemove_control(c) {
-    //     let [x, y] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
-    //     if(!isNaN(x) && !isNaN(this.values.xdrag)) {
-    //         let deltaX = x - this.values.xdrag;
-    //         this.values.xstart += deltaX;
-    //         this.values.xend += deltaX;
-    //         this.values.xdrag = x;
-    //     }
-
-    //     if(!isNaN(y) && !isNaN(this.values.ydrag)) {
-    //         let deltaY = y - this.values.ydrag;
-    //         this.values.ystart += deltaY;
-    //         this.values.yend += deltaY;
-    //         this.values.ydrag = y;
-    //     }
-    //     if(this.constructor.name == GraphicComponent.NAME) {
-    //         this.update_option();
-    //     }
-    // }
-
-    // mouseup_control(c) {
-    //     console.log('control finished');
-    //     this.chart.getZr().off('mousemove', this.mousemove_control);
-    //     this.chart.getZr().off('mouseup', this.mouseup_control);
-    //     this.enable_chart_move();
-    // }
-
     // Handler start
     mousedown_control_start(c) {
         console.log(this[Const.ID_ID], ': control_start');
@@ -409,6 +357,16 @@ class GraphicComponent extends ChartComponent {
     mousemove_control_start(c) {
         let [x, y] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
         this.chart.getZr().setCursorStyle('ne-resize');
+
+        if(this.controlStatus.magnetMode) {
+            // let data = this.chart.getOption().series[0].data;
+            let series = this.chart.getOption().series.filter( s => s.id.includes('_CURSOR'))[0];
+            let active = series.id.replace('_CURSOR', '');
+            let data = this.chart.getOption().series.filter( s => s.id == active)[0].data;
+            let {time, price} = ChartComponent.pickClosestPoint({data, x, y});
+            [x, y] = [(time) ? time : x, (price) ? price : y];
+        }
+
         if(!isNaN(x)) {
             this.values.xstart = x;
             this.values.xdrag = x;
@@ -452,6 +410,16 @@ class GraphicComponent extends ChartComponent {
     mousemove_control_end(c) {
         let [x, y] = this.chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [c.event.offsetX, c.event.offsetY]);
         this.chart.getZr().setCursorStyle('ne-resize');
+
+        if(this.controlStatus.magnetMode) {
+            // let data = this.chart.getOption().series[0].data;
+            let series = this.chart.getOption().series.filter( s => s.id.includes('_CURSOR'))[0];
+            let active = series.id.replace('_CURSOR', '');
+            let data = this.chart.getOption().series.filter( s => s.id == active)[0].data;
+            let {time, price} = ChartComponent.pickClosestPoint({data, x, y});
+            [x, y] = [(time) ? time : x, (price) ? price : y];
+        }
+
         if(!isNaN(x)) {
             this.values.xend = x;
             this.values.xdrag = x;
@@ -473,20 +441,30 @@ class GraphicComponent extends ChartComponent {
         this.enable_chart_move();
     }
 
-
     // BUILD GRAPHIC CONTROL -------------------------------------------------------------------------------
     
     static pick_start(e) {
+        $(document).off(Const.EVENT_CLOSE);
         let params = this[1];
         let chart = params.chart;
         let template = params.template;
         let timeFrame = params.timeFrame;
-        let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
+        let magnetMode = params.magnetMode;
         let graphic = {};
+        let [x, y] = chart.convertFromPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [e.event.offsetX, e.event.offsetY]);
+
+        if(magnetMode) {
+            // let data = chart.getOption().series[0].data;
+            let series = chart.getOption().series.filter( s => s.id.includes('_CURSOR'))[0];
+            let active = series.id.replace('_CURSOR', '');
+            let data = chart.getOption().series.filter( s => s.id == active)[0].data;
+            let {time, price} = ChartComponent.pickClosestPoint({data, x, y});
+            [x, y] = [(time) ? time : x, (price) ? price : y];
+        }
 
         this[0].grabData({graphic, template, x, y});
 
-        let ref = new this[0]({graphic, template, timeFrame});
+        let ref = new this[0]({graphic, template, timeFrame, magnetMode});
         $(document).trigger(GraphicComponent.EVENT_PLOT, [ref]);
         ref.select();
 
@@ -509,7 +487,7 @@ class GraphicComponent extends ChartComponent {
         this.chart.getZr().off('mousemove', this.mousemove_control_end);
         this.chart.getZr().off('mouseup', GraphicComponent.pick_end);
         this.enable_chart_move();
-        $(document).trigger(ChartComponent.EVENT_CREATED, [this.constructor.name, param]);
+        $(document).trigger(ChartComponent.EVENT_CREATED, [this.constructor.name]); //, [this.constructor.name, param]);
         if(param == Const.EVENT_CANCELED) {
             $(document).trigger(MenuChartGraphic.EVENT_REMOVE, [this]);
         }

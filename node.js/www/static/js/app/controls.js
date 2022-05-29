@@ -442,7 +442,6 @@ class Combobox {
 
 
 
-
 class Table {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
@@ -474,7 +473,8 @@ class Table {
             var that = this;
             
             let data = params.data;
-            this.#name = params.name;
+            // this.#name = params.name;
+            this.#name = params.data.title;
             this.#css = params.css;
 
             let title = (data.title) ? data.title : '';
@@ -538,7 +538,6 @@ class Table {
 
     get header_name_element() { return this.#table_header_name_element; }
 }
-
 
 
 
@@ -1006,13 +1005,14 @@ class Display {
 
 
 
-
 /** 'Inputbox'
  * @param container Container { class | css }
  * @param label Set a label for input control: { text | class | position | css }
- * @param input Set input control properties: { text | class | css | placeholder }
+ * @param input Set input control properties: { text | class | css | placeholder | maxlength }
  * @param event Get/Set event/callback. Object with {name} and {callback function} .
  * @param event Set event name.
+ * @param callback Set callback on text change.
+ * @param limit Applies function to text content, for example, apply regex to avoid content.
  * @param text Get/Set the content of input control.
  * @param placeholder Get/Set a placeholder for input control.
  * @param label_text Get/Set label text.
@@ -1027,6 +1027,8 @@ class Inputbox {
     
     static NAME = "input-box";
 
+    static DEFAULT_MAX_LENGTH = 50;
+
     //----------------------------- PROPERTIES -----------------------------
 
     #id;
@@ -1034,6 +1036,9 @@ class Inputbox {
     #input = {};
     #container = {};
     event;
+    callback;
+    limit;
+    #css;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -1061,11 +1066,13 @@ class Inputbox {
         }
 
         // Creates inputbox
+        let maxlength = this.#input.maxlength || Inputbox.DEFAULT_MAX_LENGTH;
         this.#input.control = $('<input>', {
             id: `${this.#id}-input`,
             class: (this.#input.class) ? this.#input.class : '',
             value: this.#input.text || '',
             placeholder: (this.#input.placeholder) ? this.#input.placeholder : '',
+            maxlength: maxlength
           });
         
         // Apply custom css style
@@ -1098,9 +1105,11 @@ class Inputbox {
         this.#container.control.data('Inputbox', this)
 
         this.#input.control.on('change', (e) => {
-            if(this.event) {
-                $(document).trigger(this.event, [this.text, e]);
+            if(this.limit) {
+                this.text = this.limit(this.text);
             }
+            if(this.event) { $(document).trigger(this.event, [this.text, e]); }
+            if(this.callback) { this.callback(this.text); }
         });
     }
 
@@ -1138,6 +1147,8 @@ class Inputbox {
         // }
 
         this.event = params.event;
+        this.callback = params.callback;
+        this.limit = params.limit;
 
         this.#create_control();
     }
@@ -1187,7 +1198,6 @@ class Inputbox {
     get event() { return this.event; }
     set event(event) { this.event = event; }
 } // Inputbox
-
 
 
 
@@ -1550,7 +1560,7 @@ class Checkbox {
         this.class = params.class;
         this.side = params.side || 'right';
         this.event = params.event;
-        // this.color = params.color;
+        // this.#color = params.color;
         this.#create_control();
     }
 
@@ -1559,3 +1569,304 @@ class Checkbox {
     get checked() { return this.#input.prop('checked'); }
     set checked(checked) { this.#input.prop('checked', checked); }
 }
+
+
+
+/** 'ColorPicker' */
+
+/**
+ * ColorPicker
+ * @abstract Creates color picker control, with palette and color mixer. init() should be called afer added to DOM.
+ * @param id identifier of control.
+ * @param height Height of container div.
+ * @param Width Width of container div.
+ * @param classControl class bind to main control container.
+ * @param label Label control if specified.
+ * @param label.text Text content of label.
+ * @param label.position Position of label in container: {Const.LABEL_POSTION_AFTER / Const.LABEL_POSITION_BEFORE }
+ * Position is before if omitted.
+ * @param Color Selected color when is created.
+ * @param css CSS to be applied to main control container.
+ * @param event Event triggered when color picker selection is done.
+ * @param callback Callback method to be called when color picker selection is done.
+ */
+class ColorPicker {
+    
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+    
+    static NAME = "ColorPicker";
+
+    static CLASS_COLOR_PICKER = 'color-picker';
+    static ELEMENT_CLASS_COLOR_PICKER = '.color-picker';
+    static DEFAULT_NAME = 'color-picker-';
+    static CONTAINER_NAME = '-container';
+    static LABEL_NAME = '-label';
+    static ACEPTAR = 'Aceptar';
+    static CANCELAR = 'Cancelar';
+
+    static DEFAULT_OPTIONS = {
+        showInput: true,
+        allowEmpty: true,
+        showInitial: true, // Show previous color in palette
+        showAlpha: false,
+        color: 'red',
+        showPaletteOnly: true,
+        togglePaletteOnly: true,
+        containerClassName: ColorPicker.CLASS_COLOR_PICKER,
+        hideAfterPaletteSelect: true,
+        chooseText: ColorPicker.ACEPTAR,
+        cancelText: ColorPicker.CANCELAR,
+    };
+
+    static DEFAULT_CONTAINER = {
+        height: '15px',
+        width: '15px',
+        'border-radius': '2px',
+        cursor: 'pointer',
+        margin: '0.1em 0px 0em 4em',
+    };
+
+    //----------------------------- PROPERTIES -----------------------------
+
+    static NUM_ELEMENTS = 0;
+
+    control;
+    container;
+    colorPicker;
+    label;
+    id;
+    options;
+    #color;
+    event;
+    callback;
+    labelOps;
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor({id, height, width, classControl, css, options, label, color, event, callback}) {
+        this.create({id, height, width, classControl, css, options, label, color, event, callback});
+    }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+    
+    create({id, height, width, classControl, css, options, label, color, event, callback}) {
+        if(id) {
+            this.id = id;
+        }
+        else {
+            do {
+                ColorPicker.NUM_ELEMENTS++;
+                this.id = `${ColorPicker.DEFAULT_NAME}${ColorPicker.NUM_ELEMENTS}`;
+            } while($(`#${this.id}`).length > 0);
+        }
+
+        this.control = $('<div>', {
+            id: this.id + ColorPicker.CONTAINER_NAME,
+            class: classControl || '',
+        });
+
+        this.container = $('<div>', {
+            id: this.id,
+            css: {...ColorPicker.DEFAULT_CONTAINER},
+        });
+
+        this.control.append(this.container);
+
+        if(height) {
+            this.container.css(height, 'height');
+        }
+        if(width) {
+            this.container.css(width, 'width');
+        }
+        if(css) {
+            this.container.css(css);
+        }
+
+        //Set label position if defined
+        if(label) {
+            this.labelOps = label;
+            this.label = $('<p>', {
+                id: this.id + ColorPicker.LABEL_NAME,
+                text: this.labelOps.text || '',
+                css: { margin: '0 0 0 1em', position: 'absolute', }
+            });
+
+            if(this.labelOps.css) {
+                this.label.css(this.labelOps.css);
+            }
+        
+            if(this.labelOps.position == Const.LABEL_POSITION_BEFORE) {
+                this.control.prepend(this.label);
+            }
+            else if(this.labelOps.position == Const.LABEL_POSITION_AFTER) {
+                this.control.append(this.label);
+            }
+            else {
+                this.control.prepend(this.label);
+            }
+        }
+
+
+        if(color) {
+            this.#color = color;
+        }
+        else {
+            let r = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
+            let g = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
+            let b = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
+            this.#color = `#${r}${g}${b}`;
+            // this.#color = '#2922bb';
+        }
+
+        this.container.css({ 'background-color': this.#color});
+        
+        this.options = options || ColorPicker.DEFAULT_OPTIONS;
+        this.options.color = this.#color;
+
+        this.event = event;
+        this.callback = callback;
+
+        this.control.data('ColorPicker', this);
+    }
+
+    init() {
+        $(this.container).spectrum(this.options);
+        $(this.container).on('change', (e, color) => {
+            this.updateColor(color.toHexString());
+        });
+    }
+
+    //----------------------------- GETTERS & SETTERS -----------------------------
+
+    get color() { return this.#color; }
+    set color(color) { this.updateColor(color) }
+
+    updateColor(color) {
+        this.#color = color || this.#color;
+        this.container.css('background-color', this.#color);
+        if(this.event) { $(this.container).trigger(this.event, this.#color); }
+        if(this.callback) { this.callback(this.#color); }
+    }
+}
+
+
+
+
+/** 'InputColor' */
+
+/**
+ * InputColor 
+ * @abstract Creates an inputbox + color picker control. init() should be called afer added to DOM.
+ * @param id identifier of control.
+ * @param input Inputbox options. Default applied if missing.
+ * @param input.input Inputbox options for input control: { text | class | css | placeholder | maxlength }.
+ * @param input.event Inputbox event triggered when text is modified.
+ * @param input.callback Inputbox callback method when text is modified.
+ * @param colorPicker ColorPicker options. Default applied if missing.
+ * @param classControl class bind to main control container.
+ * @param css CSS to be applied to main control container.
+ * @param event Events triggered when modifcation is done.
+ * @param event.color Event triggered when color picker selection is done.
+ * @param event.input Event triggered when inputbox text modification is done.
+ * @param callback Callback methods to be called when modification is done.
+ * @param callback.color Callback method to be called when color picker selection is done.
+ * @param callback.text Callback method to be called when inputbox text is modified.
+ */
+class InputColor {
+    
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+    
+    static NAME = "InputColor";
+
+    static DEFAULT_NAME = 'input-color-';
+    static CONTAINER_NAME = '-container';
+    static COLOR_PICKER_NAME = '-color-picker';
+    static INPUTBOX_NAME = '-input-box';
+    static DEFAULT_COLOR_PICKER = {
+        css: { postion: 'relative', margin: '0', }
+    };
+    static DEFAULT_INPUTBOX = {
+        input: { css: { 'max-width': '3em' }, maxlength: 6, },
+        position: Const.LABEL_POSITION_AFTER,
+    };
+
+    //----------------------------- PROPERTIES -----------------------------
+
+    static NUM_ELEMENTS = 0;
+
+    control;
+    inputBox;
+    colorPicker;
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+
+    constructor({id, input, colorPicker, classControl, css, event, callback}) {
+        this.create({id, input, colorPicker, classControl, css, event, callback})
+    }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
+
+    //----------------------------- PUBLIC METHODS -----------------------------
+
+    create({id, input, colorPicker, classControl, css, event, callback}) {
+        this.id = id;
+        if(!this.id) {
+            do {
+                InputColor.NUM_ELEMENTS++;
+                this.id = `${InputColor.DEFAULT_NAME}${InputColor.NUM_ELEMENTS}`
+            } while($(`#${this.id}`).length > 0);
+        }
+
+        this.control = $('<div>', {
+            id: `${this.id}${InputColor.CONTAINER_NAME}`,
+            class: classControl || '',
+        });
+
+        if(css) { this.control.css(css); }
+
+        colorPicker = colorPicker || {};
+        let colorPickerOpts = { ...InputColor.DEFAULT_COLOR_PICKER, ...colorPicker};
+        colorPickerOpts.id = this.id + InputColor.COLOR_PICKER_NAME;
+        this.colorPicker = new ColorPicker(colorPickerOpts);
+        this.control.append(this.colorPicker.control);
+
+        let inputBoxOps = InputColor.DEFAULT_INPUTBOX;
+        input = input || {};
+        inputBoxOps = { ...inputBoxOps,
+            ...input,
+            input: {
+                ...inputBoxOps.input || {},
+                ...input.input || {},
+             },
+        };
+        
+        inputBoxOps.id = this.id + InputColor.INPUTBOX_NAME;
+        this.inputBox = new Inputbox(inputBoxOps);
+        if(inputBoxOps.position == Const.LABEL_POSITION_BEFORE) {
+            this.control.prepend(this.inputBox.control);
+        }
+        else if(inputBoxOps.position == Const.LABEL_POSITION_AFTER) {
+            this.control.append(this.inputBox.control);
+        }
+        // Unknown
+        else {
+            this.control.prepend(this.inputBox.control);
+        }
+
+        this.event = event;
+        this.callback = callback;
+
+        this.control.data(this.constructor.name, this);
+    }
+    
+    init() {
+        this.colorPicker.init();
+    }
+
+    //----------------------------- GETTERS & SETTERS -----------------------------
+}
+
+
+

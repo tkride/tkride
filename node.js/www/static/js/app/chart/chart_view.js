@@ -15,6 +15,9 @@ class ChartView {
     static CHART_TOOLTIP_VALUES = '<p class="chart-tooltip-values" style="';
     static VALUES_CLOSE = '">';
     static BACKGROUND_COLOR = 'var(--border-color)';//'#353535';
+    static FONT_COLOR = 'var(--font-color)'; //: #b0b3bc;';
+
+    static Z_AXIS_COMPONENS = 200;
 
     static TREND_TEXT_ID = { [Const.BULL_ID]: '_BULL_', [Const.BEAR_ID]: '_BEAR_', [Const.BOTH_ID]: '_BOTH_'};
     static LINE_COLOR = { [Const.BULL_ID]: 'rgba(0, 255, 0, 0.8)', [Const.BEAR_ID]: 'rgba(255, 0, 0, 0.8)', [Const.BOTH_ID]: 'rgba(181, 19, 187, 0.8)'};
@@ -37,6 +40,7 @@ class ChartView {
     static CHART_ZOOM_X_DISABLED = { dataZoom: [ { type: 'inside', xAxisIndex: [0], zoomOnMouseWheel: false, } ] };
     static CHART_ZOOM_X_ENABLED = { dataZoom: [ { type: 'inside', xAxisIndex: [0], zoomOnMouseWheel: true, } ] };
     static CHART_Y_AXIS_AUTOSCALE = { yAxis: [ { scale: true, } ] };
+    static DATA_ZOOM_X_INSIDE_ID = 'x_inside';
     static DATA_ZOOM_Y_INSIDE_ID = 'y_inside';
     static DATA_ZOOM_X_SLIDER = {
                             id:'x_slider',
@@ -68,8 +72,6 @@ class ChartView {
                             xAxisIndex: [0],
                             zoomOnMouseWheel: true,
                             moveOnMouseWheel: 'ctrl',
-                            // start: 70,
-                            // end: 90,
                             filterMode: 'none',
                         };
     static DATA_ZOOM_Y_INSIDE = {
@@ -77,8 +79,6 @@ class ChartView {
                             type: 'inside',
                             yAxisIndex: [0],
                             zoomOnMouseWheel: 'shift',
-                            // start: 25,
-                            // end: 35,
                             filterMode: 'none',
                         };
 
@@ -96,8 +96,9 @@ class ChartView {
     static CURSOR_TEXT_FONT_SIZE = 15;
 
     static EVENT_CHART_FRAME_CLICKED = 'event-chart-frame-clicked';
+    static EVENT_SELECT_CHART = 'event-select-chart';
 
-    static prev_tooltip_info = '';
+    static lastSelectedChart;
 
     // ----------------------------- PROPERTIES -----------------------------
     cnf = new ChartSettings();
@@ -236,7 +237,11 @@ class ChartView {
     create_chart(params) {
         let id = params.id;
         let frame = params.frame[0];
-        let chart = echarts.init(frame); // , null, { renderer: 'svg' });
+        let chart = echarts.init(frame, null, {
+            // renderer: 'svg',
+            renderer: 'canvas',
+        });
+
         // chart.setOption({animatoinEasing: 'linear'});
         // chart.id = id;
         chart.id = id;
@@ -244,6 +249,7 @@ class ChartView {
         // $(window).resize(() => that.resize_chart_window(chart));
         $(window).on('resize', () => that.resize_chart_window(chart));
         this.onClickChart(chart, id);
+        this.zoomAxisWheel({chart, id});
         this.chart_tree[id] = {};
         this.chart_tree[id][Const.CHART_ID] = chart;
         this.chart_tree[id][Const.GRAPHICS_ID] = {};
@@ -376,11 +382,22 @@ class ChartView {
                             borderColor: this.cnf.colorBorderUp,
                             borderColor0: this.cnf.colorBorderDownd,
                         },
+                        barWidth: '75%',
                         barMinWidth: '75%',
-                        barMaxWidth: '250%',
-                        barWidth: '150%', //75%
+                        barMaxWidth: '85%',
+                        // barWidth: '250%',
+                        // barMinWidth: '150%',
+                        // barMaxWidth: '450%',
                         z: 100,
+                        zlevel: 0,
                     },
+                    {
+                        id: data.name + '_MARGIN',
+                        name: data.name,
+                        type: 'candlestick',
+                        data: data.margin,
+                        clip: true,
+                    }
                 ],
 
                 toolbox: {
@@ -405,8 +422,11 @@ class ChartView {
                 tooltip: {
                     useUTC: true,
                     trigger: 'axis',
+                    alwaysShowContent: true,
                     axisPointer: {
-                        type: 'cross'
+                        type: 'cross',
+                        snap: true,
+                        z: ChartView.Z_AXIS_COMPONENS,
                     },
                     borderWidth: 0, //1,
                     borderColor: 'rgba(0,0,0,0)',//this.cnf.colorCross,
@@ -418,8 +438,9 @@ class ChartView {
                         height: '1em',
                         textBorderWidth: 0,
                     },
-                    // position: [x_offset, grid_top],
-                    position: ['10px', '35px'],
+                    // position: ['10px', '35px'],
+                    position: ['65px', '15px'],
+                    z: ChartView.Z_AXIS_COMPONENS,
                     formatter: function(params, ticket, callback) {
                         return that.format_chart_tooltip(data, params);
                     },
@@ -453,17 +474,18 @@ class ChartView {
     static PRICE_LABEL_TIME_REMAIN = ChartView.PRICE_LABEL_SHOW_LINE + 1;
 
     plotPriceCursor({query, data, chart, showLine = true, showTime = true}) {
-        let lastCandleIndex = data.data_y[data.lastCandleIndex];
-        let lastPrice = lastCandleIndex[ChartView.ECHARTS_CLOSE];
-        let color = (lastCandleIndex[ChartView.ECHARTS_CLOSE] > lastCandleIndex[ChartView.ECHARTS_OPEN]) ? this.cnf.colorUp : this.cnf.colorDown;
-        let lastTime = lastCandleIndex[ChartView.ECHARTS_TIMESTAMP];
+        // let lastCandleIndex = data.data_y[data.lastCandleIndex];
+        let lastCandle = data.data_y.at(-1);
+        let lastPrice = lastCandle[ChartView.ECHARTS_CLOSE];
+        let color = (lastCandle[ChartView.ECHARTS_CLOSE] > lastCandle[ChartView.ECHARTS_OPEN]) ? this.cnf.colorUp : this.cnf.colorDown;
+        let lastTime = lastCandle[ChartView.ECHARTS_TIMESTAMP];
 
         let timeFrame = query[Const.TIME_FRAME_ID];
         timeFrame = Time.convertToSeconds(timeFrame)*Time.MS_IN_SECONDS;
         let timeRemain = Time.getCountdown({finalTime: (lastTime+timeFrame)});
 
         chart.setOption({
-            series: [{
+            series: {
                 id: `${data.name}_CURSOR`,
                 name: `${data.name}_CURSOR`,
                 type: 'custom',
@@ -473,39 +495,66 @@ class ChartView {
                     y: [0],
                 },
                 data: [[lastPrice, color, showTime, showLine, timeRemain]],
-            }]
+                z: ChartView.Z_AXIS_COMPONENS,
+                zlevel: 0,
+            }
         });
 
         return data;
     }
         
     updateCandles({data, chart}) {
-        chart.setOption({series: [
-            {
-                id: data.name,
-                name: data.name,
-                data: data.data_y,
-                // data: data.data_y.map(d => d.slice(1,5)),
-            }
-        ]});        
+        // // Find series index
+        // let seriesIndex = Object.keys(chart.getOption().series.filter(s => s.name == data.name))[0];
+        // chart.appendData({
+        //     seriesIndex: seriesIndex,
+        //     data: data,
+        // });
+        chart.setOption({ series:
+                {
+                    id: data.name,
+                    name: data.name,
+                    data: data.data_y,
+                }
+            },
+            // { replaceMerge: 'series' }
+            );
     }
 
-    updatePriceCursor({query, data, chart, showLine = true, showTime = true}) {
-        let lastCandleIndex = data.data_y[data.lastCandleIndex];
-        let lastPrice = lastCandleIndex[ChartView.ECHARTS_CLOSE];
-        let color = (lastCandleIndex[ChartView.ECHARTS_CLOSE] > lastCandleIndex[ChartView.ECHARTS_OPEN]) ? this.cnf.colorUp : this.cnf.colorDown;
+    updatePriceCursor_({query, data, chart, showLine = true, showTime = true}) {
+        let lastCandle = data.data_y.at(-1);
+        let lastPrice = lastCandle[ChartView.ECHARTS_CLOSE];
+        let color = (lastCandle[ChartView.ECHARTS_CLOSE] > lastCandle[ChartView.ECHARTS_OPEN]) ? this.cnf.colorUp : this.cnf.colorDown;
         
-        let lastTime = lastCandleIndex[ChartView.ECHARTS_TIMESTAMP];
+        let lastTime = lastCandle[ChartView.ECHARTS_TIMESTAMP];
         let timeFrame = query[Const.TIME_FRAME_ID];
         timeFrame = Time.convertToSeconds(timeFrame)*Time.MS_IN_SECONDS;
         let timeRemain = Time.getCountdown({finalTime: (lastTime+timeFrame)});
 
         chart.setOption({series: [
             {
-                id: `${data.name}_CURSOR`,
+                // id: `${data.name}_CURSOR`,
+                id: `${query[Const.ID_ID]}_CURSOR`,
                 data: [[lastPrice, color, showTime, showLine, timeRemain]],
             }
-        ]}); 
+        ]});
+    }
+
+    // NOTA: VERSION CON DATOS DEL WEB SOCKET:
+    //  * TIENE LOS DATOS EN STRING, Y EN DIFERENTE ORDEN.
+    //  * APORTA EL TIEMPO FINAL DE VELA DIRECTAMENTE.
+    updatePriceCursor({query, data, chart, showLine = true, showTime = true}) {
+        let lastPrice = parseFloat(data[4]);
+        let color = (data[4] > data[1]) ? this.cnf.colorUp : this.cnf.colorDown;
+        let lastTime = data[6];
+        let timeRemain = Time.getCountdown({finalTime: lastTime});
+
+        chart.setOption({series: [
+            {
+                id: `${query[Const.ID_ID]}_CURSOR`,
+                data: [[lastPrice, color, showTime, showLine, timeRemain]],
+            }
+        ]});
     }
 
     renderCursor(params, api) {
@@ -516,14 +565,19 @@ class ChartView {
         let textTime = `${api.value(ChartView.PRICE_LABEL_TIME_REMAIN)}`;
         let yLastPrice = api.coord([0, lastPrice])[1]
         let textPrice = `${lastPrice}`;
-        let width = (textPrice.length*(15/1.8)) + 10;
+
+        let yAxisX = params.coordSys.width + params.coordSys.x;
+        let xAxisY = params.coordSys.height + params.coordSys.y;
+        let width = api.getWidth() - yAxisX;
+        // let width = (textPrice.length*(15/1.8)) + 10;
 
         let id = params.seriesId;
         let name = params.seriesName;
 
-        let priceCursor = this.getPriceCursor({ id, name, x:
-                                                api.getWidth(),
+        let priceCursor = this.getPriceCursor({ id, name,
+                                                x: yAxisX, //api.getWidth(),
                                                 y: yLastPrice,
+                                                width: width,
                                                 textPrice,
                                                 color,
                                                 showTime: showTime,
@@ -533,19 +587,21 @@ class ChartView {
         return priceCursor;
     }
     
-    getPriceCursor({id, name, x, y, textPrice, color, showTime = false, textTime, showLine = false}) {
+    getPriceCursor({id, name, x, y, width, textPrice, color, showTime = false, textTime, showLine = false}) {
         // Check minimum contrast between font and label background color
         let colorText = ((ChartView.COLOR_WHITE_INT - parseInt(color.substring(1), 16)) < ChartView.COLOR_THRESHOLD) ? 'black' : 'white';
+        width = width? width : 65;
 
         let children =  [
             {
                 type: 'rect',
                 id: `${id}_CURSOR_LABEL`,
                 name: `${name}_CURSOR_LABEL`,
-                x: -65,
+                x: 0, //-65,
                 y: -12,
+                z: ChartView.Z_AXIS_COMPONENS,
                 shape: {
-                    width: 65,
+                    width: width, //65,
                     height: (showTime) ? 40 : 24,
                 },
                 style: {
@@ -556,9 +612,9 @@ class ChartView {
                 type: 'text',
                 id: `${id}_CURSOR_PRICE_TEXT`,
                 name: `${name}_CURSOR_PRICE_TEXT`,
-                x: -60,
+                x: 5, //-60,
                 y: -6,
-                z: 101,
+                z: ChartView.Z_AXIS_COMPONENS,
                 style: {
                     text: textPrice,
                     fontSize: 14,
@@ -572,9 +628,9 @@ class ChartView {
                 type: 'text',
                 id: `${id}_CURSOR_TIME_TEXT`,
                 name: `${name}_CURSOR_TIME_TEXT`,
-                x: -60,
+                x: 5, //-60,
                 y: 10,
-                z: 101,
+                z: ChartView.Z_AXIS_COMPONENS,
                 style: {
                     text: textTime,
                     fontSize: 14,
@@ -588,9 +644,10 @@ class ChartView {
                 type: 'line',
                 id: `${id}_CURSOR_LINE`,
                 name: `${name}_CURSOR_LINE`,
+                z: ChartView.Z_AXIS_COMPONENS,
                 shape: {
                     x1: -x,
-                    x2: -65,
+                    x2: width, //-65,
                     y1: 0,
                     y2: 0,
                 },
@@ -609,7 +666,7 @@ class ChartView {
             children: children,
             x: x,
             y: y,
-            z: 100,
+            z: ChartView.Z_AXIS_COMPONENS,
             clip: false,
         }
 
@@ -967,7 +1024,9 @@ class ChartView {
     }
 
     /** zoom_chart
-     * @param zoom: 2 types of settings. By values:
+     * @param zoom: 2 types of settings.
+     * margin is optional parameter.
+     * By values:
      *          {   
                     startValue: {x: dateMin, y:priceMin},
                     endValue: { x: dateMax, y:priceMax},
@@ -981,95 +1040,98 @@ class ChartView {
                 }
         onlyValid: [startValue, endValue] true: filter all undefined dates || false: start/end could be undefined date
      * @param chart Chart object to zoom.
+     * @param min Optional parameter. Min axis values. {x, y} to limit zoom.
+     * @param max Optional parameter. Max axis values. {x, y} to limit zoom.
      * @returns Zoom object with updated information if ok. Error message other case.
      */
-    zoom_chart(zoom, chart) {
+    zoomChart({zoom, chart, min, max}) {
         let ret;
         try {
-            
-            // chart.on('datazoom', function(params) {
-            //     console.log(params);
-            // });
+            let margin = zoom.margin || { x: 0, y: 0 };
+            margin = {
+                x: margin.x/100,
+                y: margin.y/100,
+             };
 
-            // let start = chart.convertToPixel({xAxisIndex: 0, yAxisIndex: 0}, [zoom.start, zoom.startValue]);
-            // let end = chart.convertToPixel({xAxisIndex: 0, yAxisIndex: 0}, [zoom.end, zoom.endValue]);
-            // chart.getModel().option.xAxis[0].data.slice(-1);
-            // chart.getModel().option.xAxis[0].data.slice(-1);
-            // chart.dispatchAction({
-            //     type: 'dataZoom',
-            //     startValue: startValue,
-            //     endValue: endValue,
-            //     start:start,
-            //     end:end,
-            // });
-
-            let data = chart.getModel().option.series[0].data.filter(v=>v[1]).map(v => v[0]);
-            
-            let margin = {
-                x: ( (zoom.margin != undefined) && (zoom.margin.x != null) ) ? zoom.margin.x : 0,
-                y: ( (zoom.margin != undefined) && (zoom.margin.y != null) ) ? zoom.margin.y : 0,
-            }
-            let minValue = 0;
-            let maxValue = 0;
-
-            let tf = data[1] - data[0];
-            let remainder = (zoom.startValue.x) ? (zoom.startValue.x % tf)  : 0;
-            zoom.startValue.x = zoom.startValue.x - remainder;
-
-            if(margin.x && margin.y) {
-                let x_start_idx = (zoom.startValue != undefined) ? data.indexOf(Math.floor(zoom.startValue.x)) : 0;
-                let x_end_idx = (zoom.endValue != undefined) ? data.indexOf(zoom.endValue.x) : 0;
-                if(x_start_idx < 0) {
-                    x_start_idx = 0;
-                }
-                if(x_end_idx < 0) {
-                    x_end_idx = data.length-1;
-                }
-
-                let filtered = chart.getModel().option.series[0].data.filter(v=>v[1]).slice(x_start_idx, x_end_idx);
-                maxValue = Math.max(...filtered.map(v => v[3]));
-                minValue = Math.min(...filtered.map(v => v[4]));
-            }
-
-            // Zoom from values
+            // Zoom from axis values
             if(zoom.startValue) {
-                let marginValue = {
-                    x: parseInt(margin.x)*tf,
-                    y: ( parseInt(margin.y) / 100 ) * (maxValue - minValue)
+                let startValue = zoom.startValue || {x: 0, y: 0};
+                let endValue = zoom.endValue || {x: 0, y: 0};
+                let diff = {
+                    x: endValue.x - startValue.x,
+                    y: endValue.y - startValue.y,
                 }
-
-                let startValue = {
-                    x: zoom.startValue.x - marginValue.x,
-                    y: zoom.startValue.y - marginValue.y,
+                startValue = {
+                    x: startValue.x - (diff.x * margin.x),
+                    y: startValue.y - (diff.y * margin.y),
+                };
+                endValue = {
+                    x: endValue.x + (diff.x * margin.x),
+                    y: endValue.y + (diff.y * margin.y),
                 };
 
-                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[0] == true) ) && (startValue.x == undefined)) {
-                    startValue.x = data[0];
+                // CLIP values to max-min
+                if(min) {
+                    if(startValue.x < min.x) { startValue.x = min.x; }
+                    if(startValue.y < min.y) { startValue.y = min.y; }
+                }
+                if(max) {
+                    if(endValue.x > max.x) { endValue.x = max.x; }
+                    if(endValue.y > max.y) { endValue.y = max.y; }
                 }
 
-                let endValue = {
-                    x: zoom.endValue.x + marginValue.x,
-                    y: zoom.endValue.y + marginValue.y,
-                }
-                if(( (zoom.onlyValid != undefined) && (zoom.onlyValid[1] == true) ) && (endValue.x == undefined)) {
-                    endValue.x = data[data.length - 1];
-                }
-                
                 chart.dispatchAction({
                     type: 'dataZoom',
                     batch: [
-                        {dataZoomId: 'x_inside', startValue: startValue.x, endValue: endValue.x, type: 'dataZoom',},
-                        {dataZoomId: 'y_inside', startValue: startValue.y, endValue: endValue.y, type: 'dataZoom',}
+                        {
+                            dataZoomId: 'x_inside',
+                            startValue: startValue.x,
+                            endValue: endValue.x,
+                            type: 'dataZoom',
+                        },
+                        {
+                            dataZoomId: 'y_inside',
+                            startValue: startValue.y,
+                            endValue: endValue.y,
+                            type: 'dataZoom',
+                        }
                     ]
                 });
             }
-            // Zoom from percent
+
+            // Zoom from total data percent
             else if(zoom.start) {
+                let start = zoom.start || {x: 0, y: 0};
+                let end = zoom.end || {x: 0, y: 0};
+                start = {
+                    x: start.x * (1 - margin.x),
+                    y: start.y * (1 - margin.y),
+                }
+                end = {
+                    x: end.x * (1 + margin.x),
+                    y: end.y * (1 + margin.y),
+                }
+                // CLIP max-min
+                if(start.x < 0) { start.x = 0; }
+                if(start.y < 0) { start.y = 0; }
+                if(end.x > 100) { end.x = 0; }
+                if(end.y > 100) { end.y = 0; }
+
                 chart.dispatchAction({
                     type: 'dataZoom',
                     batch: [
-                        {dataZoomId: 'x_inside', start: zoom.start.x - margin.x, end: zoom.end.x + margin.x, type: 'dataZoom',},
-                        {dataZoomId: 'y_inside', start: zoom.start.y - margin.y, end: zoom.end.y + margin.y, type: 'dataZoom',}
+                        {
+                            dataZoomId: 'x_inside',
+                            start: start.x,
+                            end: end.x,
+                            type: 'dataZoom',
+                        },
+                        {
+                            dataZoomId: 'y_inside',
+                            start: start.y,
+                            end: end.y,
+                            type: 'dataZoom',
+                        }
                     ]
                 });
             }
@@ -1077,7 +1139,7 @@ class ChartView {
             ret = zoom;
         }
         catch(error) {
-            console.log('Error clearing chart: ', error);
+            console.log('Error zooming chart: ', error);
             ret = error;
         }
         return ret;
@@ -1088,8 +1150,12 @@ class ChartView {
     }
 
     format_chart_tooltip(data, params) {
+        if( params && ((params instanceof Array) == false) ) {
+            params = [params];
+        }
+
         if((!params) || (params[0].componentSubType != 'candlestick')) {
-            return ChartView.prev_tooltip_info;
+            return;
         }
 
         //Get max length of all values
@@ -1163,10 +1229,12 @@ class ChartView {
             // console.error(error);
         }
         let info = '<div class="class-tooltip" style="font-size: 0.9em;">' +
-                        // ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.name + ChartView.P_CLOSE +
                         // ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.marco + ChartView.P_CLOSE +
-                        // ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.broker + ChartView.P_CLOSE +
                         // ChartView.CHART_TOOLTIP_HEADER_DUMMY + '..___________' + ChartView.P_CLOSE +
+                        // ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.name + ChartView.P_CLOSE +
+                        // ChartView.CHART_TOOLTIP_HEADER_DUMMY + data.broker + ChartView.P_CLOSE +
+                        ChartView.CHART_TOOLTIP_TEXT + data.name + ChartView.P_CLOSE +
+                        ChartView.CHART_TOOLTIP_TEXT + `(${data.broker})` + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_TEXT + '' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_TEXT + 'O' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + ChartView.VALUES_CLOSE + open + ChartView.P_CLOSE +
@@ -1179,7 +1247,7 @@ class ChartView {
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + 'font-size: 0.8em;' + ChartView.VALUES_CLOSE + `${delta} (${delta_pc}%)` + ChartView.P_CLOSE +
                     '</div>';
 
-        ChartView.prev_tooltip_info = info;
+        // ChartView.prev_tooltip_info = info;
         return info;
     }
 
@@ -1272,19 +1340,10 @@ class ChartView {
         var x2 = 0, y2 = 0;
         var that = this;
 
-        chart.getZr().on('mousemove', (e) => {
-            chart.getZr().setCursorStyle('crosshair');
-        });
-
-
         chart.getZr().on('mousedown', (e) => {
             let [x, y] = chart.convertFromPixel({ xAxisIndex:0, yAxisIndex:0}, [e.offsetX, e.offsetY]);
-            // let zoom = chart.getOption().dataZoom;
-            // let xzoom = zoom.filter(dz => dz.id.includes('x_inside'))[0];
-            // let yzoom = zoom.filter(dz => dz.id.includes('y_inside'))[0];
             let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
             let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
-            // if( (x < xzoom.startValue) && (y < yzoom.startValue)) {
             if( (x > xzoom.endValue) && (y < yzoom.startValue)) {
             }
             else if(x > xzoom.endValue) {
@@ -1297,21 +1356,20 @@ class ChartView {
                 chart.getZr().setCursorStyle('e-resize');
                 chart.getZr().on('mousemove', dragAxisZoom);
             }
-            // Unselect all graphic's controls
+            // Unselect all graphic's controls except clicked one
             else {
-                if(0) {
-
+                if(chart.id != ChartView.lastSelectedChart) {
+                    $(document).trigger(ChartView.EVENT_SELECT_CHART, [chart.id]);
+                    ChartView.lastSelectedChart = chart.id;
                 }
-                else {
-                    Object.values(this.chart_tree[chart.id][Const.GRAPHICS_ID]).forEach( g => {
-                        let target_name = (e.target) ? e.target.parent.name : '';
-                        if(g[Const.ID_ID] != target_name) {
-                            if(typeof g.unselect == "function") {
-                                g.unselect();
-                            }
+                Object.values(this.chart_tree[chart.id][Const.GRAPHICS_ID]).forEach( g => {
+                    let target_name = (e.target) ? e.target.parent.name : '';
+                    if(g[Const.ID_ID] != target_name) {
+                        if(typeof g.unselect == "function") {
+                            g.unselect();
                         }
-                    });
-                }
+                    }
+                });
             }
         });
 
@@ -1324,10 +1382,13 @@ class ChartView {
                 let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
                 let delta = (x2 - x1);
                 // Zoom over sign, stops zoom
-                that.zoom_chart({ startValue: { x: xzoom.startValue - delta, y: yzoom.startValue },
+                that.zoomChart({
+                    zoom: { startValue: { x: xzoom.startValue - delta, y: yzoom.startValue },
                                     endValue: { x: xzoom.endValue + delta, y: yzoom.endValue },
                                     onlyValid: [false, false],
-                                }, chart);
+                            },
+                    chart
+                });
                 x1 = x2;
             }
             else if(y1) {
@@ -1338,10 +1399,13 @@ class ChartView {
                 let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
                 let delta = -(y2 - y1);
                 // Zoom over sign, stops zoom
-                that.zoom_chart({ startValue: { x: xzoom.startValue, y: yzoom.startValue - delta },
+                that.zoomChart({
+                    zoom: { startValue: { x: xzoom.startValue, y: yzoom.startValue - delta },
                                     endValue: { x: xzoom.endValue, y: yzoom.endValue + delta },
                                     onlyValid: [false, false],
-                                }, chart);
+                                },
+                                chart
+                });
                 y1 = y2;
             }
         }
@@ -1352,6 +1416,65 @@ class ChartView {
             chart.getZr().off('mousemove', dragAxisZoom);
             chart.getZr().setCursorStyle('crosshair');
         });
+    }
+
+    zoomAxisWheel({chart, id}) {
+        let lastWheel = performance.now();
+        if(chart) {
+            chart.getZr().on('mousewheel', (e) => {
+                if( (performance.now() - lastWheel) > 30) {
+                    let _rect = chart._coordSysMgr._coordinateSystems[0].model.coordinateSystem._axesMap.y[0].grid._rect;
+                    let yAxisX = _rect.width + _rect.x;
+                    let xAxisY = _rect.height + _rect.y;
+                    // Ignore zoom if crossing both axis
+                    let crossPoint = ((e.offsetX > yAxisX) && (e.offsetY > xAxisY));
+                    let chartZone = ((e.offsetX < yAxisX) && (e.offsetY < xAxisY));
+                    if( crossPoint || chartZone ) {}
+                    else {
+                        let xZoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
+                        let yZoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+
+                        let yStart = yZoom.startValue;
+                        let yEnd = yZoom.endValue;
+                        let xStart = xZoom.startValue;
+                        let xEnd = xZoom.endValue;
+                        let delta = -e.wheelDelta;
+
+                        console.log('delta:', delta);
+                        console.log('x start:', xStart);
+                        console.log('x end:', xEnd);
+
+                        if(e.offsetX > yAxisX) {
+                            let absErr = (yEnd - yStart) / (yEnd + yStart);
+                            delta = (absErr * 0.2) * Math.sign(delta); // 20% zoom of total visual range
+                            yStart *= (1-delta);
+                            yEnd *= (1+delta);
+                        }
+                        else if(e.offsetY > xAxisY) {
+                            let absErr = (xEnd - xStart) / (xEnd + xStart);
+                            delta = (absErr * 0.2) * Math.sign(delta); // 20% zoom of total visual range
+                            xStart *= (1-delta);
+                            xEnd *= (1+delta);
+                            if(xStart > xEnd) {
+                                [xStart, xEnd] = [xEnd, xStart];
+                            }
+                        }
+
+                        this.zoomChart({
+                            zoom: { startValue: { x: xStart, y: yStart },
+                                    endValue: { x: xEnd, y: yEnd },
+                                    onlyValid: [false, false],
+                            },
+                            chart
+                        });
+
+                        console.log('x start 2:', xStart);
+                        console.log('x end2:', xEnd);
+                    }
+                    
+                }
+            });
+        }
     }
 
     select({chart, items}) {

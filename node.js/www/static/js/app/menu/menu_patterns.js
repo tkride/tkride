@@ -5,7 +5,7 @@ class MenuPatterns {
     //----------------------------- STATIC, CONSTANTS -----------------------------
 
     static NAME = 'menu-patterns';
-    static TITLE = 'Programar Patrones';
+    static TITLE = 'Patrones';
 
     // Main pattern menu elements
     static ID_MENU_PATTERNS = 'patterns-menu'

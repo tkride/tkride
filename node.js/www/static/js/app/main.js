@@ -92,7 +92,12 @@ $(document).ready(function() {
     $.when(that.ecc).done( () => {
         that.event_ctrl = new EventController();
         that.event_ctrl.init(that);
-        $(document).tooltip({});
+        $(document).tooltip({
+            show: {
+                delay: 250,
+                duration: 0
+            }
+        });
     });
 
     // that.drag = false;

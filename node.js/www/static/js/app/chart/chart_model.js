@@ -94,23 +94,36 @@ class ModelChart {
             }
 
             if(rawData.append) {
-                let lastCandleIndex = this.#ohlc_data.data_y.map(v => v[0]).indexOf(data_y[0][0]);
-                if(lastCandleIndex > this.#ohlc_data.lastCandleIndex) {
-                    // Deletes first unused candle
-                    this.#ohlc_data.data_y.shift();
-                    // Fills first valid candle width empty data
-                    let firstCandleIndex = this.#ohlc_data.data_y[this.#ohlc_data.firstCandle];
-                    firstCandleIndex = [firstCandleIndex[ChartView.ECHARTS_TIMESTAMP], undefined, undefined, undefined, undefined];
-                    this.#ohlc_data.data_y.splice(this.#ohlc_data.lastCandleIndex+1, 1, ...data_y);
+                // If new data to append is still last candle information, replace las candle
+                let lastIdx = this.#ohlc_data.data_y.length-1;
+                if(this.#ohlc_data.data_y[lastIdx][ModelChart.OPEN_TIME] == data_y[0][ModelChart.OPEN_TIME]) {
+                    this.#ohlc_data.data_y.splice(lastIdx, 1, ...data_y);
+                    this.#ohlc_data.volume.splice(lastIdx, 1, ...volumes);
+                    this.#ohlc_data.trades.splice(lastIdx, 1, ...trades);
                 }
+                // else if new data started new candle, append and delete firts
                 else {
-                    this.#ohlc_data.data_y.splice(lastCandleIndex, 1, ...data_y);
+                    this.#ohlc_data.data_y.shift();
+                    this.#ohlc_data.data_y.push(...data_y);
+                    this.#ohlc_data.volume.shift();
+                    this.#ohlc_data.volume.push(...volumes);
+                    this.#ohlc_data.trades.shift();
+                    this.#ohlc_data.trades.push(...trades);
                 }
+                // let lastCandleIndex = this.#ohlc_data.data_y.map(v => v[0]).indexOf(data_y[0][0]);
+                // if(lastCandleIndex > this.#ohlc_data.lastCandleIndex) {
+                //     // Deletes first unused candle
+                //     this.#ohlc_data.data_y.shift();
+                //     // Fills first valid candle width empty data
+                //     let firstCandleIndex = this.#ohlc_data.data_y[this.#ohlc_data.firstCandle];
+                //     firstCandleIndex = [firstCandleIndex[ChartView.ECHARTS_TIMESTAMP], undefined, undefined, undefined, undefined];
+                //     this.#ohlc_data.data_y.splice(this.#ohlc_data.lastCandleIndex+1, 1, ...data_y);
+                // }
+                // else {
+                //     this.#ohlc_data.data_y.splice(lastCandleIndex, 1, ...data_y);
+                // }
 
-                this.#ohlc_data.volume.shift();
-                this.#ohlc_data.volume.push(...volumes);
-                this.#ohlc_data.trades.shift();
-                this.#ohlc_data.trades.push(...trades);
+
                 min_y = Math.min(...this.#ohlc_data.data_y.map(v=>v.slice(4, 5)))
                 max_y = Math.max(...this.#ohlc_data.data_y.map(v=>v.slice(3, 4)))
                 // min_x = this.#ohlc_data.data_y[0][0];
@@ -124,30 +137,31 @@ class ModelChart {
                 max_x = data_y[data_y.length-1][0];
 
                 //Fill with empty data to let move start and end beyond limits
-                let span_len = 200;
+                let span_len = data_y.length / 4; //200;
 
                 let limit_date = Time.subtract_value(data_y[0][Const.IDX_CANDLE_TIME], span_len, query.timeFrame);
                 let dates = Time.generate_dates(limit_date, data_y[0][Const.IDX_CANDLE_TIME], query.timeFrame);
-                let dates_arr = dates.map(v=>[v, undefined, undefined, undefined, undefined]);
+                let datesArrStart = dates.map(v=>[v, undefined, undefined, undefined, undefined]);
                 // Insert dates at beginning
-                data_y.splice(0, 0, ...dates_arr);
-                let firstCandle = dates_arr.length;
-                let lastCandleIndex = data_y.length - 1;
+                // data_y.splice(0, 0, ...datesArrStart); // XXX
+                // let firstCandle = datesArrStart.length;
+                // let lastCandleIndex = data_y.length - 1;
 
 
                 limit_date = Time.add_value(data_y[data_y.length - 1][Const.IDX_CANDLE_TIME], span_len, query.timeFrame);
                 let start_date = Time.add_value(data_y[data_y.length - 1][Const.IDX_CANDLE_TIME], 1, query.timeFrame);
                 dates = Time.generate_dates(start_date, limit_date, query.timeFrame);
-                dates_arr = dates.map(v=>[v, undefined, undefined, undefined, undefined]);
+                let datesArrEnd = dates.map(v=>[v, undefined, undefined, undefined, undefined]);
                 // Insert dates at end
-                data_y.splice(data_y.length, 0, ...dates_arr);
+                // data_y.splice(data_y.length, 0, ...datesArrEnd); // XXX
+                let margin = [...datesArrStart, ...datesArrEnd];
 
 
                 // console.log(datos_json)
                 this.#ohlc_data = {
                     id: query.active,
                     name: query.active,
-                    broker: query.broker,
+                    broker: query[Const.BROKER_ID],
                     marco: query.timeFrame,
                     dataType: query.data_type,
                     data_y: data_y,
@@ -157,8 +171,9 @@ class ModelChart {
                     min_y: min_y,
                     max_x: max_x,
                     min_x: min_x,
-                    firstCandle: firstCandle,
-                    lastCandleIndex: lastCandleIndex,
+                    // firstCandle: firstCandle,
+                    // lastCandleIndex: lastCandleIndex,
+                    margin: margin,
                 };
                 this.#id = this.#ohlc_data.name;
                 this.#name = this.#ohlc_data.name;
@@ -252,7 +267,7 @@ class ModelChart {
             this.#ohlc_data = {
                 id: query.id,
                 name: query.id,
-                broker: query.broker,
+                broker: query[Const.BROKER_ID],
                 marco: query.interval,
                 dataType: query.data_type,//[TSQL_node.TIPO_PARAM_ID],
                 // data_x: data_x,

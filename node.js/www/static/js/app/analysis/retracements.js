@@ -2,7 +2,7 @@
 
 /** 'retracements.js' */
 
-class Retracement extends AnalysisData {
+class RetracementData extends AnalysisData {
     // data = {};
     // nok = {};
     // searchindata = {};
@@ -24,6 +24,15 @@ class Retracement extends AnalysisData {
 
 class Retracements extends Analysis {
 
+    //----------------------------- STATIC, CONSTANTS -----------------------------
+
+    static NAME = 'Retracements';
+
+    //----------------------------- CONSTRUCTOR -----------------------------
+    // Retracements(data) {
+    //     super(param);
+    // }
+
     //----------------------------- PUBLIC METHODS -----------------------------
 
     static process(request) {
@@ -44,7 +53,7 @@ class Retracements extends Analysis {
     //----------------------------- PRIVATE METHODS -----------------------------
     
     static #process(request) {
-        var ret = new Retracement();
+        var ret = new RetracementData();
         try {
             Retracements.#parse_request(ret, request);
 
@@ -98,25 +107,37 @@ class Retracements extends Analysis {
 
                 // If limits defined in any parent data, get it
                 if(level_data_source) {
-                    level_source = Retracements.filter_parent_data(ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID], ret[Const.QUERY_ID], level_data_source,
-                                                                    { data_level: level, data_ref: mov_source,
-                                                                      fields_data_content: [Const.FROM_ID, Const.UNTIL_ID],
-                                                                    //   fields_data: [Const.TREND_ID],
-                                                                      fields_ref: [Const.INIT_ID, Const.END_ID] //, Const.TREND_ID]
-                                                                    });
-                    if(level_source.length) {
-                        levels_trend = ((level_source[0][Const.END_ID].price - level_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
+                    try {
+                        level_source = Retracements.filter_parent_data(ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID], ret[Const.QUERY_ID], level_data_source,
+                                                                        { data_level: level, data_ref: mov_source,
+                                                                        fields_data_content: [Const.FROM_ID, Const.UNTIL_ID],
+                                                                        //   fields_data: [Const.TREND_ID],
+                                                                        fields_ref: [Const.INIT_ID, Const.END_ID] //, Const.TREND_ID]
+                                                                        });
+                        if(level_source.length) {
+                            levels_trend = ((level_source[0][Const.END_ID].price - level_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
+                        }
+                    }
+                    catch(err) {
+                        console.error(err);
+                        throw(err);
                     }
                 }
 
                 // Search data in parent results (search_in_data)
                 if(search_in_data != undefined) {
-                    search_source = Retracements.filter(mov_source, search_in_data[level], [until_new, Const.TREND_ID], [until_ref, Const.TREND_ID], false);
-                    // search_source = Retracements.filter(mov_source, search_in_data[level], [until_new], [until_ref], false);
-                    // If base parent data, and levels from any parent, check levels trend vs current data trend, to determine from configuration
-                    if(level_source && search_source.length) {
-                        let mov_trend = ((search_source[0][Const.END_ID].price - search_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
-                        levels_from = (levels_trend != mov_trend) ? Const.END_ID : Const.INIT_ID;
+                    try {
+                        search_source = Retracements.filter(mov_source, search_in_data[level], [until_new, Const.TREND_ID], [until_ref, Const.TREND_ID], false);
+                        // search_source = Retracements.filter(mov_source, search_in_data[level], [until_new], [until_ref], false);
+                        // If base parent data, and levels from any parent, check levels trend vs current data trend, to determine from configuration
+                        if(level_source && search_source.length) {
+                            let mov_trend = ((search_source[0][Const.END_ID].price - search_source[0][Const.INIT_ID].price) > 0) ? Const.BULL : Const.BEAR;
+                            levels_from = (levels_trend != mov_trend) ? Const.END_ID : Const.INIT_ID;
+                        }
+                    }
+                    catch(err) {
+                        console.error(err);
+                        throw(err);
                     }
                 }
                 else {
@@ -128,96 +149,102 @@ class Retracements extends Analysis {
                 let retracements = [];
                 let nok = [];
                 search_source.map( (m, i) => {
-                    let ok = false;
-                    
-                    // If movement has same information than any previous, object is treated as reference! Need to deepcopy (?)
-                    m = JSON.parse(JSON.stringify(m));
-                    // console.log(Retracements.toString(m));
-                    // Build real movement, based on result (if result obtained from iteration, may not fit with regular movements)
-                    if(search_in_data) {
-                        m[Const.TIMESTAMP_ID] = search_in_data[level][i][Const.TIMESTAMP_ID];
-                        m[Const.HASH_ID] = search_in_data[level][i][Const.HASH_ID];// + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
-                        if(from) { m[Const.INIT_ID] = search_in_data[level][i][from]; }
-                        if(until) { m[Const.END_ID] = search_in_data[level][i][until]; }
-                        if(from) { m[Const.DELTA_INIT_ID] = m[Const.END_ID].price - m[Const.INIT_ID].price; }
-                        if(until) { m[Const.DELTA_END_ID] = m[Const.CORRECTION_ID].price - m[Const.END_ID].price; }
-                        if((from != undefined) || (until != undefined)) { m[Const.RET_ID] = Math.abs(m[Const.DELTA_END_ID] / m[Const.DELTA_INIT_ID]); }
-                        // m[Const.TREND_ID] = -1*trend_sign;
-                        // console.log(Retracements.toString(m)); console.log('');
-                    }
-
-                    // Appends new familiy results hash identification;
-                    Retracements.append_hash(m);
-
-                    let ret_max = ret[Const.RET_MAX_ID];
-                    let ret_min = ret[Const.RET_MIN_ID];
-                    // If checks levels in external data
-                    if(level_source) {
-                        // TODO NO: PUEDEN HABER MULTIPLES SOLUCIONES
-                        let parent_source = level_source[i];
-                        // TODO TAMPOCO: PUEDEN HABER MULTIPLES SOLUCIONES
-                        // let parent_source = level_source.filter( ls => ls[Const.TIMESTAMP_ID] == m[Const.TIMESTAMP_ID])[0];
-                        if(parent_source) {
-                                let new_ret =
-                                Retracements.get_projected_retracement_limits( { parent: parent_source,
-                                                                                 movement: m,
-                                                                                 [Const.RET_MAX_ID]: ret.ret_max,
-                                                                                 [Const.RET_MIN_ID]: ret.ret_min,
-                                                                                 trend_sign: trend_sign,
-                                                                                 levels_from: levels_from } );
-                                ret_max = new_ret.ret_max;
-                                ret_min = new_ret.ret_min;
-                                m[Const.RET_LEVELS_DATA_SOURCE_ID] = { [new_ret.ret_max]: new_ret.value_max,
-                                                                       [new_ret.ret_min]: new_ret.value_min };
-                                m[Const.RET_DATA_SOURCE_ID] = {   [Const.INIT_ID]: new_ret[Const.INIT_ID],
-                                                                       [Const.END_ID]: new_ret[Const.END_ID] };
-                        }
-                        else {
-                            console.warn(`No match level source for: ${level_source[i]}`);
-                        }
-                    }
-                    
-                    // Append retracement levels item list
-                    m[Const.RET_LEVELS_ID] = {};
-
-                    ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
-                    let pending_nok = [];
-                    if(ok) retracements.push(m);
-                    else {
-                        // nok.push(m);
-                        pending_nok.push(m);
-                    }
-
-                    // If iteration defined
-                    if(ret[Const.ITERATE_ID] && (m[Const.RET_ID] <= ret_max)) {
-                // TODO Y TENER EN CUENTA QUE LOS RESULTADOS BASE, PUEDEN NO ESTAR EN LOS MOVIMIENTOS FUENTE DIRECTAMENTE (MERGE DE MOVIMIENTOS, RESULTADOS DE ITERACIONES)
-                        //TODO BUSCAR EN LOS MOVIMIENTOS A PARTIR DEL SELECCIONADO (O RESULTADO PADRE SELECCIONADO)
-                        // let search_remain = search_source.slice(i);
-                        // TODO ENCONTRAR EL MOVIMIENTO ACTUAL EN LA FUENTE
-                        // let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[Const.CORRECTION_ID].time);
-                        // TODO XXX until AQUI NO TIENE VALOR (y lanza excepcion) SI SE BUSCA EN "CORRECCION" => SOLUCIONAR
-                        let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[until].time);
-                        let mov_remain = mov_source.slice(idx_mov);
-                        let res_it = Retracements.process_iteration({
-                                                         start_movement: m,
-                                                        //  source: search_remain,
-                                                         source: mov_remain,
-                                                         ret_max: ret_max,
-                                                         ret_min: ret_min,
-                                                         iterations: ret[Const.ITERATE_ID],
-                                                         from: from,
-                                                         trend_sign: trend_sign,
-                        });
+                    try {
+                        let ok = false;
                         
-                        // If (at least 1) result ok, stores results and nok is emptied
-                        if(res_it.ok.length > 0) {
-                            retracements.push(...res_it.ok);
-                            pending_nok = [];
+                        // If movement has same information than any previous, object is treated as reference! Need to deepcopy (?)
+                        m = JSON.parse(JSON.stringify(m));
+                        // console.log(Retracements.toString(m));
+                        // Build real movement, based on result (if result obtained from iteration, may not fit with regular movements)
+                        if(search_in_data) {
+                            m[Const.TIMESTAMP_ID] = search_in_data[level][i][Const.TIMESTAMP_ID];
+                            m[Const.HASH_ID] = search_in_data[level][i][Const.HASH_ID];// + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
+                            if(from) { m[Const.INIT_ID] = search_in_data[level][i][from]; }
+                            if(until) { m[Const.END_ID] = search_in_data[level][i][until]; }
+                            if(from) { m[Const.DELTA_INIT_ID] = m[Const.END_ID].price - m[Const.INIT_ID].price; }
+                            if(until) { m[Const.DELTA_END_ID] = m[Const.CORRECTION_ID].price - m[Const.END_ID].price; }
+                            if((from != undefined) || (until != undefined)) { m[Const.RET_ID] = Math.abs(m[Const.DELTA_END_ID] / m[Const.DELTA_INIT_ID]); }
+                            // m[Const.TREND_ID] = -1*trend_sign;
+                            // console.log(Retracements.toString(m)); console.log('');
                         }
-                        else { nok.push(...res_it.nok); }
+
+                        // Appends new familiy results hash identification;
+                        Retracements.append_hash(m);
+
+                        let ret_max = ret[Const.RET_MAX_ID];
+                        let ret_min = ret[Const.RET_MIN_ID];
+                        // If checks levels in external data
+                        if(level_source) {
+                            // TODO NO: PUEDEN HABER MULTIPLES SOLUCIONES
+                            let parent_source = level_source[i];
+                            // TODO TAMPOCO: PUEDEN HABER MULTIPLES SOLUCIONES
+                            // let parent_source = level_source.filter( ls => ls[Const.TIMESTAMP_ID] == m[Const.TIMESTAMP_ID])[0];
+                            if(parent_source) {
+                                    let new_ret =
+                                    Retracements.get_projected_retracement_limits( { parent: parent_source,
+                                                                                    movement: m,
+                                                                                    [Const.RET_MAX_ID]: ret.ret_max,
+                                                                                    [Const.RET_MIN_ID]: ret.ret_min,
+                                                                                    trend_sign: trend_sign,
+                                                                                    levels_from: levels_from } );
+                                    ret_max = new_ret.ret_max;
+                                    ret_min = new_ret.ret_min;
+                                    m[Const.RET_LEVELS_DATA_SOURCE_ID] = { [new_ret.ret_max]: new_ret.value_max,
+                                                                        [new_ret.ret_min]: new_ret.value_min };
+                                    m[Const.RET_DATA_SOURCE_ID] = {   [Const.INIT_ID]: new_ret[Const.INIT_ID],
+                                                                        [Const.END_ID]: new_ret[Const.END_ID] };
+                            }
+                            else {
+                                console.warn(`No match level source for: ${level_source[i]}`);
+                            }
+                        }
+                        
+                        // Append retracement levels item list
+                        m[Const.RET_LEVELS_ID] = {};
+
+                        ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
+                        let pending_nok = [];
+                        if(ok) retracements.push(m);
+                        else {
+                            // nok.push(m);
+                            pending_nok.push(m);
+                        }
+
+                        // If iteration defined
+                        if(ret[Const.ITERATE_ID] && (m[Const.RET_ID] <= ret_max)) {
+                    // TODO Y TENER EN CUENTA QUE LOS RESULTADOS BASE, PUEDEN NO ESTAR EN LOS MOVIMIENTOS FUENTE DIRECTAMENTE (MERGE DE MOVIMIENTOS, RESULTADOS DE ITERACIONES)
+                            //TODO BUSCAR EN LOS MOVIMIENTOS A PARTIR DEL SELECCIONADO (O RESULTADO PADRE SELECCIONADO)
+                            // let search_remain = search_source.slice(i);
+                            // TODO ENCONTRAR EL MOVIMIENTO ACTUAL EN LA FUENTE
+                            // let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[Const.CORRECTION_ID].time);
+                            // TODO XXX until AQUI NO TIENE VALOR (y lanza excepcion) SI SE BUSCA EN "CORRECCION" => SOLUCIONAR
+                            let idx_mov = mov_source.map(ms => ms[Const.INIT_ID].time).indexOf(m[until].time);
+                            let mov_remain = mov_source.slice(idx_mov);
+                            let res_it = Retracements.process_iteration({
+                                                            start_movement: m,
+                                                            //  source: search_remain,
+                                                            source: mov_remain,
+                                                            ret_max: ret_max,
+                                                            ret_min: ret_min,
+                                                            iterations: ret[Const.ITERATE_ID],
+                                                            from: from,
+                                                            trend_sign: trend_sign,
+                            });
+                            
+                            // If (at least 1) result ok, stores results and nok is emptied
+                            if(res_it.ok.length > 0) {
+                                retracements.push(...res_it.ok);
+                                pending_nok = [];
+                            }
+                            else { nok.push(...res_it.nok); }
+                        }
+                        
+                        nok.push(...pending_nok);
                     }
-                    
-                    nok.push(...pending_nok);
+                    catch(err) {
+                        console.error(err);
+                        throw(err);
+                    }
                 });
 
                 // Sort results by timestamp
@@ -233,7 +260,7 @@ class Retracements extends Analysis {
                 // Append calculated retracement level price data
                 retracements.map( v => ret[Const.RET_LEVELS_ID].forEach( l => v[Const.RET_LEVELS_ID][l] = v[Const.END_ID].price - (v[Const.DELTA_INIT_ID] * l)) );
 
-                // Push current level results into Retracement final object
+                // Push current level results into RetracementData final object
                 ret[Const.DATA_ID][level].push(...retracements);
                 ret[Const.NOK_ID][level].push(...nok);
 
@@ -272,21 +299,21 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         // Validate data source
         let data_type = request[Const.BUSCAR_EN_COMBO_ID];
 
-        //---- TODO TRADUCCION TEMPORAL. OBTENER TIPO DE DATOS BIEN EN ORIGEN ----
-        if( data_type == Const.MOVIMIENTOS_ID)
-            data_type = Const.MOVS_ID;
-        else if(data_type == Const.RETROCESOS_ID)
-            data_type = Const.PATTERN_RESULTS_ID;
-        // ---- END TRADUCCION TEMPORAL. OBTENER TIPO DE DATOS BIEN EN ORIGEN ----
+        // //---- TODO TRADUCCION TEMPORAL. OBTENER TIPO DE DATOS BIEN EN ORIGEN ----
+        // if( data_type == Const.MOVIMIENTOS_ID)
+        //     data_type = Const.MOVS_ID;
+        // else if(data_type == Const.RETROCESOS_ID)
+        //     data_type = Const.PATTERN_RESULTS_ID;
+        // // ---- END TRADUCCION TEMPORAL. OBTENER TIPO DE DATOS BIEN EN ORIGEN ----
 
-        ret[Const.DATA_TYPE_ID] = data_type;
+        ret[Const.DATA_TYPE_ID] = this.NAME; //data_type;
         
         // Read request parameters
         // ret[Const.NAME_ID] = request[Const.NAME_ID];
         ret[Const.ID_ID] = request[Const.ID_ID];
-        let trend_req = request[Const.TREND_ID];
-        trend_req = (typeof trend_req === 'undefined') ? undefined : eval(`Const.${trend_req.toUpperCase()}`);
-        ret[Const.TREND_ID] = (trend_req instanceof Array) ? trend_req : [trend_req];
+        // let trend_req = request[Const.TREND_ID];
+        // trend_req = (typeof trend_req === 'undefined') ? undefined : eval(`Const.${trend_req.toUpperCase()}`);
+        // ret[Const.TREND_ID] = (trend_req instanceof Array) ? trend_req : [trend_req];
         
         ret[Const.ITERATE_ID] = (request[Const.ITERATE_ID] != undefined) ? parseInt(request[Const.ITERATE_ID]) : 0;
         ret[Const.ONLY_MAX_ID] = (request[Const.ONLY_MAX_ID] != undefined) ? request[Const.ONLY_MAX_ID] : 0;
@@ -379,28 +406,34 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
     static #get_stats(ok_data, nok_data, search_in_model, trend_sign) {
         let res = [];
         Const.BOTH.forEach( s => {
-            let total;
-            let ok = ok_data.filter( m => m[Const.TREND_ID] == (s*trend_sign)).length;
-            let bad = nok_data.filter(m => m[Const.TREND_ID] == (s*trend_sign)).length;
-            let total_current = ok + bad;
-            if(search_in_model != undefined) {
-                total = search_in_model.filter(t => t[Const.TREND_ID] == (s*trend_sign))[0][Const.OK_ID].num;
+            try {
+                let total;
+                let ok = ok_data.filter( m => m[Const.TREND_ID] == (s*trend_sign)).length;
+                let bad = nok_data.filter(m => m[Const.TREND_ID] == (s*trend_sign)).length;
+                let total_current = ok + bad;
+                if(search_in_model != undefined) {
+                    total = search_in_model.filter(t => t[Const.TREND_ID] == (s*trend_sign))[0][Const.OK_ID].num;
+                }
+                else {
+                    total = total_current;
+                }
+                let total_pc = (total_current / total) * 100;
+                total_pc = (isNaN(total_pc)) ? 0 : total_pc;
+                let ok_pc = (ok / total_current) * 100;
+                ok_pc = (isNaN(ok_pc)) ? 0 : ok_pc;
+                let bad_pc = (bad / total_current) * 100;
+                bad_pc = (isNaN(bad_pc)) ? 0 : bad_pc;
+                let stats = {};
+                stats[Const.TREND_ID] = s*trend_sign;
+                stats[Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
+                stats[Const.NOK_ID] = { [Const.NUM_ID]: bad, [Const.PERCENT_ID]: bad_pc};
+                stats[Const.TOTAL_ID] = { [Const.NUM_ID]: total_current, [Const.PERCENT_ID]: total_pc };
+                res.push(stats);
             }
-            else {
-                total = total_current;
+            catch(err) {
+                console.error(err);
+                throw(err);
             }
-            let total_pc = (total_current / total) * 100;
-            total_pc = (isNaN(total_pc)) ? 0 : total_pc;
-            let ok_pc = (ok / total_current) * 100;
-            ok_pc = (isNaN(ok_pc)) ? 0 : ok_pc;
-            let bad_pc = (bad / total_current) * 100;
-            bad_pc = (isNaN(bad_pc)) ? 0 : bad_pc;
-            let stats = {};
-            stats[Const.TREND_ID] = s*trend_sign;
-            stats[Const.OK_ID] = { [Const.NUM_ID]: ok, [Const.PERCENT_ID]: ok_pc};
-            stats[Const.NOK_ID] = { [Const.NUM_ID]: bad, [Const.PERCENT_ID]: bad_pc};
-            stats[Const.TOTAL_ID] = { [Const.NUM_ID]: total_current, [Const.PERCENT_ID]: total_pc };
-            res.push(stats);
         });
         return res;
     }
@@ -421,7 +454,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         if((f1 != undefined) && (f1 instanceof Array) && (f1.length > 0)) {
             if(f2 == undefined) f2 = f1;
             else if(f1.length != f2.length)
-                throw('Error: Retracement.equal_mov: Parameter f2 length must be null or same length of f1');
+                throw('Error: RetracementData.equal_mov: Parameter f2 length must be null or same length of f1');
             
             res = true;
             f1.forEach( (f, i) => {
@@ -456,7 +489,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         let ind1 = 0;
         let ret = [];
         for(let ind2 = 0; ind2 < r2.length; ind2++) {
-            if(ind1 >= r1.length) ind1 = 0; // Retracement not find drives to end of source data...restart with next search
+            if(ind1 >= r1.length) ind1 = 0; // RetracementData not find drives to end of source data...restart with next search
             for( ; ind1 < r1.length; ind1++) {
                 let res = true;
                 // f2.forEach( (f, i) => {
@@ -799,44 +832,52 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             let prev_ret = m[Const.RET_ID];
 
             for(let i = 0; (i < ms.length) && (iter < max_iter); i++, iter++) {
-                // Merge with next movement
-                let new_mov = Retracements.merge_movements(m, ms[i], trend_sign, end_fixed);
+                try {
+                    // Merge with next movement
+                    let new_mov = Retracements.merge_movements(m, ms[i], trend_sign, end_fixed);
 
-                // if(new_mov == null) {
-                if(new_mov.valid == false) {
-                    nok.push(new_mov);
-                    break;
-                }
+                    // if(new_mov == null) {
+                    // if(new_mov.valid == false) {
+                    if((new_mov == null) || (new_mov.valid == false)) {
+                        if(new_mov) nok.push(new_mov);
+                        break;
+                    }
 
-                // If generated movement is diferent
-                if(JSON.stringify(new_mov) != JSON.stringify(m)) {
-                    //TODO EL LIMITE TAMBIEN SE TIENE QUE COMPROBAR POR EL MINIMO, RECORDAR QUE HACIA SI HABIA UNA CORRECCION POR DEBAJO DEL INICIO, PERO NO ERA FINAL DEL MOVIMIENTO
-                    //TODO SE DESPLAZABA EL INICIO DEL MOVIMIENTO
-                    
-                    // Updates hash id for family results
-                    Retracements.increment_hash(new_mov);
-                    
-                    // Check retracement restrictions
-                    let check = ((new_mov[Const.RET_ID] >= ret_min) && (new_mov[Const.RET_ID] <= ret_max));
-                    // if( (check == false) || (prev_ret > new_mov[Const.RET_ID]) ) {
-                    if(check == false) {
-                        if(delete_nok == false) {
-                            nok.push(new_mov);
+                    // If generated movement is diferent
+                    if(JSON.stringify(new_mov) != JSON.stringify(m)) {
+                        //TODO EL LIMITE TAMBIEN SE TIENE QUE COMPROBAR POR EL MINIMO, RECORDAR QUE HACIA SI HABIA UNA CORRECCION POR DEBAJO DEL INICIO, PERO NO ERA FINAL DEL MOVIMIENTO
+                        //TODO SE DESPLAZABA EL INICIO DEL MOVIMIENTO
+                        
+                        // Updates hash id for family results
+                        Retracements.increment_hash(new_mov);
+                        
+                        // Check retracement restrictions
+                        let check = ((new_mov[Const.RET_ID] >= ret_min) && (new_mov[Const.RET_ID] <= ret_max));
+                        // if( (check == false) || (prev_ret > new_mov[Const.RET_ID]) ) {
+                        if(check == false) {
+                            if(delete_nok == false) {
+                                nok.push(new_mov);
+                            }
+                            if(new_mov[Const.RET_ID] > ret_max) break;
                         }
-                        if(new_mov[Const.RET_ID] > ret_max) break;
+                        else {
+                            ok.push(new_mov);
+                            delete_nok = true;
+                            nok = [];
+                        }
+                        m = new_mov;
                     }
-                    else {
-                        ok.push(new_mov);
-                        delete_nok = true;
-                        nok = [];
-                    }
-                    m = new_mov;
+                }
+                catch(err) {
+                    let msg = `i:${i} / iter:${iter} / max_iter:${max_iter} / ms.length:${ms.length}.`;
+                    console.error(msg);
+                    throw(err);
                 }
             }
         }
         catch(error) {
             let msg = `ERROR: @Retracements::process_iteration: ${error}.`;
-            console.log(msg);
+            console.error(msg);
             throw(msg);
         }
 

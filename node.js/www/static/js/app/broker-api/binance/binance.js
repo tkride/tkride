@@ -22,6 +22,9 @@ class Binance {
     static STREAM = 'stream.binance.com';
     static STREAM_PORT = '9443';
 
+    // Events
+    static EVENT_VIRTUAL_WEBSOCKET = 'event-virtual-websocket-';
+
     //----------------------------- PROPERTIES -----------------------------
 
     tickers = [];
@@ -37,7 +40,7 @@ class Binance {
 
     #sendQueryWorker({query, timeout, url, method}) {
         return new Promise((resolve, reject) => {
-            console.log(query);
+            // console.log(query);
             let worker = new Worker('/static/js/app/ajax_worker.js');
             worker.onmessage = e => {
                 let data = e.data;
@@ -109,12 +112,16 @@ class Binance {
     getHistoric({ id, timeFrame, startTime, endTime, limit = 1000 }) {
         return new Promise((resolve, reject) => {
             let baseQuery = Binance.HISTORIC + `?symbol=${id}&interval=${timeFrame}&limit=${limit}`;
-            let timeQueries = Time.getTimeQueries({timeFrame, startTime, endTime, querySize: limit});
+            // Default 1 object. Will add base query
+            let timeQueries = [{}];
+            if(startTime || endTime) {
+                timeQueries = Time.getTimeQueries({timeFrame, startTime, endTime, querySize: limit});
+            }
             let historicQueries = [];
             timeQueries.forEach( q => {
                 let query = (q.startTime) ? baseQuery + `&startTime=${q.startTime}` : baseQuery;
                 query = (q.endTime) ? query + `&endTime=${q.endTime}` : query;
-                console.log(query);
+                // console.log(query);
                 historicQueries.push(this.#sendQueryWorker({url: query, method: 'GET'}));
             });
             
@@ -139,8 +146,7 @@ class Binance {
         });
     }
 
-    // openWebSocket({query, callback, modelKey, chart }) {
-    openWebSocket({id, active, timeFrame, callback }) {
+    openWebSocket_({id, active, timeFrame, callback }) {
         // if(this.webSockets[`${active}_${timeFrame}`]) {
         //     this.webSockets[`${active}_${timeFrame}`].count++;
         // }
@@ -164,12 +170,47 @@ class Binance {
             }
         }
     }
-
-    closeWebSocket({id, active, timeFrame}) {
+    
+    closeWebSocket_({id, active, timeFrame}) {
         id = (id) ? id : `${active}_${timeFrame}`;
         if(this.webSockets[id]) {
             if(--this.webSockets[id].count == 0) {
                 this.webSockets[id].object.close();
+                delete this.webSockets[id];
+            }
+        }
+    }
+
+    openWebSocket({id, active, timeFrame, callback }) {
+        if(this.webSockets[id]) {
+            this.webSockets[id].count++;
+        }
+        else {
+            this.webSockets[id] = {
+                object: setInterval( () => {
+                            this.getHistoric({ id: active, timeFrame, limit: 1 }).
+                            then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );                
+                        }, 1000),
+                count: 1
+            };
+            // this.webSockets[id].object = setInterval( () => {
+            //     this.getHistoric({ id: active, timeFrame, limit: 1 }).
+            //     then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );                
+            // }, 1000);
+        }
+
+        $(document).on(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, (e, data) => {
+            if(typeof callback == "function") {
+                callback({id, data});
+            }
+        });
+    }
+    
+    closeWebSocket({id, active, timeFrame}) {
+        id = (id) ? id : `${active}_${timeFrame}`;
+        if(this.webSockets[id]) {
+            if(--this.webSockets[id].count == 0) {
+                clearInterval(this.webSockets[id].object);
                 delete this.webSockets[id];
             }
         }
