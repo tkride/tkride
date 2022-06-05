@@ -10,6 +10,22 @@ class KeysDAO {
         general: {
             '-': { description: 'Contexto general del gráfico.' }
         },
+        [Fibonacci.NAME] : {
+            [GraphicComponent.STATUS_CREATING] : { description: 'Crear Fibonacci.' },
+            [GraphicComponent.STATUS_SELECTED] : { description: 'Fibonacci.' },
+        },
+        [TrendLine.NAME] : {
+            [GraphicComponent.STATUS_CREATING] : { description: 'Crear línea de tendencia.' },
+            [GraphicComponent.STATUS_SELECTED] : { description: 'Línea de tendencia.' },
+        },
+        [RectangleGraphic.NAME] : {
+            [GraphicComponent.STATUS_CREATING] : { description: 'Crear rectángulo.' },
+            [GraphicComponent.STATUS_SELECTED] : { description: 'Rectángulo.' },
+        },
+        [AlertComponent.NAME] : {
+            [GraphicComponent.STATUS_CREATING] : { description: 'Crear alerta.' },
+            [GraphicComponent.STATUS_SELECTED] : { description: 'Alerta.' },
+        },
     }
 
     static SHORTCUTS = {
@@ -52,7 +68,6 @@ class KeysDAO {
                     command: { [KeyManager.CMD_KEY_DOWN]: ControlSettings.EVENT_PATTERN_MENU, },
                 },
 
-                // TODO PARA LOS ELEMENTOS GRÁFICOS HAY QUE CREAR EVENTOS QUE SIMULEN CLICK DEL ICONO DEL MENU
                 [ Key([KeyCode.ALT, GetKeyCode('m')]) ]: {
                     command: { [KeyManager.CMD_KEY_DOWN]: EventController.EVENT_MAGNET_MODE, },
                 },
@@ -136,34 +151,64 @@ class KeysDAO {
     };
 
     static COMMANDS = {
-        [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
-        [ControlSettings.EVENT_ADD_CHART] : 'Agrega gráfica al diseño.',
-        [ControlSettings.EVENT_DEL_CHART]: 'Elimina gráfica del diseño.',
-        [ControlSettings.EVENT_CHART_ZOOM_VERTICAL] : 'Zoom vertical.',
-        [ControlSettings.EVENT_CHART_ZOOM_VERTICAL_END]: 'Finalizado zoom vertical.',
-        [ControlSettings.EVENT_CHART_WHEEL_MOVE] : 'Desplazamiento horizontal del gráfico.',
-        [ControlSettings.EVENT_CHART_WHEEL_MOVE_END]: 'Fin del desplazamiento horizontal del gráfico.',
-        [ControlSettings.EVENT_CHART_AUTO_SCALE] : 'Auto escalar gráfico.',
-        [ControlSettings.EVENT_MOVS_MENU] : 'Abrir menú movimientos.',
-        [ControlSettings.EVENT_PATTERN_MENU] : 'Abrir menu patrones.',
+        general: {
+            [KeyManager.DEFAULT_SUB]: {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+                [ControlSettings.EVENT_ADD_CHART] : 'Agrega gráfica al diseño.',
+                [ControlSettings.EVENT_DEL_CHART]: 'Elimina gráfica del diseño.',
+                [ControlSettings.EVENT_CHART_ZOOM_VERTICAL] : 'Zoom vertical.',
+                [ControlSettings.EVENT_CHART_ZOOM_VERTICAL_END]: 'Finalizado zoom vertical.',
+                [ControlSettings.EVENT_CHART_WHEEL_MOVE] : 'Desplazamiento horizontal del gráfico.',
+                [ControlSettings.EVENT_CHART_WHEEL_MOVE_END]: 'Fin del desplazamiento horizontal del gráfico.',
+                [ControlSettings.EVENT_CHART_AUTO_SCALE] : 'Auto escalar gráfico.',
+                [ControlSettings.EVENT_MOVS_MENU] : 'Abrir menú movimientos.',
+                [ControlSettings.EVENT_PATTERN_MENU] : 'Abrir menu patrones.',
+                [EventController.EVENT_MAGNET_MODE] : 'Alternar modo magnético.',
+                [EventController.EVENT_PERSIST_MODE] : 'Alternar persistencia en modo dibujo.',
+                [ControlSettings.EVENT_CREATE_FIBONACCI] : 'Crear retroceso de Fibonacci.',
+                [ControlSettings.EVENT_CREATE_TREND_LINE] : 'Crear línea de tendencia.',
+                [ControlSettings.EVENT_CREATE_RECTANGLE] : 'Crear rectángulo.',
+                [ControlSettings.EVENT_CREATE_ALERT] : 'Crear alerta.',
+            }
+        },
 
         // TODO PARA LOS ELEMENTOS GRÁFICOS HAY QUE CREAR EVENTOS QUE SIMULEN CLICK DEL ICONO DEL MENU
-        [EventController.EVENT_MAGNET_MODE] : 'Alternan modo magnético.',
-        [EventController.EVENT_PERSIST_MODE] : 'Alternan persistencia en modo dibujo.',
-        [ControlSettings.EVENT_CREATE_FIBONACCI] : 'Crear retroceso de Fibonacci.',
-        [ControlSettings.EVENT_CREATE_TREND_LINE] : 'Crear línea de tendencia.',
-        [ControlSettings.EVENT_CREATE_RECTANGLE] : 'Crear rectángulo.',
-        [ControlSettings.EVENT_CREATE_ALERT] : 'Crear alerta.',
-
-        [Fibonacci.EVENT_UNSELECTED] : 'Deseleccionar Fibonacci.',
-        [MenuFibonacci.EVENT_REMOVE] : 'Eliminar Fibonacci.',
-        [TrendLine.EVENT_UNSELECTED] : 'Deseleccionar línea de tendencia.',
-        [TrendLine.EVENT_REMOVE] : 'Eliminar línea de tendencia.',
-        [RectangleGraphic.EVENT_UNSELECTED] : 'Deseleccionar rectángulo.',
-        [RectangleGraphic.EVENT_REMOVE] : 'Eliminar rectángulo.',
-
-        [AlertComponent.EVENT_UNSELECTED] : 'Deseleccionar alerta.',
-        [AlertComponent.EVENT_REMOVE] : 'Eliminar alarma.',
+        [Fibonacci.NAME] : {
+            [Fibonacci.STATUS_CREATING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+            },
+            [Fibonacci.STATUS_SELECTED] : { 
+                [Fibonacci.EVENT_UNSELECTED] : 'Deseleccionar Fibonacci.',
+                [MenuFibonacci.EVENT_REMOVE] : 'Eliminar Fibonacci.',
+            },
+        },
+        [TrendLine.NAME] : {
+            [TrendLine.STATUS_CREATING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+            },
+            [TrendLine.STATUS_SELECTED] : { 
+                [TrendLine.EVENT_UNSELECTED] : 'Deseleccionar línea de tendencia.',
+                [MenuTrendLine.EVENT_REMOVE] : 'Eliminar línea de tendencia.',
+            },
+        },
+        [RectangleGraphic.NAME] : {
+            [RectangleGraphic.STATUS_CREATING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+            },
+            [RectangleGraphic.STATUS_SELECTED] : { 
+                [RectangleGraphic.EVENT_UNSELECTED] : 'Deseleccionar rectángulo.',
+                [MenuRectangleGraphic.EVENT_REMOVE] : 'Eliminar rectángulo.',
+            },
+        },
+        [AlertComponent.NAME] : {
+            [AlertComponent.STATUS_CREATING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+            },
+            [AlertComponent.STATUS_SELECTED] : { 
+                [AlertComponent.EVENT_UNSELECTED] : 'Deseleccionar alerta.',
+                [MenuAlertComponent.EVENT_REMOVE] : 'Eliminar alerta.',
+            },
+        },
     }
     
     //----------------------------- PROPERTIES -----------------------------

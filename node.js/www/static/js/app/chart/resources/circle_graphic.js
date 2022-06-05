@@ -158,6 +158,7 @@ class CircleGraphic extends GraphicComponent {
             series: [{
                 id: this[Const.ID_ID],
                 name: this[Const.ID_ID],
+                // xAxisIndex: ChartComponent.X_AXIS_INDEX,
                 type: 'custom',
                 renderItem: this.render.bind(this),
                 encode: {

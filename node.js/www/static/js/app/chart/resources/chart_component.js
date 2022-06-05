@@ -15,6 +15,8 @@ class ChartComponent {
 
     static REFRESH_RATE = 30;
 
+    // static X_AXIS_INDEX = 1;
+
     // CONTROLS
     static CONTROL_COLOR = '#2962ff';
     static CONTROL_AXIS_BACK_COLOR = '#2962ff50';

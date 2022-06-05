@@ -69,6 +69,7 @@ class GraphicComponent extends ChartComponent {
                     id: this[Const.ID_ID]+'_LABEL',
                     name: this[Const.ID_ID]+'_LABEL',
                     type: 'custom',
+                    // xAxisIndex: ChartComponent.X_AXIS_INDEX,
                     renderItem: this.renderLabel.bind(this),
                     encode: {
                         x: [GraphicComponent.XSTART, GraphicComponent.XEND],

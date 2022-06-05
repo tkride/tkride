@@ -42,46 +42,53 @@ class ChartView {
     static CHART_ZOOM_X_DISABLED = { dataZoom: [ { type: 'inside', xAxisIndex: [0], zoomOnMouseWheel: false, } ] };
     static CHART_ZOOM_X_ENABLED = { dataZoom: [ { type: 'inside', xAxisIndex: [0], zoomOnMouseWheel: true, } ] };
     static CHART_Y_AXIS_AUTOSCALE = { yAxis: [ { scale: true, } ] };
+    static CHART_ZOOM_Y_DISABLED = { dataZoom: [ { type: 'inside', yAxisIndex: [0], zoomOnMouseWheel: false, } ] };
+    static CHART_ZOOM_Y_ENABLED = { dataZoom: [ { type: 'inside', yAxisIndex: [0], zoomOnMouseWheel: 'shift', } ] };
     static DATA_ZOOM_X_INSIDE_ID = 'x_inside';
     static DATA_ZOOM_Y_INSIDE_ID = 'y_inside';
-    static DATA_ZOOM_X_SLIDER = {
-                            id:'x_slider',
-                            type: 'slider',
-                            xAxisIndex: [0],
-                            // realtime: true,
-                            dataBackground: {
-                                areaStyle: { opacity: 0.1, color: '#8392A5'},
-                                lineStyle: { opacity: 0.1, color: '#8392A5'}
-                            },
-                            backgroundColor: 'rgba(47, 69, 84, 0)',
-                            fillerColor: 'rgba(47, 69, 84, 0.3)',
-                            handleSize: '100%',
-                            moveHandleSize: '35%',
-                            moveHandleStyle: {
-                                color: 'rgba(47, 69, 84, 0)',
-                                borderWidth: 0,
-                                borderCap: 'round',
-                            },
-                            height: ChartView.DATA_ZOOM_SLIDER_HIGHT, //slider_height,
-                            bottom: '2%', //slider_vert_offset,
-                            // start: 30,
-                            // end: 70,
-                            filterMode: 'none',
-                        };
+    // static DATA_ZOOM_X_SLIDER = {
+    //                         id:'x_slider',
+    //                         type: 'slider',
+    //                         xAxisIndex: [0],
+    //                         // realtime: true,
+    //                         dataBackground: {
+    //                             areaStyle: { opacity: 0.1, color: '#8392A5'},
+    //                             lineStyle: { opacity: 0.1, color: '#8392A5'}
+    //                         },
+    //                         backgroundColor: 'rgba(47, 69, 84, 0)',
+    //                         fillerColor: 'rgba(47, 69, 84, 0.3)',
+    //                         handleSize: '100%',
+    //                         moveHandleSize: '35%',
+    //                         moveHandleStyle: {
+    //                             color: 'rgba(47, 69, 84, 0)',
+    //                             borderWidth: 0,
+    //                             borderCap: 'round',
+    //                         },
+    //                         height: ChartView.DATA_ZOOM_SLIDER_HIGHT, //slider_height,
+    //                         bottom: '2%', //slider_vert_offset,
+    //                         // start: 30,
+    //                         // end: 70,
+    //                         filterMode: 'none',
+    //                         throttle: 20,
+    //                     };
     static DATA_ZOOM_X_INSIDE = {
-                            id:'x_inside',
+                            id:ChartView.DATA_ZOOM_X_INSIDE_ID,
                             type: 'inside',
                             xAxisIndex: [0],
                             zoomOnMouseWheel: true,
                             moveOnMouseWheel: 'ctrl',
-                            filterMode: 'none',
+                            // preventDefaultMouseMove: true,
+                            filterMode: 'filter',
+                            throttle: 0,
                         };
     static DATA_ZOOM_Y_INSIDE = {
-                            id:'y_inside',
+                            id:ChartView.DATA_ZOOM_Y_INSIDE_ID,
                             type: 'inside',
                             yAxisIndex: [0],
                             zoomOnMouseWheel: 'shift',
+                            // preventDefaultMouseMove: true,
                             filterMode: 'none',
+                            throttle: 0,
                         };
 
     static CHART_ZOOM_DISABLED = [{ dataZoom: [/*ChartView.DATA_ZOOM_X_SLIDER*/] }, {replaceMerge: ['dataZoom']}];
@@ -318,6 +325,7 @@ class ChartView {
                 
                 xAxis: [
                     {
+                        id: 'data',
                         scale: true,
                         type: 'time',
                         // type: 'category',
@@ -336,6 +344,7 @@ class ChartView {
                             color: this.cnf.colorTextAxis,
                             fontSize: 15,
                             backgroundColor: 'transparent',
+                            showMaxLabel: false,
                         },
                         min: null,
                         max: null,
@@ -357,9 +366,13 @@ class ChartView {
                             show: true,
                             color: this.cnf.colorTextAxis,
                             fontSize: 15,
-                            margin: 15,
-                            formatter: price => { return price; },
+                            margin: 0,
+                            // Workaround hasta que pueda configurar ancho de eje (no parece que pueda hacerse)
+                            formatter: price => { return `${price}      `; },
                             backgroundColor: 'transparent',
+                            showMaxLabel: false,
+                            verticalAlign: 'middle',
+                            padding: [0, 0, 0, 15],
                         },
                         min: min_y,
                         max: max_y,
@@ -385,12 +398,15 @@ class ChartView {
                             borderColor: this.cnf.colorBorderUp,
                             borderColor0: this.cnf.colorBorderDownd,
                         },
-                        barWidth: '75%',
-                        barMinWidth: '75%',
-                        barMaxWidth: '85%',
+                        // barWidth: '75%',
+                        barMinWidth: 1, //'75%',
+                        barMaxWidth: 34, //'85%',
                         // barWidth: '250%',
                         // barMinWidth: '150%',
                         // barMaxWidth: '450%',
+                        emphasys: {
+                            disabled: true,
+                        },
                         z: 100,
                         zlevel: 0,
                     },
@@ -523,7 +539,7 @@ class ChartView {
                 }
             },
             // { replaceMerge: 'series' }
-            );
+        );
     }
 
     updatePriceCursor_({query, data, chart, showLine = true, showTime = true}) {
@@ -1090,13 +1106,13 @@ class ChartView {
                     type: 'dataZoom',
                     batch: [
                         {
-                            dataZoomId: 'x_inside',
+                            dataZoomId: ChartView.DATA_ZOOM_X_INSIDE_ID,
                             startValue: startValue.x,
                             endValue: endValue.x,
                             type: 'dataZoom',
                         },
                         {
-                            dataZoomId: 'y_inside',
+                            dataZoomId: ChartView.DATA_ZOOM_Y_INSIDE_ID,
                             startValue: startValue.y,
                             endValue: endValue.y,
                             type: 'dataZoom',
@@ -1127,13 +1143,13 @@ class ChartView {
                     type: 'dataZoom',
                     batch: [
                         {
-                            dataZoomId: 'x_inside',
+                            dataZoomId: ChartView.DATA_ZOOM_X_INSIDE_ID,
                             start: start.x,
                             end: end.x,
                             type: 'dataZoom',
                         },
                         {
-                            dataZoomId: 'y_inside',
+                            dataZoomId: ChartView.DATA_ZOOM_Y_INSIDE_ID,
                             start: start.y,
                             end: end.y,
                             type: 'dataZoom',
@@ -1351,8 +1367,8 @@ class ChartView {
 
         chart.getZr().on('mousedown', (e) => {
             let [x, y] = chart.convertFromPixel({ xAxisIndex:0, yAxisIndex:0}, [e.offsetX, e.offsetY]);
-            let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
-            let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+            let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_X_INSIDE_ID))[0];
+            let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_Y_INSIDE_ID))[0];
             if( (x > xzoom.endValue) && (y < yzoom.startValue)) {
             }
             else if(x > xzoom.endValue) {
@@ -1387,8 +1403,8 @@ class ChartView {
                 chart.getZr().setCursorStyle('e-resize');
 
                 x2 = chart.convertFromPixel({ xAxisIndex:0 }, e.offsetX);
-                let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
-                let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+                let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_X_INSIDE_ID))[0];
+                let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_Y_INSIDE_ID))[0];
                 let delta = (x2 - x1);
                 // Zoom over sign, stops zoom
                 that.zoomChart({
@@ -1404,8 +1420,8 @@ class ChartView {
                 chart.getZr().setCursorStyle('n-resize');
 
                 y2 = chart.convertFromPixel({ yAxisIndex:0 }, e.offsetY);
-                let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
-                let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+                let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_X_INSIDE_ID))[0];
+                let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_Y_INSIDE_ID))[0];
                 let delta = -(y2 - y1);
                 // Zoom over sign, stops zoom
                 that.zoomChart({
@@ -1440,8 +1456,8 @@ class ChartView {
                     let chartZone = ((e.offsetX < yAxisX) && (e.offsetY < xAxisY));
                     if( crossPoint || chartZone ) {}
                     else {
-                        let xZoom = chart._model.option.dataZoom.filter(z => z.id.includes('x_inside'))[0];
-                        let yZoom = chart._model.option.dataZoom.filter(z => z.id.includes('y_inside'))[0];
+                        let xZoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_X_INSIDE_ID))[0];
+                        let yZoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_Y_INSIDE_ID))[0];
 
                         let yStart = yZoom.startValue;
                         let yEnd = yZoom.endValue;

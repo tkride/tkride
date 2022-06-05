@@ -394,7 +394,8 @@ class ChartController {
                 let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
                 let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
                 that.activeChart.chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
-                that.activeChart.chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER/*, ChartView.DATA_ZOOM_X_SLIDER*/ ] }, { replaceMerge: ['dataZoom']} );
+                // that.activeChart.chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER/*, ChartView.DATA_ZOOM_X_SLIDER*/ ] }, { replaceMerge: ['dataZoom']} );
+                that.activeChart.chart.setOption(ChartView.CHART_ZOOM_Y_DISABLED);
                 console.log(that.get_chart_option('yAxis'));
                 console.log(that.get_chart_option('dataZoom'));
             });

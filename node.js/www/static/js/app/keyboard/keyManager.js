@@ -94,7 +94,7 @@ class KeyManager {
                                 if(this.#current.command[KeyManager.CMD_KEY_UP]) {
                                     command.push( {
                                         event: this.#current.command[KeyManager.CMD_KEY_UP],
-                                        description: this.#commands[this.#current.command[KeyManager.CMD_KEY_UP]]
+                                        description: this.#commands[this.#current.context][this.#current.sub][this.#current.command[KeyManager.CMD_KEY_UP]]
                                     });
                                 }
                                 this.#current.command = undefined;
@@ -103,7 +103,7 @@ class KeyManager {
                             if(this.#current.command[KeyManager.CMD_KEY_DOWN]) {
                                 command.push( {
                                     event: this.#current.command[KeyManager.CMD_KEY_DOWN],
-                                    description: this.#commands[this.#current.command[KeyManager.CMD_KEY_DOWN]]
+                                    description: this.#commands[this.#current.context][this.#current.sub][this.#current.command[KeyManager.CMD_KEY_DOWN]]
                                 });
                             }
                             return command;
@@ -119,7 +119,7 @@ class KeyManager {
             if(this.#current.command[KeyManager.CMD_KEY_UP]) {
                 command.push({
                     event: this.#current.command[KeyManager.CMD_KEY_UP],
-                    description: this.#commands[this.#current.command[KeyManager.CMD_KEY_UP]],
+                    description: this.#commands[this.#current.context][this.#current.sub][this.#current.command[KeyManager.CMD_KEY_UP]],
                 });
             }
             this.#current.command = undefined;

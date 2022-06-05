@@ -1,4 +1,11 @@
 
+
+
+
+// TODO BORRAR, ANTES HAY QUE MOVER LOS COMANDOS Y LAS FUNCIONES ESTÁTICAS
+// TODO BORRAR TAMBIÉN FICHERO key_config
+
+
 function Key(...k) {
     let res = '';
     k.forEach(i => res += i);

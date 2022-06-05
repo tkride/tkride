@@ -190,6 +190,9 @@ class EventController {
                 else {
                     $(document).trigger(ChartController.EVENT_KEYUP, e);
                 }
+                if(e.keyCode == KeyCode.ESC) {
+                    main.ctrl.keyManager.clearKeys();
+                }
             });
 
             $(document).on('keydown', e => {
