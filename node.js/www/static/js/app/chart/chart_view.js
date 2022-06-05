@@ -7,8 +7,10 @@ class ChartView {
     static ELEMENT_ID_CHART_MAIN = '#chart-main';
     static ELEMENT_CLASS_FOOTER_MENU = '.footer-menu';
 
-    static CLASS_CHART_SELECTED = 'chart-selected';
-    static ELEMENT_CLASS_CHART_SELECTED = '.chart-selected';
+    // static CLASS_CHART_SELECTED = 'chart-selected';
+    // static ELEMENT_CLASS_CHART_SELECTED = '.chart-selected';
+    static CLASS_CHART_SELECTED = 'selected';
+    static ELEMENT_CLASS_CHART_SELECTED = '.selected';
     static CHART_TOOLTIP_HEADER_DUMMY = '<p class="chart-tooltip-text" style="color: rgba(0,0,0,0);">';
     static CHART_TOOLTIP_TEXT = '<p class="chart-tooltip-text">';
     static P_CLOSE = '</p>';
@@ -290,7 +292,6 @@ class ChartView {
             let y_offset = (vert_margins/2) * 100 + '%';
             let slider_height = 18;
             let slider_vert_offset = doc_heigh * 0.075;
-            
      
             // Specify the configuration items and data for the chart
             this.#chart_view = {
@@ -306,10 +307,11 @@ class ChartView {
 
                 grid: [
                     {
-                        left: '0%',
+                        left: '0px',
                         bottom: '10px',
-                        height: '95%',
-                        width: '99%', //'98.5%',
+                        height: '100%',//'95%',
+                        width: '100%', //'98.5%',
+                        margin: '5px',
                         containLabel: true,
                     },
                 ],
@@ -324,7 +326,8 @@ class ChartView {
                         position: 'bottom',
                         splitNumber: 6,
                         // offset:x_axis_vert_offset,
-                        axisLine: { show: true, lineStyle: { color: this.cnf.colorLineAxis } },
+                        // offset: -15,
+                        axisLine: { show: true, lineStyle: { color: this.cnf.colorLineAxis }, onZero: true },
                         axisTick: { show: false },
                         splitLine: { show: false },
                         axisLabel: {
@@ -345,7 +348,7 @@ class ChartView {
                         gridIndex: 0,
                         position: 'right',
                         splitNumber: 11,
-                        // offset: -10,
+                        // offset: -15,
                         // axisLine: { show: true, lineStyle: { color: this.cnf.colorTextAxis } },
                         axisLine: { show: true, lineStyle: { color: this.cnf.colorLineAxis } },
                         axisTick: { show: false },
@@ -429,18 +432,20 @@ class ChartView {
                         z: ChartView.Z_AXIS_COMPONENS,
                     },
                     borderWidth: 0, //1,
-                    borderColor: 'rgba(0,0,0,0)',//this.cnf.colorCross,
-                    backgroundColor: 'rgba(0,0,0,0)',
-                    padding: 0, //10,
+                    borderColor: 'rgba(0,0,0,0)',
+                    backgroundColor: 'rgba(80,80,80,0.03)',
+                    padding: 0, //[5, 20],
                     textStyle: {
                         color: this.cnf.colorCross,
-                        width: '65%',
+                        // width: '65%',
                         height: '1em',
                         textBorderWidth: 0,
                     },
                     // position: ['10px', '35px'],
-                    position: ['65px', '15px'],
+                    position: ['65px', '13px'],
+                    // position: ['25px', '30px'],
                     z: ChartView.Z_AXIS_COMPONENS,
+                    zlevel: 0,
                     formatter: function(params, ticket, callback) {
                         return that.format_chart_tooltip(data, params);
                     },
@@ -543,11 +548,12 @@ class ChartView {
     // NOTA: VERSION CON DATOS DEL WEB SOCKET:
     //  * TIENE LOS DATOS EN STRING, Y EN DIFERENTE ORDEN.
     //  * APORTA EL TIEMPO FINAL DE VELA DIRECTAMENTE.
-    updatePriceCursor({query, data, chart, showLine = true, showTime = true}) {
+    updatePriceCursor({query, data, chart, time, showLine = true, showTime = true}) {
         let lastPrice = parseFloat(data[4]);
         let color = (data[4] > data[1]) ? this.cnf.colorUp : this.cnf.colorDown;
         let lastTime = data[6];
-        let timeRemain = Time.getCountdown({finalTime: lastTime});
+        // TODO WORKAROUND: BINANCE ENTREGA LA NUEVA VELA UNOS 5s MAS TARDE
+        let timeRemain = Time.getCountdown({finalTime: lastTime, initTime: time}); //Date.now()-(5*Time.MS_IN_SECONDS) });
 
         chart.setOption({series: [
             {
@@ -1154,72 +1160,75 @@ class ChartView {
             params = [params];
         }
 
-        if((!params) || (params[0].componentSubType != 'candlestick')) {
-            return;
-        }
+        // if((!params) || (params[0].componentSubType != 'candlestick')) {
+            // return;
+        // }
 
         //Get max length of all values
-        let len_max = 4;
+        let strLenMax = 4;
         let open = '';
         let high = '';
         let low = '';
         let close = '';
         let delta = '';
-        let delta_pc = '';
-        let width_values = 'width:' + len_max * 0.6 + 'em;';
+        let deltaPc = '';
+        let width_values = 'width:' + strLenMax * 0.6 + 'em;';
         let color_values = 'color:rgba(0, 0, 0, 0);';
         let value;
         let color;
-        let idx_time;
+        let idxTime;
         try {
-            if((params != undefined) && (params[0].value != undefined)) {
-                if(params[0].value.includes(undefined)) {
-                    if(params[0].axisValue > data.max_x) {
-                        idx_time = data.data_y.map(v=>v[Const.IDX_CANDLE_TIME]).indexOf(data.max_x);
-                        // value = [params[0].value[0], ...data.data_y[data.data_x.indexOf(data.max_x)]];
-                        value = [params[0].value[0], ...data.data_y[idx_time].slice(1, 5)];
-                        color = (value[Const.IDX_CANDLE_OPEN] < value[Const.IDX_CANDLE_CLOSE]) ? this.cnf.colorUp : this.cnf.colorDown;
-                    }
-                    else {
-                        idx_time = data.data_y.map(v=>v[Const.IDX_CANDLE_TIME]).indexOf(data.min_x);
-                        // value = [params[0].value[0], ...data.data_y[data.data_x.indexOf(data.min_x)]];
-                        value = [params[0].value[0], ...data.data_y[idx_time].slice(1, 5)];
-                        color = (value[Const.IDX_CANDLE_OPEN] < value[Const.IDX_CANDLE_CLOSE]) ? this.cnf.colorUp : this.cnf.colorDown;
-                    }
+            if((params != undefined) && (params[0].axisValue != undefined)) {
+                // if(params[0].value.includes(undefined)) {
+                if(params[0].axisValue > data.data_y.at(-1)[Const.IDX_CANDLE_TIME]) {
+                    idxTime = data.data_y.length-1;
+                }
+                else if(params[0].axisValue < data.data_y[0][Const.IDX_CANDLE_TIME]) {
+                    idxTime = 0;
                 }
                 else {
-                    idx_time = params[0].dataIndex;
-                    value = params[0].value;
-                    color = params[0].color;
+                    idxTime = params[0].dataIndex;
+                    // value = params[0].value;
+                    // color = params[0].color;
                 }
+                
+                value = data.data_y[idxTime];
+                color = (value[Const.IDX_CANDLE_OPEN] < value[Const.IDX_CANDLE_CLOSE]) ? this.cnf.colorUp : this.cnf.colorDown;
 
-                len_max = Math.max(...[value[Const.IDX_CANDLE_OPEN].toString().length, value[Const.IDX_CANDLE_CLOSE].toString().length,
+                // Get max length of prices (OHLC) strings
+                strLenMax = Math.max(...[value[Const.IDX_CANDLE_OPEN].toString().length, value[Const.IDX_CANDLE_CLOSE].toString().length,
                                     value[Const.IDX_CANDLE_HIGH].toString().length, value[Const.IDX_CANDLE_LOW].toString().length]);
+
                 //Set length of container
-                width_values = 'width:' + len_max * 0.6 + 'em;';
+                width_values = 'width:' + strLenMax * 0.6 + 'em;';
                 //Set color for values (bull, bear colors)
                 color_values = 'color:' + color + ';';
                 
                 //Adjust number of decimals to meet max length
                 if(value.includes(undefined) == false) {
                     open = value[Const.IDX_CANDLE_OPEN];
-                    let diff_dec = (len_max - open.toString().length) - 1;
-                    open = (diff_dec > 0) ? open.toFixed(diff_dec) : open;
+                    let diffDec = (strLenMax - open.toString().length) - 1;
+                    open = (diffDec > 0) ? open.toFixed(diffDec) : open;
                     high = value[Const.IDX_CANDLE_HIGH];
-                    diff_dec = (len_max - high.toString().length) - 1;
-                    high = (diff_dec > 0) ? high.toFixed(diff_dec) : high;
+                    diffDec = (strLenMax - high.toString().length) - 1;
+                    high = (diffDec > 0) ? high.toFixed(diffDec) : high;
                     low = value[Const.IDX_CANDLE_LOW];
-                    diff_dec = (len_max - low.toString().length) - 1;
-                    low = (diff_dec > 0) ? low.toFixed(diff_dec) : low;
+                    diffDec = (strLenMax - low.toString().length) - 1;
+                    low = (diffDec > 0) ? low.toFixed(diffDec) : low;
                     close = value[Const.IDX_CANDLE_CLOSE];
-                    diff_dec = (len_max - close.toString().length) - 1;
-                    close = (diff_dec > 0) ? close.toFixed(diff_dec) : close;
-                    if(idx_time != undefined) {
-                        let prev_close = data.data_y[idx_time-1][Const.IDX_CANDLE_CLOSE];
+                    diffDec = (strLenMax - close.toString().length) - 1;
+                    close = (diffDec > 0) ? close.toFixed(diffDec) : close;
+                    // if(idxTime != undefined) {
+                    if(idxTime > 0) {
+                        let prev_close = data.data_y[idxTime-1][Const.IDX_CANDLE_CLOSE];
                         delta = (close - prev_close);
-                        delta_pc = (delta/close) * 100;
-                        delta = delta.toFixed((diff_dec > 0) ? diff_dec : 2);
-                        delta_pc = delta_pc.toFixed(2);
+                        deltaPc = (delta/close) * 100;
+                        delta = delta.toFixed((diffDec > 0) ? diffDec : 2);
+                        deltaPc = deltaPc.toFixed(2);
+                    }
+                    else {
+                        delta = '-'
+                        deltaPc = '-'
                     }
                 }
             }
@@ -1244,7 +1253,7 @@ class ChartView {
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + ChartView.VALUES_CLOSE + low + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_TEXT + 'C' + ChartView.P_CLOSE +
                         ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + ChartView.VALUES_CLOSE + close + ChartView.P_CLOSE +
-                        ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + 'font-size: 0.8em;' + ChartView.VALUES_CLOSE + `${delta} (${delta_pc}%)` + ChartView.P_CLOSE +
+                        ChartView.CHART_TOOLTIP_VALUES + color_values + width_values + 'font-size: 0.8em;' + ChartView.VALUES_CLOSE + ` ${delta} (${deltaPc}%)` + ChartView.P_CLOSE +
                     '</div>';
 
         // ChartView.prev_tooltip_info = info;
@@ -1440,10 +1449,6 @@ class ChartView {
                         let xEnd = xZoom.endValue;
                         let delta = -e.wheelDelta;
 
-                        console.log('delta:', delta);
-                        console.log('x start:', xStart);
-                        console.log('x end:', xEnd);
-
                         if(e.offsetX > yAxisX) {
                             let absErr = (yEnd - yStart) / (yEnd + yStart);
                             delta = (absErr * 0.2) * Math.sign(delta); // 20% zoom of total visual range
@@ -1467,9 +1472,6 @@ class ChartView {
                             },
                             chart
                         });
-
-                        console.log('x start 2:', xStart);
-                        console.log('x end2:', xEnd);
                     }
                     
                 }

@@ -9,9 +9,13 @@ class EventController {
     static TICKER_FILTER = '#chart-filter';
     static TIME_FRAME_PANEL = '#chart-time-frame-panel';
     static ADD_CHART = "#add-chart-icon";
-
+    static DEL_CHART = "#del-chart-icon";
+    
     static OUTSIDE_TICKER_FILTER = $('#chart-main > *').not('#chart-filter, #chart-filter > *');
     static OUTSIDE_TIME_FRAME_PANEL = $('#chart-main > *').not('#chart-time-frame-panel, #chart-time-frame-panel > *');
+    
+    static EVENT_MAGNET_MODE = "event-magnet-mode";
+    static EVENT_PERSIST_MODE = "event-persist-mode";
 
     //----------------------------- PROPERTIES -----------------------------
     keys_down = [];
@@ -127,50 +131,85 @@ class EventController {
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             });
 
-            // Manages main keyup events
+            // // Manages main keyup events
+            // $(document).on('keyup', e => {
+            //     let ikey = that.keys_down.indexOf(e.keyCode);
+            //     let events;
+            //     if(ikey != -1) {
+            //         let key_up = that.keys_down.splice(ikey, 1);
+            //         events = this.#cfg.get(key_up, e.type);
+            //         //TODO AL ACTIVAR COMANDO DESHABILITAR KEYS DEL CONTROLADOR PARA QUE NO SALTE EL FILTRO NI EL PANEL DE MARCO TEMPORAL
+            //         if(events.event.length) {
+            //             events.event.forEach(ev => {
+            //                 e.stopPropagation();
+            //                 e.preventDefault();
+            //                 $(document).trigger(ev, e);
+            //             });
+            //         }
+            //         // else if(events.released.length) {}
+            //         else {
+            //             $(document).trigger(ChartController.EVENT_KEYUP, e);
+            //         }
+            //     }
+            // });
+
+            // // Close all clear keys pressed
+            // $(document).on(Const.EVENT_CLOSE, e => {
+            //     that.keys_down = [];
+            //     that.#cfg.clear();
+            // });
+
+            // // Manages main keydown events
+            // $(document).on('keydown', e => {
+            //     if(that.keys_down.indexOf(e.keyCode) === -1) {
+            //         that.keys_down.push(e.keyCode);
+            //         let events = this.#cfg.get(that.keys_down, e.type);
+            //         if(events.event.length) {
+            //             events.event.forEach(ev => {
+            //                 e.stopPropagation();
+            //                 e.preventDefault();
+            //                 $(document).trigger(ev, e);
+            //             });
+            //         }
+            //         else {
+            //             $(document).trigger(ChartController.EVENT_KEYDOWN, e);
+            //         }
+            //     }
+            // });
+
             $(document).on('keyup', e => {
-                let ikey = that.keys_down.indexOf(e.keyCode);
-                let events;
-                if(ikey != -1) {
-                    let key_up = that.keys_down.splice(ikey, 1);
-                    events = this.#cfg.get(key_up, e.type);
-                    //TODO AL ACTIVAR COMANDO DESHABILITAR KEYS DEL CONTROLADOR PARA QUE NO SALTE EL FILTRO NI EL PANEL DE MARCO TEMPORAL
-                    if(events.event.length) {
-                        events.event.forEach(ev => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            $(document).trigger(ev, e);
-                        });
-                    }
-                    // else if(events.released.length) {}
-                    else {
-                        $(document).trigger(ChartController.EVENT_KEYUP, e);
-                    }
+                let cmds = main.ctrl.keyManager.getCommand( { up: e.keyCode } );
+                if(cmds) {
+                    cmds.forEach( cmd => {
+                        console.log(cmd.description);
+                        $(document).trigger(cmd.event, e);
+                    });
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+                else {
+                    $(document).trigger(ChartController.EVENT_KEYUP, e);
+                }
+            });
+
+            $(document).on('keydown', e => {
+                let cmds = main.ctrl.keyManager.getCommand( { down:e.keyCode } );
+                if(cmds) {
+                    cmds.forEach( cmd => {
+                        console.log(cmd.description);
+                        $(document).trigger(cmd.event);
+                    });
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+                else {
+                    $(document).trigger(ChartController.EVENT_KEYDOWN, e);
                 }
             });
 
             // Close all clear keys pressed
             $(document).on(Const.EVENT_CLOSE, e => {
-                that.keys_down = [];
-                that.#cfg.clear();
-            });
-
-            // Manages main keyup events
-            $(document).on('keydown', e => {
-                if(that.keys_down.indexOf(e.keyCode) === -1) {
-                    that.keys_down.push(e.keyCode);
-                    let events = this.#cfg.get(that.keys_down, e.type);
-                    if(events.event.length) {
-                        events.event.forEach(ev => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            $(document).trigger(ev, e);
-                        });
-                    }
-                    else {
-                        $(document).trigger(ChartController.EVENT_KEYDOWN, e);
-                    }
-                }
+                main.ctrl.keyManager.clearKeys();
             });
 
             // Clears disable from menu icons
@@ -179,6 +218,20 @@ class EventController {
             // Add chart
             let ops; //TODO OPCIONES DE CREACIÓN DE NUEVO CHART (ARRIBA, ABAJO, IZQ. O DERECHA)
             $(EventController.ADD_CHART).on('click', e => $(document).trigger(ChartController.EVENT_ADD_CHART, e, ops));
+
+            $(EventController.DEL_CHART).on('click', e => $(document).trigger(ChartController.EVENT_DEL_CHART, e, ops));
+
+            $(document).on(EventController.EVENT_MAGNET_MODE, e => $(Const.ELEMENT_ID_MAGNET_MODE).trigger('click'));
+
+            $(document).on(EventController.EVENT_PERSIST_MODE, e => $(Const.ELEMENT_ID_PERSIST_MODE).trigger('click'));
+
+            $(document).on(ControlSettings.EVENT_CREATE_FIBONACCI, e => $(MenuFibonacci.MENU_ICON).trigger('click'));
+
+            $(document).on(ControlSettings.EVENT_CREATE_TREND_LINE, e => $(MenuTrendLine.MENU_ICON).trigger('click'));
+
+            $(document).on(ControlSettings.EVENT_CREATE_RECTANGLE, e => $(MenuRectangleGraphic.MENU_ICON).trigger('click'));
+
+            $(document).on(ControlSettings.EVENT_CREATE_ALERT, e => $(MenuAlertComponent.MENU_ICON).trigger('click'));
 
             console.log("Event Controller Initialized OK.");
         }

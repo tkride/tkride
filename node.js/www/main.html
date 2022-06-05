@@ -146,7 +146,8 @@
         </div>
 
         <!-- Add chart icon -->
-        <div id="add-chart-icon"><span class="hoverable-text lni lni-circle-plus"></span></div>
+        <div id="add-chart-icon"><span class="hoverable-text lni lni-circle-plus" title="Agregar gráfico"></span></div>
+        <div id="del-chart-icon"><span class="hoverable-text lni lni-circle-minus" title="Eliminar gráfico"></span></div>
 
         <!-- Loads main.js -->
         <script src="/static/js/app/constants.js"></script>
@@ -154,6 +155,8 @@
         <script src="/static/js/app/ajax_worker.js"></script>
         <script src="/static/js/app/ajax.js"></script>
         <script src="/static/js/app/brokers.js"></script>
+
+        <script src="/static/js/app/event_controller.js"></script>
 
         <script src="/static/js/app/chart/resources/chart_component.js"></script>
         <script src="/static/js/app/chart/resources/alert_component.js"></script>
@@ -175,8 +178,12 @@
         <script src="/static/js/app/menu/menu_settings.js"></script>
         <script src="/static/js/app/menu/menu_status.js"></script>
         
+        <script src="/static/js/app/control_settings.js"></script>
+        <script src="/static/js/app/keyboard/keyManager.js"></script>
+        
         <script src="/static/js/app/menu/models/patterns_dao.js"></script>
         <script src="/static/js/app/menu/models/templates_dao.js"></script>
+        <script src="/static/js/app/menu/models/keysDao.js"></script>
 
         <script src="/static/js/app/controls.js"></script>
 
@@ -189,7 +196,6 @@
         <script src="/static/js/app/chart/time_frame_panel.js"></script>
         <script src="/static/js/app/chart/ticker_filter.js"></script>
         <script src="/static/js/app/chart/chart_settings.js"></script>
-        <script src="/static/js/app/control_settings.js"></script>
         <script src="/static/js/app/broker-api/binance/binance.js"></script>
         
         <!-- <script src="/static/js/app/test.js"></script> -->
@@ -199,7 +205,6 @@
         <script src="/static/js/app/interfaces/interface_tsql.js"></script>
         <script src="/static/js/app/interfaces/interface_ddbb.js"></script>
 
-        <script src="/static/js/app/event_controller.js"></script>
         <script src="/static/js/app/chart/chart_controller.js"></script>
         
         <script src="/static/js/app/keyboard/key_config.js"></script>

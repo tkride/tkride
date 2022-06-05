@@ -8,9 +8,11 @@
     --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     /* --back: #1f232d; */
     /* --back: #101010; */
+    /* --back: #1d1c1c; */
     --back: #1d1c1c;
     --font-size-title: 1.1em;
     --font-size-handle: 0.85em;
+    --font-size-icons: 0.85em;
     --font-weight-title: 500;/*bold;*/
     /* --font-color: #b0b2bd; */
     --font-color: #9a9a9b; /*#b0b3bc; */
@@ -98,21 +100,18 @@ input {
 }
 
 #chart-main {
-    /* width: 96.5vw; /* TODO: Comentar linea de abajo para permitir menu lateral*/
-    /* width: 100vw; */
-    /* height: 94vh; */
-    /* height: 100%; */
-    /* bottom: 6vh; */
     left: 0;
-    margin-right: 50px;
-    background-color: #ff000088;
+    /* margin-right: 50px; */
+    margin-right: 40px;
+    bottom: 40px;
+    /* background-color: #ff000088; */
     display: block;
 }
 
 /* --------------------------------- ICONS --------------------------------- */
 
 .icon {
-    font-size: 1.4em;
+    font-size: 1.3em;
     font-weight: lighter;
 }
 
@@ -150,7 +149,7 @@ input {
 
 .hoverable-close {
     padding: 4px;
-    border-radius: 5px;
+    /* border-radius: 5px; */
 }
 
 .hoverable-close:hover {
@@ -356,17 +355,17 @@ input[type="radio"]:checked + label {
 .right-menu {
     right: 0;
     top: 0;
-    width: 50px;
+    width: 40px;
     height: 100vh;
-    border-left: solid;
-    border-color: var(--color-invisible);
+    /* border-left: solid; */
+    /* border-color: var(--color-invisible); */
     cursor: pointer;
     position: absolute;
     z-index: var(--z-menu-over);
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-content: center;
+    /* justify-content: flex-start; */
+    /* align-content: center; */
     align-items: center;
 }
 
@@ -385,28 +384,23 @@ input[type="radio"]:checked + label {
     width: 100vw;
     bottom: 0vh;
     left: 0vw;
-    border-top: solid;
-    border-bottom: solid;
-    border-color: var(--color-invisible);
     background-color: var(--back);
-
     position: relative;
-    
-    display: inline-flex;
-    align-content: center;
-    align-items: center;
-    justify-content: flex-start;
-    justify-items: center;
-    flex-direction: row;
-    flex-wrap: nowrap;
 }
+
 
 .footer-menu {
     height: 100%;
     /* border-right: 1px solid var(--border-color); */
     border-color: var(--color-invisible);
     cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    justify-items: center;
+    flex-direction: row;    
+    position: relative;
 }
+
 
 .footer-menu > * {
     height: 100%;
@@ -414,12 +408,12 @@ input[type="radio"]:checked + label {
     display: inline-block;
 }
 
-.footer-menu-item:first-child {
+.footer-menu:first-child {
     margin-left: 10px;
 }
 
 .footer-menu-options {
-    border-right: 1px solid var(--border-color);
+    /* border-right: 1px solid var(--border-color); */
 }
 
 .footer-status {
@@ -594,6 +588,13 @@ input[type=radio] {
     width: 1px;
     margin: 0.3em 0.3em;
 }
+
+.points_ {
+    background: var(--back);
+    background-image: radial-gradient(var(--font-color) 1px, transparent 0);
+    background-size: 40px 40px;
+    background-position: -19px -19px;
+  }
 
 
 /* --------------------------------- CUSTOM CHECKBOX --------------------------------- */

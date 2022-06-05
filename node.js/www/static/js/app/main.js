@@ -95,8 +95,9 @@ $(document).ready(function() {
         $(document).tooltip({
             show: {
                 delay: 250,
-                duration: 0
-            }
+                duration: 0,
+            },
+            // position: { my: "left bottom-6", at: "left-5 top" },
         });
     });
 

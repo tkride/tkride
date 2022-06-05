@@ -168,22 +168,23 @@ class MenuFibonacci extends MenuChartGraphic {
 
         let retLabelContainer = $('<div>', {
             css: { 'display': 'block', margin: '0 0 0 1em', },
-                    // class: Const.CLASS_MENU_FIELD,
+            class: Const.CLASS_MENU_FIELD,
         });
         let retLabel = $('<p>', {
             id: MenuFibonacci.ID_MENU_RET_VALUES_LABEL,
-            class: Const.CLASS_MENU_FIELD,
             text: 'Valores retroceso',
         });
         retLabelContainer.append(retLabel);
         
         let levelAdd = $('<div>', {
-            class: `${Const.CLASS_ICON_ADD}`,
+            class: `${Const.CLASS_ICON_ADD} ${Const.CLASS_HOVERABLE_TEXT}`,
+            title: 'Agregar retroceso',
         });
         retLabelContainer.append(levelAdd);
 
         let levelRemove = $('<div>', {
-            class: `${Const.CLASS_ICON_MINUS}`,
+            class: `${Const.CLASS_ICON_MINUS} ${Const.CLASS_HOVERABLE_TEXT}`,
+            title: 'Eliminar retroceso',
         });
         retLabelContainer.append(levelRemove);
 

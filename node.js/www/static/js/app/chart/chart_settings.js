@@ -9,7 +9,8 @@ class ChartSettings {
     static COLOR_TITLE_TEXT_DEFAULT = '#d7d7d7'; //"#aeb1ba";
     // static COLOR_BACKGROUND_DEFAULT = "#121723";
     // static COLOR_BACKGROUND_DEFAULT = "#1d1c1c";
-    static COLOR_BACKGROUND_DEFAULT = "#101010";
+    // static COLOR_BACKGROUND_DEFAULT = "#101010";
+    static COLOR_BACKGROUND_DEFAULT = "#151515";
     static COLOR_CROSS_DEFAULT = '#525560';
     static COLOR_TIP_TEXT_DEFAULT ="#f8f8fa";
     static COLOR_SELECTED_BACK ="#2862fe";

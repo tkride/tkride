@@ -27,6 +27,12 @@ class ControlSettings {
     static EVENT_MOVS_MENU = 'event-movs-menu';
     static EVENT_PATTERN_MENU = 'event-pattern-menu';
     static EVENT_ADD_CHART = 'event-add-chart';
+    static EVENT_DEL_CHART = 'event-del-chart';
+    static EVENT_CREATE_FIBONACCI = 'event-cresate-fibonacci';
+    static EVENT_CREATE_TREND_LINE = 'event-create-trend-line';
+    static EVENT_CREATE_RECTANGLE = 'event-create-rectangle';
+    static EVENT_CREATE_ALERT = "event-create-alarm";
+
 
     //----------------------------- PROPERTIES -----------------------------
     #cfg = {};

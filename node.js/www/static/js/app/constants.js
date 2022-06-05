@@ -215,10 +215,10 @@ class Const {
     static CLASS_ICON_WHATSAPP = 'lni lni-whatsapp';
     static CLASS_ICON_EMAIL = 'lni lni-envelope';
     static CLASS_ICON_ALARM = 'lni lni-alarm';
-    // static CLASS_ICON_LOCK = 'lni lni-lock';
-    // static CLASS_ICON_UNLOCK = 'lni lni-unlock';
-    static CLASS_ICON_LOCK = 'bi bi-lock';
-    static CLASS_ICON_UNLOCK = 'bi bi-unlock';
+    static CLASS_ICON_LOCK = 'lni lni-lock-alt';
+    static CLASS_ICON_UNLOCK = 'lni lni-unlock';
+    // static CLASS_ICON_LOCK = 'bi bi-lock';
+    // static CLASS_ICON_UNLOCK = 'bi bi-unlock';
     static CLASS_ICON_RECTANGLE = 'bi bi-bounding-box-circles';
     static CLASS_ICON_MAGNET = 'bi bi-magnet';
     static CLASS_ICON_CAMERA = 'bi bi-camera';
@@ -403,6 +403,9 @@ class Const {
     static EVENT_DDBB_DELETE_MODEL = 'event-ddbb-delete-model';
     static EVENT_DDBB_SAVE_MODEL = 'event-ddbb-save-model';
     static EVENT_UPDATE_MODEL = 'event-update-model';
+
+    static WILDCARD = '*';
+
 }
 
 class Conf {
@@ -603,9 +606,9 @@ class Time {
     }
 
     static getCountdown({ finalTime, initTime = Date.now()}) {
-        let d2 = new Date(finalTime);
+        let d2 = new Date(finalTime+Time.MS_IN_SECONDS);
         let d1 = new Date(initTime);
-        
+
         let secondsRemain = (d2 - d1);
         let m = secondsRemain / (Time.MS_IN_SECONDS * Time.S_IN_MINUTE);
         let msInHour = Time.S_IN_HOUR * Time.MS_IN_SECONDS;
@@ -744,10 +747,13 @@ class DDBB {
     static AUTHENTICATE_USER = 'authenticate_user';
     static DELETE_PATTERN = 'delete_pattern';
     static DELETE_TEMPLATE = 'delete_template';
+    static DELETE_KEY_CONFIGURATION = 'delete_key_configuration';
     static SAVE_PATTERN = 'save_pattern';
     static SAVE_TEMPLATE = 'save_template';
+    static SAVE_KEY_CONFIGURATION = 'save_key_configuration';
     static LOAD_USER_PATTERNS = 'load_user_patterns';
     static LOAD_USER_TEMPLATES = 'load_user_templates';
+    static LOAD_KEY_CONFIGURATION = 'load_key_configuration';
     static DDBB_ERROR = 'Error en base de datos';
     static DUPLICATE_KEY = 1062;
     static DUPLICATE_KEY_MSG = 'Identificador duplicado';

@@ -14,7 +14,7 @@
  * @param event Event/Callback callback name when clicking a list item. If no one provided,
  *                   check for HTML micro-data 'data-event'. If function provided, then
  *                   callback is called when clicking items, instead of triggering event.
- * @param css Aplies CSS properties to each element: css: { container: {..}, items: {..}, label: {..} }
+ * @param css Aplies CSS properties to each element: css: { container | control | items | label }
  * @param select_unknown Let select items not available in list.
  * @note Event is triggered to 'document'.
  */
@@ -144,8 +144,8 @@ class Dropdown {
             this.#control = dd;
 
             if(params.css) {
-                if(params.css.container) {
-                    this.#control.css(params.css.container);
+                if(params.css.control) {
+                    this.#control.css(params.css.control);
                 }
             }
             
@@ -195,6 +195,10 @@ class Dropdown {
                 id: this.#container_id + '-container',
                 class: (this.#class) ? this.#class : ''
             });
+
+            if(params.css?.container) {
+                main_container.css(params.css.container);
+            }
             main_container.append(this.#control);
             this.#control = main_container;
         }
@@ -1623,7 +1627,9 @@ class ColorPicker {
         width: '15px',
         'border-radius': '2px',
         cursor: 'pointer',
-        margin: '0.1em 0px 0em 4em',
+        top: '2px',
+        position: 'relative',
+        // margin: '0.1em 0px 0em 4em',
     };
 
     //----------------------------- PROPERTIES -----------------------------
@@ -1690,7 +1696,9 @@ class ColorPicker {
             this.label = $('<p>', {
                 id: this.id + ColorPicker.LABEL_NAME,
                 text: this.labelOps.text || '',
-                css: { margin: '0 0 0 1em', position: 'absolute', }
+                css: {
+                    // margin: '0 0 0 1em',
+                }
             });
 
             if(this.labelOps.css) {
@@ -1785,10 +1793,18 @@ class InputColor {
     static COLOR_PICKER_NAME = '-color-picker';
     static INPUTBOX_NAME = '-input-box';
     static DEFAULT_COLOR_PICKER = {
-        css: { postion: 'relative', margin: '0', }
+        css: { position: 'absolute', }
     };
     static DEFAULT_INPUTBOX = {
-        input: { css: { 'max-width': '3em' }, maxlength: 6, },
+        input: {
+            css: {
+                'max-width': '3em',
+                maxlength: 6,
+            },
+        },
+        container: {
+            css: { margin: '0 0 0 1em', }
+        },
         position: Const.LABEL_POSITION_AFTER,
     };
 

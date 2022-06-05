@@ -94,21 +94,39 @@ class ModelChart {
             }
 
             if(rawData.append) {
-                // If new data to append is still last candle information, replace las candle
-                let lastIdx = this.#ohlc_data.data_y.length-1;
-                if(this.#ohlc_data.data_y[lastIdx][ModelChart.OPEN_TIME] == data_y[0][ModelChart.OPEN_TIME]) {
-                    this.#ohlc_data.data_y.splice(lastIdx, 1, ...data_y);
-                    this.#ohlc_data.volume.splice(lastIdx, 1, ...volumes);
-                    this.#ohlc_data.trades.splice(lastIdx, 1, ...trades);
+                // // If new data to append is still last candle information, replace las candle
+                // let lastIdx = this.#ohlc_data.data_y.length-1;
+                // if(this.#ohlc_data.data_y[lastIdx][ModelChart.OPEN_TIME] == data_y[0][ModelChart.OPEN_TIME]) {
+                //     this.#ohlc_data.data_y.splice(lastIdx, 1, ...data_y);
+                //     this.#ohlc_data.volume.splice(lastIdx, 1, ...volumes);
+                //     this.#ohlc_data.trades.splice(lastIdx, 1, ...trades);
+                // }
+                // // else if new data started new candle, append and delete firts
+                // else {
+                //     this.#ohlc_data.data_y.shift();
+                //     this.#ohlc_data.data_y.push(...data_y);
+                //     this.#ohlc_data.volume.shift();
+                //     this.#ohlc_data.volume.push(...volumes);
+                //     this.#ohlc_data.trades.shift();
+                //     this.#ohlc_data.trades.push(...trades);
+                // }
+                if(this.#ohlc_data.data_y.at(-data_y.length)[ModelChart.OPEN_TIME] == data_y[0][ModelChart.OPEN_TIME]) {
+                    let idx = this.#ohlc_data.data_y.length - data_y.length;
+                    this.#ohlc_data.data_y.splice(idx, data_y.length, ...data_y);
+                    this.#ohlc_data.volume.splice(idx, volumes.length, ...volumes);
+                    this.#ohlc_data.trades.splice(idx, trades.length, ...trades);
                 }
                 // else if new data started new candle, append and delete firts
                 else {
-                    this.#ohlc_data.data_y.shift();
-                    this.#ohlc_data.data_y.push(...data_y);
-                    this.#ohlc_data.volume.shift();
-                    this.#ohlc_data.volume.push(...volumes);
-                    this.#ohlc_data.trades.shift();
-                    this.#ohlc_data.trades.push(...trades);
+                    let idx = this.#ohlc_data.data_y.map(d => d[ModelChart.OPEN_TIME]).indexOf(data_y[0][ModelChart.OPEN_TIME]);
+                    let len = (idx > -1) ? (this.#ohlc_data.data_y.length - idx) : data_y.length;
+
+                    this.#ohlc_data.data_y.splice(0, len);
+                    this.#ohlc_data.data_y.splice(idx, data_y.length, ...data_y);
+                    this.#ohlc_data.volume.splice(0, len);
+                    this.#ohlc_data.volume.splice(idx, volumes.length, ...volumes);
+                    this.#ohlc_data.trades.splice(0, len);
+                    this.#ohlc_data.trades.splice(idx, trades.length, ...trades);
                 }
                 // let lastCandleIndex = this.#ohlc_data.data_y.map(v => v[0]).indexOf(data_y[0][0]);
                 // if(lastCandleIndex > this.#ohlc_data.lastCandleIndex) {

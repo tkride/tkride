@@ -323,7 +323,7 @@ class MenuPatterns {
                                             items: MenuPatterns.PATTERNS_TYPE_OPTIONS,
                                             event: MenuPatterns.EVENT_TYPE_SELECTED,
                                             header: { selected: true },
-                                            css: { container: { 'font-size': '1em', 'font-weight': '400' } },
+                                            css: { control: { 'font-size': '1em', 'font-weight': '400' } },
                                             parent: this.#display.control,
                                         });
         types_combobox.controls.each( (i, c) => types_container.append(c) );

@@ -29,6 +29,7 @@ class Binance {
 
     tickers = [];
     webSockets = {};
+    lastServerTime;
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -186,11 +187,20 @@ class Binance {
             this.webSockets[id].count++;
         }
         else {
+            function processWebSocket() {
+                let timeout = Date.now() - (parseInt(Date.now()/1000)*1000);
+                this.webSockets[id].object = setTimeout( () => processWebSocket.call(this), timeout);
+                this.getHistoric({ id: active, timeFrame, limit: 2 })
+                .then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );
+            }
+
+            let timeout = Date.now() - (parseInt(Date.now()/1000)*1000);
             this.webSockets[id] = {
-                object: setInterval( () => {
-                            this.getHistoric({ id: active, timeFrame, limit: 1 }).
-                            then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );                
-                        }, 1000),
+                // object: setInterval( () => {
+                //             this.getHistoric({ id: active, timeFrame, limit: 1 }).
+                //             then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );                
+                //         }, 1000),
+                object: setTimeout( () => processWebSocket.call(this), timeout),
                 count: 1
             };
             // this.webSockets[id].object = setInterval( () => {
@@ -198,10 +208,14 @@ class Binance {
             //     then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );                
             // }, 1000);
         }
-
+        
         $(document).on(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, (e, data) => {
             if(typeof callback == "function") {
-                callback({id, data});
+                this.getServerTime()
+                .then(time => {
+                    this.lastServerTime = time;
+                    callback({id, data, time});
+                });
             }
         });
     }
@@ -210,7 +224,8 @@ class Binance {
         id = (id) ? id : `${active}_${timeFrame}`;
         if(this.webSockets[id]) {
             if(--this.webSockets[id].count == 0) {
-                clearInterval(this.webSockets[id].object);
+                // clearInterval(this.webSockets[id].object);
+                clearTimeout(this.webSockets[id].object);
                 delete this.webSockets[id];
             }
         }

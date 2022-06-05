@@ -29,23 +29,34 @@
 
 .chart-frame-layout {
     flex-grow: 1;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
     /* border: 1px solid #92979e; */
-    /* box-sizing: border-box; */
-    /* height: 25%; */
-    /* width: 25%; */
-    /* width: 50%; */
-    /* height: 50%; */
+    border: 2px solid var(--border-color);
+}
+
+.chart-frame-layout.selected {
+    border: 2px solid var(--selected);
 }
 
 /* ----------------------------- ADD CHART  -----------------------------*/
 
 #add-chart-icon {
-    font-size: 200%;
+    font-size: 1.5em;
     color: var(--font-color);
     float: left;
     position: absolute;
-    top: 10%;
-    right: 10%;
+    top: 70px;
+    right: 170px;
+}
+#del-chart-icon {
+    font-size: 1.5em;
+    color: var(--font-color);
+    float: left;
+    position: absolute;
+    top: 70px;
+    right: 135px;
 }
 
 /* ----------------------------- CHART FILTER  -----------------------------*/
@@ -297,10 +308,14 @@ input {
     -o-transition: border 500ms ease-out; */
 }
 
-.chart-selected {
-    box-sizing: border-box;
+.chart-border {
+    /* box-sizing: border-box;
     -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+    -webkit-box-sizing: border-box; */
+    border: 2px solid var(--border-color);
+}
+
+.chart-border.selected {
     border: 2px solid var(--selected);
 }
 

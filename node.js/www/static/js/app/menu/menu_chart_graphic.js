@@ -315,6 +315,7 @@ class MenuChartGraphic {
     }
 
     createMenuFloat() {
+
         // Creates main menu container
         this.menuFloat = new Display({
             id: MenuChartGraphic.ID_MENU_FLOAT+this.name,
@@ -325,7 +326,6 @@ class MenuChartGraphic {
             show: false,
             draggable: true,
             close: false,
-            height: '40px',
             overflow: false,
         });
 
@@ -333,8 +333,11 @@ class MenuChartGraphic {
         // Drag handle
         let handle = $('<div>', {
             id: MenuChartGraphic.ID_MENU_FLOAT_HANDLE+this.name,
-            class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_BACK_POINTS}`,
-            css: { padding: '1em 0.5em', border: 'none' },
+            class: ``,
+            css: {
+                display: 'inline-block',
+                padding: '0 0.5em',
+            }
         });
         this.menuFloat.append_content(handle);
 
@@ -342,19 +345,16 @@ class MenuChartGraphic {
         // Settings
         this.settings = $('<div>', {
             id: MenuChartGraphic.ID_MENU_FLOAT_SETTIGNS+this.name,
-            class: `${Const.CLASS_ICON_SETTINGS} ${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
-            css: { padding: '1em' },
+            class: `${Const.CLASS_ICON_SETTINGS} ${Const.CLASS_HOVERABLE_ICON}`,
             title: MenuChartGraphic.SETTINGS_TITLE,
         });
         this.menuFloat.append_content(this.settings);
         this.settings.on('click', e => $(document).trigger(MenuChartGraphic.EVENT_OPEN_SETTINGS, [this.ref]));
-
         
         // Remove
         this.remove = $('<div>', {
             id: MenuChartGraphic.ID_MENU_FLOAT_REMOVE+this.name,
-            class: `${Const.CLASS_ICON_REMOVE} ${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
-            css: { padding: '1em' },
+            class: `${Const.CLASS_ICON_REMOVE} ${Const.CLASS_HOVERABLE_ICON}`,
             title: MenuChartGraphic.REMOVE_TITLE,
         });
         this.menuFloat.append_content(this.remove);
@@ -369,8 +369,7 @@ class MenuChartGraphic {
         // Block
         this.block = $('<div>', {
             id: MenuChartGraphic.ID_MENU_FLOAT_BLOCK+this.name,
-            class: `${Const.CLASS_ICON_UNLOCK} ${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
-            css: { padding: '0.5em', 'font-size': '1.5em', },
+            class: `${Const.CLASS_ICON_UNLOCK} ${Const.CLASS_HOVERABLE_ICON}`,
             title: MenuChartGraphic.BLOCK_TITLE
         });
         this.menuFloat.append_content(this.block);
@@ -387,10 +386,19 @@ class MenuChartGraphic {
             event: MenuChartGraphic.EVENT_STORED_SELECTED_FLOAT+this.name,
             header: { selected: true },
             select_unknown: true,
-            class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
+            class: `${Const.CLASS_HOVERABLE_ICON}`,
+            css: { display: 'inline-block', },
             css: {
-                // items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
-                container: { 'background-color': 'var(--color-invisible)' },//, height: '1.35em', padding: '0.5em 0.3em', },
+                container: {
+                    'background-color': 'var(--color-invisible)',
+                    display: 'inline-block',
+                },
+                control: {
+                    'background-color': 'var(--color-invisible)',
+                },
+                items: {
+                    'font-size': '0.85em',
+                }
             },
             parent: this.menuFloat.control,
         });
@@ -446,7 +454,7 @@ class MenuChartGraphic {
             // class: `${Display.CLASS_ICONS_FLOAT} ${Const.CLASS_HOVERABLE_ICON}`,
             css: {
                 items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
-                // container: { 'background-color': 'var(--color-invisible)', height: '1.35em', padding: '0.5em 0.3em', },
+                // control: { 'background-color': 'var(--color-invisible)', height: '1.35em', padding: '0.5em 0.3em', },
             },
             parent: this.menu.control,
         });
@@ -604,7 +612,7 @@ class MenuChartGraphic {
              },
             class: Const.CLASS_MENU_FIELD,
             css: {
-                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', },
+                items: { 'font-size': '0.8em', 'font-weight': '400', left: '0%', 'white-space': 'nowrap'},
             },
             parent: this.menu.control,
         });

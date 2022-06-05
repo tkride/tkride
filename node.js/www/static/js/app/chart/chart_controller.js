@@ -9,6 +9,7 @@ class ChartController {
     static EVENT_KEYDOWN = 'event-keydown';
     static EVENT_RX_HISTORICAL = 'event-rx-historical';
     static EVENT_ADD_CHART = 'event-add-chart';
+    static EVENT_DEL_CHART = 'event-del-chart';
     static EVENT_TIME_FRAME_CHANGED = 'event-time-frame-changed';
 
     static LAYOUT_LEFT = 0;
@@ -21,6 +22,7 @@ class ChartController {
 
     static CHARTS_FRAMES_PARENT = '#chart-frames';
     static CLASS_CHART_LAYOUT = 'chart-frame-layout';
+    static CLASS_CHART_BORDER = 'chart-border';
     static FILTER_TITLE_TICKER = "Selecciona activo";
     static FILTER_TITLE_INTERVAL = "Selecciona intervalo";
 
@@ -52,7 +54,10 @@ class ChartController {
     #chart_models = {};
     patterns_dao;
     templates_dao;
+    keysDao;
+    keyManager;
     #trash = [];
+    selected = [];
     // View
     #view;
     //Brokers manager
@@ -233,7 +238,7 @@ class ChartController {
             // Get initial date time
             let end_time = Time.now(Time.FORMAT_STR);
             // let init_time = Time.subtract_value(end_time, 100000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
-            let init_time = Time.subtract_value(end_time, 9999, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
+            let init_time = Time.subtract_value(end_time, 15000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
             // let init_time = Time.subtract_value(end_time, 150, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
 
             let query = { [Const.ACTIVE_ID]:chartInfo.active[Const.ID_ID],
@@ -395,7 +400,7 @@ class ChartController {
             });
         }
 
-        if(!$._data(document, 'events')[ControlSettings.EVENT_KEYUP]) {
+        if(!$._data(document, 'events')[ChartController.EVENT_KEYUP]) {
             $(document).on(ChartController.EVENT_KEYUP, (e, key) => {
                 let filter_visible = that.#ticker_filter.is_visible();
                 let tframe_visible = that.#time_frame.is_visible();
@@ -406,7 +411,7 @@ class ChartController {
             });
         }
 
-        if(!$._data(document, 'events')[ControlSettings.EVENT_ADD_CHART]) {
+        if(!$._data(document, 'events')[ChartController.EVENT_ADD_CHART]) {
             $(document).on(ChartController.EVENT_ADD_CHART, (e, ops) => {
                 console.log('EVENT_ADD_CHART');
                 let id = this.create_chart({place: {col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
@@ -418,6 +423,14 @@ class ChartController {
                     zoom: {}
                 });
                 this.eventLoadHistoric(this.activeChart);
+            });
+        }
+
+        if(!$._data(document, 'events')[ChartController.EVENT_DEL_CHART]) {
+            $(document).on(ChartController.EVENT_DEL_CHART, (e, ops) => {
+                console.log('EVENT_DEL_CHART');
+                let id = this.activeChart.id;
+                this.removeChart({id});
             });
         }
 
@@ -474,18 +487,28 @@ class ChartController {
         });
         
         $(document).on(ChartComponent.EVENT_SELECTED, (e, params) => {
-            let menu_name = params.constructor.name;
-            if(this.#menus[menu_name]) {
-                $(document).trigger(Const.EVENT_UPDATE_MODEL, [menu_name]);
-                this.#menus[menu_name].show_float(params);
+            let menuName = params.constructor.name;
+            if(this.#menus[menuName]) {
+                $(document).trigger(Const.EVENT_UPDATE_MODEL, [menuName]);
+                this.#menus[menuName].show_float(params);
+                if(this.selected.indexOf(params) === -1) {
+                    this.selected.push(params);
+                }
+                this.keyManager.setContext({ context: [menuName], sub: [GraphicComponent.STATUS_SELECTED] })
             }
         });
 
         $(document).on(ChartComponent.EVENT_UNSELECTED, (e, params) => {
+            params = params || this.selected.at(-1);
             let menu_name = params.constructor.name;
             if(this.#menus[menu_name]) {
                 this.#menus[menu_name].hide_float();
                 this.#menus[menu_name].hide();
+                let idx = this.selected.indexOf(params);
+                if(idx != -1) {
+                    this.selected.splice(idx, 1);
+                }
+                this.keyManager.setContext({})
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             }
         });
@@ -518,6 +541,8 @@ class ChartController {
         });
 
         $(document).on(MenuChartGraphic.EVENT_REMOVE, (e, graphic) => {
+            graphic = graphic || this.selected.at(-1);
+            this.keyManager.setContext({});
             this.throw_trash(graphic, MenuChartGraphic.EVENT_REMOVE);
             this.#view.clear_chart(this.activeChart.chart, [graphic[Const.ID_ID]]);
         });
@@ -626,6 +651,10 @@ class ChartController {
             this.#EVENT_SOURCE[Fibonacci.NAME] = [this.templates_dao, MenuFibonacci.TITLE];
             this.#EVENT_SOURCE[TrendLine.NAME] = [this.templates_dao, MenuTrendLine.TITLE];
             this.#EVENT_SOURCE[TrendLine.NAME] = [this.templates_dao, MenuRectangleGraphic.TITLE];
+            
+            // Create keyboard configuration
+            this.keysDao = new KeysDAO(this.interface_ddbb, this.#models);
+            this.keyManager = new KeyManager(this.keysDao.models);
 
             // Creates all option menus
             this.#create_menus();
@@ -726,7 +755,7 @@ class ChartController {
                         //     that.#view.clear_chart(that.activeChart.chart, series_to_del);
                         // });
                     }
-                    catch(err) {
+                    catch(error) {
                         console.error('Error loading movements: ', error);
                         that.#view.clear_chart(that.activeChart.chart, series_to_del);
                     }
@@ -831,6 +860,8 @@ class ChartController {
                     }
                 }
             });
+
+            $(document).on(ChartComponent.EVENT_UNSELECTED, (e) => this.#view.unselect({ chart: this.activeChart, items:[Const.WILDCARD] }) );
 
             this.#init_events_models();
             console.log("Chart Controller Initialized OK.");
@@ -972,10 +1003,20 @@ class ChartController {
         this.updateChartActive({chartInfo, newActive});
     }
 
+    updateLayout(row) {
+        let w = (100 / this.#chart_layout[row]) + '%';
+        let h = (100 / this.#chart_layout.length) + '%';
+        $('.'+ChartController.CLASS_CHART_LAYOUT).css({
+            'width': w,
+            'height': h
+        });
+
+    }
+
     generate_layout({id, place}) {
         let row = 0;
         let frame = $('<div />',
-                    { 'id':id, class: ChartController.CLASS_CHART_LAYOUT });
+                    { 'id':id, class: `${ChartController.CLASS_CHART_LAYOUT}` });
         if(place.row == ChartController.LAYOUT_DOWN) {
             this.#chart_layout.splice(0, 0, 0);
             $(ChartController.CHARTS_FRAMES_PARENT).append(ChartController.CHART_NEW_ROW);
@@ -1001,12 +1042,14 @@ class ChartController {
         }
         
         this.#chart_layout[row] += 1;
-        let w = (100 / this.#chart_layout[row]) + '%';
-        let h = (100 / this.#chart_layout.length) + '%';
-        $('.'+ChartController.CLASS_CHART_LAYOUT).css({
-            'width': w,
-            'height': h
-        });
+        this.updateLayout(row);
+        // this.#chart_layout[row] += 1;
+        // let w = (100 / this.#chart_layout[row]) + '%';
+        // let h = (100 / this.#chart_layout.length) + '%';
+        // $('.'+ChartController.CLASS_CHART_LAYOUT).css({
+        //     'width': w,
+        //     'height': h
+        // });
 
         // Updates all charts sizes to new layout
         let charts = Object.keys(this.#chartFrames);
@@ -1017,7 +1060,7 @@ class ChartController {
 
     create_chart({id, place}) {
         try {
-            id = id || this.#n_frames + '_' + Date.now();
+            id = id || (this.#n_frames + '_' + Date.now());
             let frame = this.generate_layout({id, place});
             let chart = this.#view.create_chart({ id: id, frame: frame })
             this.#create_header({id, frame});
@@ -1039,6 +1082,20 @@ class ChartController {
             console.error('Error creating chart:', error);
         }
         return null;
+    }
+
+    removeChart({id}) {
+        try {
+            this.#chartFrames[id].chart.dispose();
+            delete this.#chartFrames[id];
+            let row = this.#chart_layout.length - 1;
+            this.#chart_layout[row]--;
+            this.updateLayout(row);
+            $(window).trigger('resize');
+        }
+        catch(err) {
+            console.error(`Error removing chart: ${err}`);
+        }
     }
 
     selectChart({id}) {
@@ -1175,11 +1232,11 @@ class ChartController {
         let active = query[Const.ID_ID];
         let timeFrame = query[Const.TIME_FRAME_ID];
         
-        function updateCandles({id, data}) {
+        function updateCandles({id, data, time}) {
             let dataOhlc = this.#chart_models[id].splitOhlcData({ query, data, append: true });
             this.#view.updateCandles({ data: dataOhlc, chart });
             // setTimeout(() => this.#view.updatePriceCursor_({ query, data: dataOhlc, chart }), 10);
-            setTimeout(() => this.#view.updatePriceCursor({ query, data: data[0], chart }), 0);
+            setTimeout(() => this.#view.updatePriceCursor({ query, data: data.at(-1), time, chart }), 0);
         }
         this.#brokers.brokers[broker].openWebSocket({id, active, timeFrame, callback: updateCandles.bind(this)});
     }
