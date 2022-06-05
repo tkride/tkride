@@ -123,11 +123,11 @@ class MenuFibonacci extends MenuChartGraphic {
             // this.template[Const.RET_LEVELS_ID] = levels;
             if(this.inputColors.length) {
                 this.template.levels = [];
-                this.template.color = [];
+                this.template.colors = [];
 
                 this.inputColors.forEach( (ic,i) => {
                     this.template.levels.push(ic.inputBox.text);
-                    this.template.color.push(ic.colorPicker.color);
+                    this.template.colors.push(ic.colorPicker.color);
                 });
             }
             return this.template;
@@ -260,7 +260,7 @@ class MenuFibonacci extends MenuChartGraphic {
             colorPicker: {
                 color: this.template.colors[i],
                 callback: color => {
-                    this.template.colors[i] = color || this.template.color.at(-1);
+                    this.template.colors[i] = color || this.template.colors.at(-1);
                     this.ref.setTemplate(this.template);
                 }
             }

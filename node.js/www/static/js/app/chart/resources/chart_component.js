@@ -15,6 +15,8 @@ class ChartComponent {
 
     static REFRESH_RATE = 30;
 
+    static STATUS_SELECTED = 'selected';
+    
     // static X_AXIS_INDEX = 1;
 
     // CONTROLS
@@ -144,6 +146,12 @@ class ChartComponent {
     }
 
     clone() { return Object.assign({}, this); }
+    
+    getOpacityHex() {
+        let opacity = parseInt((this.template.opacity * 255) / 100);
+        let opacityHex = opacity.toString(16).toUpperCase().padStart(2, '0');
+        return opacityHex;
+    }
 
     stringify() {
         let ret = JSON.stringify(

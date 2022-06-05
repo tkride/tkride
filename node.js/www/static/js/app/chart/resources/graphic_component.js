@@ -7,7 +7,6 @@ class GraphicComponent extends ChartComponent {
     static NAME = 'GraphicComponent';
 
     static STATUS_CREATING = 'drawing';
-    static STATUS_SELECTED = 'selected';
 
     // PROPERTIES
 

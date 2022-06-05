@@ -45,7 +45,7 @@ class Fibonacci extends GraphicComponent {
     // Render and dynamic control values
     ydelta = {};
     yvalues_chart = [];
-    fillColor = [];
+    // fillColor = [];
 
     constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
@@ -99,17 +99,17 @@ class Fibonacci extends GraphicComponent {
             }
         }
 
-        this.defineFillColor();
+        this.getOpacityColors();
 
         // Fill data
         this.update_data();
     }
 
-    defineFillColor() {
-        this.fillColor = [];
-        let opacity_hex = this.template.opacity.toString(16).toUpperCase().padStart(2, '0');
+    getOpacityColors() {
+        this.fillColors = [];
+        let opacityHex = super.getOpacityHex();
         for (let i = 0; i < this.template.levels.length; i++) {
-            this.fillColor.push(`${this.template.colors[i]}${opacity_hex}`);
+            this.fillColors[i] = `${this.template.colors[i]}${opacityHex}`;
         }
     }
 
@@ -222,7 +222,8 @@ class Fibonacci extends GraphicComponent {
         let data = [this.template.lineWidth, this.template.lineType, this.template.textShow, this.values.yvalues.length];
         let text = this.get_text();
         for(let i=0; i<this.values.yvalues.length; i++) {
-            data.push(...[this.values.yvalues[i], text[i], this.template.colors[i], this.fillColor[i]]);
+            // data.push(...[this.values.yvalues[i], text[i], this.template.colors[i], this.fillColor[i]]);
+            data.push(...[this.values.yvalues[i], text[i], this.template.colors[i], this.fillColors[i]]);
         }
         this.data[0].push(...data);
     }
@@ -267,7 +268,7 @@ class Fibonacci extends GraphicComponent {
 
     setTemplate(template) {
         super.setTemplate(template);
-        this.defineFillColor();
+        this.getOpacityColors();
         this.values.yvalues = this.calculateYValues();
         this.update_option();
     }

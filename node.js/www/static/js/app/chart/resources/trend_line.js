@@ -63,13 +63,17 @@ class TrendLine extends GraphicComponent {
                 let r = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
                 let g = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
                 let b = Math.floor((Math.random() * 255)).toString(16).toUpperCase().padStart(2,'0');
-                this.template.colors.push(`#${r}${g}${b}${opacity_hex}`);
+                // this.template.colors.push(`#${r}${g}${b}${opacity_hex}`);
+                this.template.colors.push(`#${r}${g}${b}`);
             }
         }
+
+        this.getOpacityColors();
 
         // Fill data
         this.update_data();
     }
+    
 
     render(param, api) {
         if (param.context.rendered) {
@@ -155,6 +159,13 @@ class TrendLine extends GraphicComponent {
         return this.graphic;
     }
     
+    
+    getOpacityColors() {
+        let opacityHex = super.getOpacityHex();
+        this.color = `${this.template.colors[0]}${opacityHex}`;
+    }
+
+
     update_data() {
         // Width is fixed, so it's appended first once
         super.update_data();
@@ -162,7 +173,7 @@ class TrendLine extends GraphicComponent {
         let data = [
             this.template.lineWidth,
             this.template.lineType,
-            this.template.colors[0],
+            this.color,
             this.template.textShow,
             text,
             this.values.slope,
@@ -210,6 +221,7 @@ class TrendLine extends GraphicComponent {
     
     setTemplate(template) {
         super.setTemplate(template);
+        this.getOpacityColors();
         this.update_option();
     }
 

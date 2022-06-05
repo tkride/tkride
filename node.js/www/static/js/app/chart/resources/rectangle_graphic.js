@@ -25,8 +25,8 @@ class RectangleGraphic extends GraphicComponent {
     template = {
         ...this.template,
         type: 'RectangleGraphic',
-        // colors: [],
-        fill: '#AA552244',
+        colors: ['#AA5522'],
+        fillColors: ['#AA5522'],
         opacity: 100,
         // lineWidth: 2,
         // lineType: Const.LINE_SOLID,
@@ -34,6 +34,7 @@ class RectangleGraphic extends GraphicComponent {
         // textSide: 'right',
         // textInfo: '%',
     };
+    fillColors;
 
     constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
@@ -59,6 +60,8 @@ class RectangleGraphic extends GraphicComponent {
                 this.template.colors.push(`#${r}${g}${b}${opacity_hex}`);
             }
         }
+
+        this.getOpacityColors();
 
         // Fill data
         this.update_data();
@@ -131,6 +134,11 @@ class RectangleGraphic extends GraphicComponent {
         return this.graphic;
     }
     
+    getOpacityColors() {
+        let opacityHex = super.getOpacityHex();
+        this.fillColors = `${this.template.fillColors[0]}${opacityHex}`;
+    }
+
     update_data() {
         // Width is fixed, so it's appended first once
         super.update_data();
@@ -139,7 +147,7 @@ class RectangleGraphic extends GraphicComponent {
             this.template.lineWidth,
             this.template.lineType,
             this.template.colors[0],
-            this.template.fill,
+            this.fillColors,
             this.template.textShow,
             text,
         ];
@@ -177,6 +185,7 @@ class RectangleGraphic extends GraphicComponent {
     
     setTemplate(template) {
         super.setTemplate(template);
+        this.getOpacityColors();
         this.update_option();
     }
 

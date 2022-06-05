@@ -26,6 +26,8 @@ class MenuRectangleGraphic extends MenuChartGraphic {
     static ELEMENT_ID_MENU_RET_VALUES_LABEL = '#menu-ret-values-label-RectangleGraphic';
     static ID_MENU_RET_VALUES = 'menu-ret-values-RectangleGraphic';
     static ELEMENT_ID_MENU_RET_VALUES = '#menu-ret_values-RectangleGraphic';
+
+    static FILL_COLOR_PICKER = '-fillcolor-';
     
     //Events
     // static EVENT_MENU_CLOSE = 'event-menu-close-RectangleGraphic';
@@ -40,8 +42,8 @@ class MenuRectangleGraphic extends MenuChartGraphic {
 
     static EMPTY_FORM = {
         name: '',
-        [Const.RET_LEVELS_ID]: [],
         colors: [],
+        fillColors: [],
         opacity: 30,
         lineWidth: 1,
         lineType: Const.LINE_SOLID,
@@ -57,7 +59,8 @@ class MenuRectangleGraphic extends MenuChartGraphic {
     prev_template = {
         name: 'TMP',
         type: RectangleGraphic.NAME,
-        colors: ['#FF7D00', '#7DFF00', '#007DFF'],
+        colors: ['#FF7D00'],
+        fillColors: ['#FF7D00'],
         opacity: 30,
         lineWidth: 1,
         lineType: Const.LINE_SOLID,
@@ -70,6 +73,7 @@ class MenuRectangleGraphic extends MenuChartGraphic {
         type: RectangleGraphic.NAME,
         levels: [],
         colors: [],
+        fillColors: [],
         opacity: 30,
         lineWidth: 1,
         lineType: Const.LINE_SOLID,
@@ -90,6 +94,20 @@ class MenuRectangleGraphic extends MenuChartGraphic {
         try {
             config = config || MenuRectangleGraphic.EMPTY_FORM;
             super.loadControlsValues(config);
+            this.colorPicker.color = this.template.colors[0];
+            this.colorPickerFillColor.color = this.template.fillColors[0];
+        }
+        catch(error) {
+            console.error(error);
+        }
+    }
+
+    readControlsValues() {
+        try {
+            super.readControlsValues();
+            this.template.colors = [this.colorPicker.color];
+            this.template.fillColors = [this.colorPickerFillColor.color];
+            return this.template;
         }
         catch(error) {
             console.error(error);
@@ -102,6 +120,34 @@ class MenuRectangleGraphic extends MenuChartGraphic {
 
     createMenu() {
         super.createMenu();
+
+        // Color picker
+        this.colorPicker = new ColorPicker({
+            id: `${MenuChartGraphic.COLOR_PICKER}${this.name}`,
+            classControl: Const.CLASS_MENU_FIELD,
+            label: { text: 'Color' },
+            color: this.template.colors[0],
+            callback: color => {
+                this.template.colors = [color];
+                this.ref.setTemplate(this.template);
+            },
+        });
+        this.menu.append_content(this.colorPicker.control);
+        this.colorPicker.init();
+
+        // Fill color picker
+        this.colorPickerFillColor = new ColorPicker({
+            id: `${MenuChartGraphic.COLOR_PICKER}${MenuRectangleGraphic.FILL_COLOR_PICKER}${this.name}`,
+            classControl: Const.CLASS_MENU_FIELD,
+            label: { text: 'Relleno' },
+            color: this.template.fill,
+            callback: color => {
+                this.template.fillColors = [color];
+                this.ref.setTemplate(this.template);
+            },
+        });
+        this.menu.append_content(this.colorPickerFillColor.control);
+        this.colorPickerFillColor.init();
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------

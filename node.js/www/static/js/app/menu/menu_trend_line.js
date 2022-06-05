@@ -100,6 +100,17 @@ class MenuTrendLine extends MenuChartGraphic {
         }
     }
 
+    readControlsValues() {
+        try {
+            super.readControlsValues();
+            this.template.colors = [this.colorPicker.color];
+            return this.template;
+        }
+        catch(error) {
+            console.error(error);
+        }
+    }
+
     createMenuFloat() {
         super.createMenuFloat();
 

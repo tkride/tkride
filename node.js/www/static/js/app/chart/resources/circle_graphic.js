@@ -25,8 +25,8 @@ class CircleGraphic extends GraphicComponent {
     template = {
         ...this.template,
         type: 'CircleGraphic',
-        // colors: [],
-        fill: '#AA552244',
+        colors: ['#AA5522'],
+        fillColors: ['#AA5522'],
         opacity: 100,
         // lineWidth: 2,
         // lineType: Const.LINE_SOLID,
@@ -64,6 +64,8 @@ class CircleGraphic extends GraphicComponent {
             }
         }
 
+        this.getOpacityColors();
+        
         // Fill data
         this.update_data();
     }
@@ -132,6 +134,11 @@ class CircleGraphic extends GraphicComponent {
         return this.graphic;
     }
     
+    getOpacityColors() {
+        let opacityHex = super.getOpacityHex();
+        this.fillColors = `${this.template.fillColors[0]}${opacityHex}`;
+    }
+
     update_data() {
         // Width is fixed, so it's appended first once
         super.update_data();
@@ -140,7 +147,7 @@ class CircleGraphic extends GraphicComponent {
             this.template.lineWidth,
             this.template.lineType,
             this.template.colors[0],
-            this.template.fill,
+            this.fillColors,
             this.template.textShow,
             text,
         ];
@@ -178,6 +185,7 @@ class CircleGraphic extends GraphicComponent {
     
     setTemplate(template) {
         super.setTemplate(template);
+        this.getOpacityColors();
         this.update_option();
     }
 

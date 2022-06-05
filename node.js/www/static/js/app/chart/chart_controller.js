@@ -651,7 +651,7 @@ class ChartController {
             this.templates_dao = new TemplatesDAO(this.interface_ddbb, this.#models);
             this.#EVENT_SOURCE[Fibonacci.NAME] = [this.templates_dao, MenuFibonacci.TITLE];
             this.#EVENT_SOURCE[TrendLine.NAME] = [this.templates_dao, MenuTrendLine.TITLE];
-            this.#EVENT_SOURCE[TrendLine.NAME] = [this.templates_dao, MenuRectangleGraphic.TITLE];
+            this.#EVENT_SOURCE[RectangleGraphic.NAME] = [this.templates_dao, MenuRectangleGraphic.TITLE];
             
             // Create keyboard configuration
             this.keysDao = new KeysDAO(this.interface_ddbb, this.#models);

@@ -201,9 +201,6 @@ class KeysDAO {
             },
         },
         [AlertComponent.NAME] : {
-            [AlertComponent.STATUS_CREATING] : {
-                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
-            },
             [AlertComponent.STATUS_SELECTED] : { 
                 [AlertComponent.EVENT_UNSELECTED] : 'Deseleccionar alerta.',
                 [MenuAlertComponent.EVENT_REMOVE] : 'Eliminar alerta.',

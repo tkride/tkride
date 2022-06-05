@@ -90,6 +90,20 @@ class MenuCircleGraphic extends MenuChartGraphic {
         try {
             config = config || MenuCircleGraphic.EMPTY_FORM;
             super.loadControlsValues(config);
+            this.colorPicker.color = this.template.colors[0];
+            this.colorPickerFillColor.color = this.template.fillColors[0];
+        }
+        catch(error) {
+            console.error(error);
+        }
+    }
+
+    readControlsValues() {
+        try {
+            super.readControlsValues();
+            this.template.colors = [this.colorPicker.color];
+            this.template.fillColors = [this.colorPickerFillColor.color];
+            return this.template;
         }
         catch(error) {
             console.error(error);
@@ -102,6 +116,34 @@ class MenuCircleGraphic extends MenuChartGraphic {
 
     createMenu() {
         super.createMenu();
+
+        // Color picker
+        this.colorPicker = new ColorPicker({
+            id: `${MenuChartGraphic.COLOR_PICKER}${this.name}`,
+            classControl: Const.CLASS_MENU_FIELD,
+            label: { text: 'Color' },
+            color: this.template.colors[0],
+            callback: color => {
+                this.template.colors = [color];
+                this.ref.setTemplate(this.template);
+            },
+        });
+        this.menu.append_content(this.colorPicker.control);
+        this.colorPicker.init();
+
+        // Fill color picker
+        this.colorPickerFillColor = new ColorPicker({
+            id: `${MenuChartGraphic.COLOR_PICKER}${MenuRectangleGraphic.FILL_COLOR_PICKER}${this.name}`,
+            classControl: Const.CLASS_MENU_FIELD,
+            label: { text: 'Relleno' },
+            color: this.template.fill,
+            callback: color => {
+                this.template.fillColors = [color];
+                this.ref.setTemplate(this.template);
+            },
+        });
+        this.menu.append_content(this.colorPickerFillColor.control);
+        this.colorPickerFillColor.init();
     }
 
     //----------------------------- PUBLIC METHODS -----------------------------
