@@ -102,6 +102,11 @@ class KeysDAO {
                     command: { [KeyManager.CMD_KEY_DOWN]: MenuFibonacci.EVENT_REMOVE, },
                 },
             },
+            [Fibonacci.STATUS_EDITING] : {
+                [ Key([KeyCode.ESC]) ]: {
+                    command: { [KeyManager.CMD_KEY_DOWN]: Const.EVENT_CLOSE, },
+                },
+            }
         },
         [TrendLine.NAME] : {
             [GraphicComponent.STATUS_CREATING] : {
@@ -117,6 +122,11 @@ class KeysDAO {
                     command: { [KeyManager.CMD_KEY_DOWN]: MenuFibonacci.EVENT_REMOVE, },
                 },
             },
+            [TrendLine.STATUS_EDITING] : {
+                [ Key([KeyCode.ESC]) ]: {
+                    command: { [KeyManager.CMD_KEY_DOWN]: Const.EVENT_CLOSE, },
+                },
+            }
         },
         [RectangleGraphic.NAME] : {
             [GraphicComponent.STATUS_CREATING] : {
@@ -132,6 +142,11 @@ class KeysDAO {
                     command: { [KeyManager.CMD_KEY_DOWN]: MenuFibonacci.EVENT_REMOVE, },
                 },
             },
+            [RectangleGraphic.STATUS_EDITING] : {
+                [ Key([KeyCode.ESC]) ]: {
+                    command: { [KeyManager.CMD_KEY_DOWN]: Const.EVENT_CLOSE, },
+                },
+            }
         },
         [AlertComponent.NAME] : {
             [GraphicComponent.STATUS_CREATING] : {
@@ -147,6 +162,8 @@ class KeysDAO {
                     command: { [KeyManager.CMD_KEY_DOWN]: MenuFibonacci.EVENT_REMOVE, },
                 },
             },
+            [AlertComponent.STATUS_EDITING] : {
+            }
         },
     };
 
@@ -177,33 +194,45 @@ class KeysDAO {
             [Fibonacci.STATUS_CREATING] : {
                 [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
             },
-            [Fibonacci.STATUS_SELECTED] : { 
+            [Fibonacci.STATUS_SELECTED] : {
                 [Fibonacci.EVENT_UNSELECTED] : 'Deseleccionar Fibonacci.',
                 [MenuFibonacci.EVENT_REMOVE] : 'Eliminar Fibonacci.',
             },
+            [Fibonacci.STATUS_EDITING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+            }
         },
         [TrendLine.NAME] : {
             [TrendLine.STATUS_CREATING] : {
                 [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
             },
-            [TrendLine.STATUS_SELECTED] : { 
+            [TrendLine.STATUS_SELECTED] : {
                 [TrendLine.EVENT_UNSELECTED] : 'Deseleccionar línea de tendencia.',
                 [MenuTrendLine.EVENT_REMOVE] : 'Eliminar línea de tendencia.',
+            },
+            [TrendLine.STATUS_EDITING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
             },
         },
         [RectangleGraphic.NAME] : {
             [RectangleGraphic.STATUS_CREATING] : {
                 [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
             },
-            [RectangleGraphic.STATUS_SELECTED] : { 
+            [RectangleGraphic.STATUS_SELECTED] : {
                 [RectangleGraphic.EVENT_UNSELECTED] : 'Deseleccionar rectángulo.',
                 [MenuRectangleGraphic.EVENT_REMOVE] : 'Eliminar rectángulo.',
             },
+            [RectangleGraphic.STATUS_EDITING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
+            },
         },
         [AlertComponent.NAME] : {
-            [AlertComponent.STATUS_SELECTED] : { 
+            [AlertComponent.STATUS_SELECTED] : {
                 [AlertComponent.EVENT_UNSELECTED] : 'Deseleccionar alerta.',
                 [MenuAlertComponent.EVENT_REMOVE] : 'Eliminar alerta.',
+            },
+            [AlertComponent.STATUS_EDITING] : {
+                [Const.EVENT_CLOSE] : 'Finalizar/cerrar.',
             },
         },
     }

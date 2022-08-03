@@ -6,8 +6,8 @@ class DataModel {
     name;
     ohlc = {};
     movs = {};
-    patternresults = {};
-    // TODO PASAR RESULTADOS DE PATRONES A SU TIPO, EN LUGAR DE INCLUIRLOS TODOS EN patternresults (REVISAR CUANDO SE DESARROLLEN LOS DEMAS CASOS)
+    patternResults = {};
+    // TODO PASAR RESULTADOS DE PATRONES A SU TIPO, EN LUGAR DE INCLUIRLOS TODOS EN patternResults (REVISAR CUANDO SE DESARROLLEN LOS DEMAS CASOS)
     rets = {};
     trend = {};
     next = {};
@@ -484,7 +484,7 @@ class ModelChart {
             level_ = data_source[Const.NIVEL_ID][0];
             // name_ = data_source[Const.NAME_ID][0];
             name_ = data_source[Const.ID_ID][0];
-            model_key_ = query.model_key;
+            model_key_ = query.modelKey;
             if(!this.#pattern_result) { this.#pattern_result = {}; }
             if(!this.#pattern_result[level_]) { this.#pattern_result[level_] = {}; }
 
@@ -502,7 +502,7 @@ class ModelChart {
             //     delta_fin: {[level_]: data_delta_fin},
             //     level: level_,
             //     query: query,
-            //     model_key: model_key_,
+            //     modelKey: model_key_,
             // };
             this.#pattern_result[level_][name_] = {
                 id: data_source[Const.ID_ID][0],
@@ -519,7 +519,7 @@ class ModelChart {
                 level: level_,
                 search_in: query[Const.BUSCAR_EN_ID],
                 query: query,
-                model_key: model_key_,
+                modelKey: model_key_,
             };
         }
         catch(error) {
@@ -553,7 +553,7 @@ class ModelChart {
 
     get pattern_result() { return this.#pattern_result; }
     
-    get_pattern_result(id) {
+    getPatternResult(id) {
         if(this.#pattern_result && this.#pattern_result[level] ) {
             return this.#pattern_result[level][id];
         }

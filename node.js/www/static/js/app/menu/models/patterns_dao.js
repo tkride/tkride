@@ -16,7 +16,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'init',
             [Const.ITERATE_ID]: '20',
             [Const.ONLY_MAX_ID]: '0', //'1',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: '',
             // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         TARGETS: {
@@ -30,7 +30,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: '',
             // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC_SC_UP: {
@@ -44,7 +44,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: '',
             // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC_SC_DOWN: {
@@ -58,7 +58,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_SC_UP',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: 'CC_SC_UP',
             // [Const.RET_LEVELS_FROM_ID]: 'end',
         },
         CC_SC_TARGETS: {
@@ -72,7 +72,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_SC_UP',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: 'CC_SC_UP',
             // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC_1: {
@@ -86,7 +86,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '20',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: '',
             // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         CC: {
@@ -100,7 +100,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '20',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_1',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: 'CC_1',
             // [Const.RET_LEVELS_FROM_ID]: 'end',
         },
         CC_TARGETS: {
@@ -114,7 +114,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '20',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: 'CC_1',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: 'CC_1',
             // [Const.RET_LEVELS_FROM_ID]: 'init',
         },
         ZR: {
@@ -128,7 +128,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'end',
             [Const.ITERATE_ID]: '0',
             [Const.ONLY_MAX_ID]: '0',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: '',
             // [Const.RET_LEVELS_FROM_ID]: '',
         },
         '▲': {
@@ -142,7 +142,7 @@ class PatternsDAO {
             [Const.FROM_ID]: 'init',
             [Const.ITERATE_ID]: '5',
             [Const.ONLY_MAX_ID]: '1',
-            [Const.RET_LEVELS_DATA_SOURCE_ID]: '',
+            [Const.RET_LEVELS_DATA_SOURCE_NAME_ID]: '',
             // [Const.RET_LEVELS_FROM_ID]: '',
         },
     };

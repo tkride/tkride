@@ -16,7 +16,8 @@ class ChartComponent {
     static REFRESH_RATE = 30;
 
     static STATUS_SELECTED = 'selected';
-    
+    static STATUS_EDITING = 'editing';
+
     // static X_AXIS_INDEX = 1;
 
     // CONTROLS
@@ -39,6 +40,7 @@ class ChartComponent {
     static EVENT_PLOT = 'event-chart-component-control-plot';
     static EVENT_SELECTED = 'event-chart-component-control-selected';
     static EVENT_UNSELECTED = 'event-chart-component-control-unselected';
+    static EVENT_DOUBLE_CLICK = 'event-chart-component-control-double-click';
        
     static LINE_TYPE_PATTERN = {
         [Const.LINE_SOLID]: [1, 0],
@@ -104,7 +106,8 @@ class ChartComponent {
     mousedown_cb;
     mouseover_cb;
     mouseout_cb;
-    last_update = 0;
+    lastClick = 0;
+    lastUpdate = 0;
 
     constructor({graphic, template, timeFrame, serialized, magnetMode}) {
         if(serialized) {
@@ -194,9 +197,9 @@ class ChartComponent {
     }
 
     update_option() {
-        let diff_time = (performance.now() - this.last_update)
+        let diff_time = (performance.now() - this.lastUpdate)
         if(diff_time > 10) {
-            this.last_update = performance.now();
+            this.lastUpdate = performance.now();
             this.update_data();
             this.chart.setOption({ series:
                 {
@@ -284,6 +287,8 @@ class ChartComponent {
         }
     }
     
+    isSelected() { return this.controlStatus.selected; }
+
     select() {
         if(this.controlStatus.selected == false) {
             this.controlStatus.selected = true;
@@ -376,7 +381,7 @@ class ChartComponent {
             this.chart.getZr().setCursorStyle('crosshair');
             if(this.controlStatus.selected == false) {
                 this.controlStatus.showControls = false;
-                this.last_update = 0;
+                this.lastUpdate = 0;
                 this.update_option(c);
             }
         }
@@ -401,6 +406,11 @@ class ChartComponent {
         if(this.controlStatus.selected == false) {
             this.select();
         }
+        else {
+            if((performance.now() - this.lastClick) < Const.DOUBLE_CLICK_TIMEOUT) {
+                $(document).trigger(ChartComponent.EVENT_DOUBLE_CLICK, [this]);
+            }
+        }
         if(!this.controlStatus.blocked && this.settings.draggable) {
             this.disable_chart_move();
             this.chart.getZr().on('mousemove', this.mousemove_control, this);
@@ -409,6 +419,7 @@ class ChartComponent {
         if(this.constructor.name == ChartComponent.NAME) {
             this.update_option();
         }
+        this.lastClick = performance.now();
     }
     
     mousemove_control(c) {

@@ -37,7 +37,7 @@ class GraphicComponent extends ChartComponent {
         //     console.warn('UPDATE PERIOD: ', diff);
         // }
 
-        let diff_time = (performance.now() - this.last_update)
+        let diff_time = (performance.now() - this.lastUpdate)
         if(diff_time > ChartComponent.REFRESH_RATE) {
             this.update_data();
             this.chart.setOption({ series:
@@ -52,7 +52,7 @@ class GraphicComponent extends ChartComponent {
                     z: this.settings.z_level,
                 }]
             });
-            this.last_update = performance.now();
+            this.lastUpdate = performance.now();
         }
         // else {
             // console.warn('DIFF TIME: ', diff_time);

@@ -188,7 +188,7 @@ class Binance {
         }
         else {
             function processWebSocket() {
-                let timeout = Date.now() - (parseInt(Date.now()/1000)*1000);
+                let timeout = ((parseInt(Date.now()/1000)*1000) + Time.MS_IN_SECONDS ) - Date.now();
                 this.webSockets[id].object = setTimeout( () => processWebSocket.call(this), timeout);
                 this.getHistoric({ id: active, timeFrame, limit: 2 })
                 .then( data => $(document).trigger(`${Binance.EVENT_VIRTUAL_WEBSOCKET}${id}`, [data]) );

@@ -15,12 +15,13 @@ class RetracementData extends AnalysisData {
     // from;
     // until;
     onlymax = 0;
-    ret_min = -Infinity; //Number.MIN_SAFE_INTEGER;
-    ret_max = Infinity; //Number.MAX_SAFE_INTEGER;
+    retMin = -Infinity; //Number.MIN_SAFE_INTEGER;
+    retMax = Infinity; //Number.MAX_SAFE_INTEGER;
     // logical = '';
     // iterate = 0;
     // query;
 }
+
 
 class Retracements extends Analysis {
 
@@ -29,7 +30,7 @@ class Retracements extends Analysis {
     static NAME = 'Retracements';
 
     //----------------------------- CONSTRUCTOR -----------------------------
-    // Retracements(data) {
+    // constructor(data) {
     //     super(param);
     // }
 
@@ -50,8 +51,9 @@ class Retracements extends Analysis {
         return ret;
     }
 
+
     //----------------------------- PRIVATE METHODS -----------------------------
-    
+
     static #process(request) {
         var ret = new RetracementData();
         try {
@@ -63,7 +65,7 @@ class Retracements extends Analysis {
             let search_in_model = ret[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][search_in];
             let search_in_data = ((search_in_model != undefined) && (search_in != undefined)) ?
                                             JSON.parse(JSON.stringify(search_in_model[Const.DATA_ID])) : undefined;
-            
+
             // If parent results not processed yet, then process to make them available
             if(search_in && !search_in_data) {
                 let request_parent = JSON.parse(JSON.stringify(ret[Const.PATTERNS_ID][search_in]));
@@ -77,7 +79,7 @@ class Retracements extends Analysis {
             }
 
             //
-            let level_data_source = ret[Const.RET_LEVELS_DATA_SOURCE_ID];
+            let level_data_source = ret[Const.RET_LEVELS_DATA_SOURCE_NAME_ID];
 
             let from = ret[Const.QUERY_ID][Const.FROM_ID];
             let until = ret[Const.QUERY_ID][Const.UNTIL_ID];
@@ -86,8 +88,7 @@ class Retracements extends Analysis {
             let levels_from;
 
             // Iterate over all levels
-            data_source.forEach((mov_source, i) => {
-                let level = i;
+            data_source.forEach((mov_source, level) => {
                 let trend_sign = 1;
                 let level_source;
                 let levels_trend;
@@ -151,8 +152,8 @@ class Retracements extends Analysis {
                 search_source.map( (m, i) => {
                     try {
                         let ok = false;
-                        
-                        // If movement has same information than any previous, object is treated as reference! Need to deepcopy (?)
+
+                        // If movement has same information than any previous, object is treated as reference! Need to deepcopy
                         m = JSON.parse(JSON.stringify(m));
                         // console.log(Retracements.toString(m));
                         // Build real movement, based on result (if result obtained from iteration, may not fit with regular movements)
@@ -171,8 +172,8 @@ class Retracements extends Analysis {
                         // Appends new familiy results hash identification;
                         Retracements.append_hash(m);
 
-                        let ret_max = ret[Const.RET_MAX_ID];
-                        let ret_min = ret[Const.RET_MIN_ID];
+                        let retMax = ret[Const.RET_MAX_ID];
+                        let retMin = ret[Const.RET_MIN_ID];
                         // If checks levels in external data
                         if(level_source) {
                             // TODO NO: PUEDEN HABER MULTIPLES SOLUCIONES
@@ -183,14 +184,14 @@ class Retracements extends Analysis {
                                     let new_ret =
                                     Retracements.get_projected_retracement_limits( { parent: parent_source,
                                                                                     movement: m,
-                                                                                    [Const.RET_MAX_ID]: ret.ret_max,
-                                                                                    [Const.RET_MIN_ID]: ret.ret_min,
+                                                                                    [Const.RET_MAX_ID]: ret.retMax,
+                                                                                    [Const.RET_MIN_ID]: ret.retMin,
                                                                                     trend_sign: trend_sign,
                                                                                     levels_from: levels_from } );
-                                    ret_max = new_ret.ret_max;
-                                    ret_min = new_ret.ret_min;
-                                    m[Const.RET_LEVELS_DATA_SOURCE_ID] = { [new_ret.ret_max]: new_ret.value_max,
-                                                                        [new_ret.ret_min]: new_ret.value_min };
+                                    retMax = new_ret.retMax;
+                                    retMin = new_ret.retMin;
+                                    m[Const.RET_LEVELS_DATA_SOURCE_NAME_ID] = { [new_ret.retMax]: new_ret.value_max,
+                                                                        [new_ret.retMin]: new_ret.value_min };
                                     m[Const.RET_DATA_SOURCE_ID] = {   [Const.INIT_ID]: new_ret[Const.INIT_ID],
                                                                         [Const.END_ID]: new_ret[Const.END_ID] };
                             }
@@ -198,11 +199,11 @@ class Retracements extends Analysis {
                                 console.warn(`No match level source for: ${level_source[i]}`);
                             }
                         }
-                        
+
                         // Append retracement levels item list
                         m[Const.RET_LEVELS_ID] = {};
 
-                        ok = ((m[Const.RET_ID] >= ret_min) && (m[Const.RET_ID] <= ret_max));
+                        ok = ((m[Const.RET_ID] >= retMin) && (m[Const.RET_ID] <= retMax));
                         let pending_nok = [];
                         if(ok) retracements.push(m);
                         else {
@@ -211,7 +212,7 @@ class Retracements extends Analysis {
                         }
 
                         // If iteration defined
-                        if(ret[Const.ITERATE_ID] && (m[Const.RET_ID] <= ret_max)) {
+                        if(ret[Const.ITERATE_ID] && (m[Const.RET_ID] <= retMax)) {
                     // TODO Y TENER EN CUENTA QUE LOS RESULTADOS BASE, PUEDEN NO ESTAR EN LOS MOVIMIENTOS FUENTE DIRECTAMENTE (MERGE DE MOVIMIENTOS, RESULTADOS DE ITERACIONES)
                             //TODO BUSCAR EN LOS MOVIMIENTOS A PARTIR DEL SELECCIONADO (O RESULTADO PADRE SELECCIONADO)
                             // let search_remain = search_source.slice(i);
@@ -224,13 +225,13 @@ class Retracements extends Analysis {
                                                             start_movement: m,
                                                             //  source: search_remain,
                                                             source: mov_remain,
-                                                            ret_max: ret_max,
-                                                            ret_min: ret_min,
+                                                            retMax: retMax,
+                                                            retMin: retMin,
                                                             iterations: ret[Const.ITERATE_ID],
                                                             from: from,
                                                             trend_sign: trend_sign,
                             });
-                            
+
                             // If (at least 1) result ok, stores results and nok is emptied
                             if(res_it.ok.length > 0) {
                                 retracements.push(...res_it.ok);
@@ -238,7 +239,7 @@ class Retracements extends Analysis {
                             }
                             else { nok.push(...res_it.nok); }
                         }
-                        
+
                         nok.push(...pending_nok);
                     }
                     catch(err) {
@@ -293,7 +294,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
         return ret;
     }
-    
+
 
     static #parse_request(ret, request) {
         // Validate data source
@@ -307,14 +308,14 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         // // ---- END TRADUCCION TEMPORAL. OBTENER TIPO DE DATOS BIEN EN ORIGEN ----
 
         ret[Const.DATA_TYPE_ID] = this.NAME; //data_type;
-        
+
         // Read request parameters
         // ret[Const.NAME_ID] = request[Const.NAME_ID];
         ret[Const.ID_ID] = request[Const.ID_ID];
         // let trend_req = request[Const.TREND_ID];
         // trend_req = (typeof trend_req === 'undefined') ? undefined : eval(`Const.${trend_req.toUpperCase()}`);
         // ret[Const.TREND_ID] = (trend_req instanceof Array) ? trend_req : [trend_req];
-        
+
         ret[Const.ITERATE_ID] = (request[Const.ITERATE_ID] != undefined) ? parseInt(request[Const.ITERATE_ID]) : 0;
         ret[Const.ONLY_MAX_ID] = (request[Const.ONLY_MAX_ID] != undefined) ? request[Const.ONLY_MAX_ID] : 0;
         ret[Const.FILTER_MODE_ID] = (request[Const.FILTER_MODE_ID] != undefined) ? request[Const.FILTER_MODE_ID] : Const.FILTER_INTERVAL;
@@ -334,7 +335,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         ret[Const.ONLY_MAX_ID] = request[Const.ONLY_MAX_ID];
         ret[Const.SEARCH_IN_ID] = request[Const.SEARCH_IN_ID];
         // ret[Const.SEARCH_IN_DATA_ID] = JSON.parse(JSON.stringify(models[Const.PATTERN_RESULTS_ID][ret[Const.SEARCH_IN_ID]]));
-        
+
         // TODO TEMPORAL DEBERÍA IR EN EL QUERY NO EN LOS DATOS!
         //Set requested level
         let level = request[Const.LEVEL_ID];
@@ -350,20 +351,20 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             return value;
         });
 
-        ret[Const.RET_LEVELS_DATA_SOURCE_ID] = request[Const.RET_LEVELS_DATA_SOURCE_ID];
+        ret[Const.RET_LEVELS_DATA_SOURCE_NAME_ID] = request[Const.RET_LEVELS_DATA_SOURCE_NAME_ID];
         ret[Const.RET_LEVELS_FROM_ID] = request[Const.RET_LEVELS_FROM_ID];
 
         if(ret[Const.LOGICAL_ID] == Const.LOGICAL_LOWER_THAN) {
-            // ret.ret_min = Number.MIN_SAFE_INTEGER;
-            ret.ret_max = Math.max(...ret.levels);
+            // ret.retMin = Number.MIN_SAFE_INTEGER;
+            ret.retMax = Math.max(...ret.levels);
         }
         else if(ret[Const.LOGICAL_ID] == Const.LOGICAL_HIGHER_THAN) {
-            // ret.ret_max = Number.MAX_SAFE_INTEGER;
-            ret.ret_min = Math.min(...ret.levels);
+            // ret.retMax = Number.MAX_SAFE_INTEGER;
+            ret.retMin = Math.min(...ret.levels);
         }
         else {
-            ret.ret_min = Math.min(...ret.levels);
-            ret.ret_max = Math.max(...ret.levels);
+            ret.retMin = Math.min(...ret.levels);
+            ret.retMax = Math.max(...ret.levels);
         }
 
         // Get query fields
@@ -439,7 +440,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
     }
 
 
-    /** 
+    /**
      * @param m1 Movement 1
      * @param m2 Movement 2
      * @param f1 Array of movement fields to be compared.
@@ -455,7 +456,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             if(f2 == undefined) f2 = f1;
             else if(f1.length != f2.length)
                 throw('Error: RetracementData.equal_mov: Parameter f2 length must be null or same length of f1');
-            
+
             res = true;
             f1.forEach( (f, i) => {
                 if(m1[f].time != undefined) {
@@ -463,7 +464,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                             && (m1[f].price == m2[f2[i]].price);
                 }
                 else res &= (m1[f] == m2[f2[i]]);
-            });    
+            });
         }
         else {
             res = (m1[Const.INIT_ID].time == m2[Const.INIT_ID].time)
@@ -476,7 +477,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
     /**
      * filter_: DELETE. Unused version. Filters data based in another source data, compairing specified fields.
-     * @pre Sorted data 
+     * @pre Sorted data
      * @param r1 Data to be filtered.
      * @param r2 Filter reference.
      * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
@@ -516,7 +517,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
     /**
      * filter: Filters data based in another source data, compairing specified fields.
-     * @pre Sorted data 
+     * @pre Sorted data
      * @param r1 Data to be filtered
      * @param r2 Filter reference
      * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
@@ -549,7 +550,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                             }
                         }
                     }
-                    
+
                     if(check_res) {
                         if(compare_hash) {
                             if(m1[Const.HASH_ID].length > m2[Const.HASH_ID].length) {
@@ -606,7 +607,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
 
 
     /**
-     * get_family_trend: Get family trend based on 'from' setting in each query, and base data trend. 
+     * get_family_trend: Get family trend based on 'from' setting in each query, and base data trend.
      * @param {*} model Full data model.
      * @param {*} query Query to build current data.
      * @returns trend_sign: 1 (Const.BULL) | -1 (Const.BEAR).
@@ -702,7 +703,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             let data_ref = filter_params.data_ref;
             let level = filter_params.data_level;
             let parent_name;
-            
+
             do {
                 // Get inmediate parent data
                 parent_name = query[Const.SEARCH_IN_ID];
@@ -753,11 +754,11 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
      * @param retmin Current min retracement value for parent movement.
      * @param trend_sign Stored equivalent trend sign, based on first pattern.
      * @param levels_from Point from movement, where retracement starts: [ init | end | correction ].
-     * @returns Object with { ret_max, value_max, ret_min, value_min, (TimePrice)init, (TimePrice)end } values.
+     * @returns Object with { retMax, value_max, retMin, value_min, (TimePrice)init, (TimePrice)end } values.
      */
     static get_projected_retracement_limits(params) {
-        let ret_max;
-        let ret_min;
+        let retMax;
+        let retMin;
         let value_max;
         let value_min;
         let init;
@@ -765,28 +766,28 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         try {
             let parent = params.parent;
             let mov = params.movement;
-            ret_max = params[Const.RET_MAX_ID];
-            ret_min = params[Const.RET_MIN_ID];
+            retMax = params[Const.RET_MAX_ID];
+            retMin = params[Const.RET_MIN_ID];
             let trend_sign = params.trend_sign;
             let levels_from = params.levels_from;
-            
-            if(Math.abs(ret_max) != Infinity) {
-                value_max = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_max);
+
+            if(Math.abs(retMax) != Infinity) {
+                value_max = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * retMax);
                 let new_delta_end_max = (value_max - mov[Const.END_ID].price);
-                ret_max = ((new_delta_end_max * mov[Const.TREND_ID]) < 0) ?
+                retMax = ((new_delta_end_max * mov[Const.TREND_ID]) < 0) ?
                                     Math.abs(new_delta_end_max / mov[Const.DELTA_INIT_ID]) : 0;
             }
-            if(Math.abs(ret_min) != Infinity) {
-                value_min = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * ret_min);
+            if(Math.abs(retMin) != Infinity) {
+                value_min = parent[Const.END_ID].price - (parent[Const.DELTA_INIT_ID] * retMin);
                 let new_delta_end_min = (value_min - mov[Const.END_ID].price);
-                ret_min = ((new_delta_end_min * mov[Const.TREND_ID] * trend_sign) < 0) ?
+                retMin = ((new_delta_end_min * mov[Const.TREND_ID] * trend_sign) < 0) ?
                                     Math.abs(new_delta_end_min / mov[Const.DELTA_INIT_ID]) : 0;
             }
-            
+
             if(levels_from == Const.END_ID) {
-                let ret_min_tmp = (Math.abs(ret_max) == Infinity) ? 0 : ret_max;
-                ret_max = (Math.abs(ret_min) == Infinity) ? 0 : ret_min;
-                ret_min = ret_min_tmp;
+                let ret_min_tmp = (Math.abs(retMax) == Infinity) ? 0 : retMax;
+                retMax = (Math.abs(retMin) == Infinity) ? 0 : retMin;
+                retMin = ret_min_tmp;
             }
 
             init = parent[Const.INIT_ID];
@@ -798,17 +799,17 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
             throw(msg);
         }
 
-        return { ret_max, value_max, ret_min, value_min, init, end };
+        return { retMax, value_max, retMin, value_min, init, end };
     }
 
 
     /**
      * process_iteration: Searches movements that matches retracement restrictions specified, mergin availables movements.
-     * @param {*} params { start_movement, source, start_idx, ret_max, ret_min, iterations, from, trend_sign }
+     * @param {*} params { start_movement, source, start_idx, retMax, retMin, iterations, from, trend_sign }
      * @param start_movement Base start movement, from where iteration starts.
      * @param source Movements data source array, starting with next to start movement.
-     * @param ret_max Maximum retracement allowed.
-     * @param ret_min Minimum retracement allowed.
+     * @param retMax Maximum retracement allowed.
+     * @param retMin Minimum retracement allowed.
      * @param iterations Number of max iterations (if restriction allows them).
      * @param from 'From' where movement is started, referenced from a parent source.
      * @param trend_sign Result ascendant trend sign.
@@ -820,14 +821,14 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
         try {
             let m = JSON.parse(JSON.stringify(params.start_movement));
             let source = params.source;
-            let ret_max = params.ret_max;
-            let ret_min = params.ret_min;
+            let retMax = params.retMax;
+            let retMin = params.retMin;
             let max_iter = params.iterations;
             let iter = 0;
             let end_fixed = (params.from == Const.END_ID) ? true : false;
             let trend_sign = (params.trend_sign < 0) ? Const.BEAR : Const.BULL;
             let delete_nok = false; // If (at least) 1 solution is ok => nok is emptied
-            
+
             let ms = source.filter( mov => mov[Const.TREND_ID] == m[Const.TREND_ID]);
             let prev_ret = m[Const.RET_ID];
 
@@ -847,18 +848,18 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                     if(JSON.stringify(new_mov) != JSON.stringify(m)) {
                         //TODO EL LIMITE TAMBIEN SE TIENE QUE COMPROBAR POR EL MINIMO, RECORDAR QUE HACIA SI HABIA UNA CORRECCION POR DEBAJO DEL INICIO, PERO NO ERA FINAL DEL MOVIMIENTO
                         //TODO SE DESPLAZABA EL INICIO DEL MOVIMIENTO
-                        
+
                         // Updates hash id for family results
                         Retracements.increment_hash(new_mov);
-                        
+
                         // Check retracement restrictions
-                        let check = ((new_mov[Const.RET_ID] >= ret_min) && (new_mov[Const.RET_ID] <= ret_max));
+                        let check = ((new_mov[Const.RET_ID] >= retMin) && (new_mov[Const.RET_ID] <= retMax));
                         // if( (check == false) || (prev_ret > new_mov[Const.RET_ID]) ) {
                         if(check == false) {
                             if(delete_nok == false) {
                                 nok.push(new_mov);
                             }
-                            if(new_mov[Const.RET_ID] > ret_max) break;
+                            if(new_mov[Const.RET_ID] > retMax) break;
                         }
                         else {
                             ok.push(new_mov);
@@ -1029,7 +1030,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                 }
                 max_filtered.push(group_curr);
             }
-            
+
             // If length hasn't changed, decrements iterator index ...
             if(source.length == total_len) {
                 last_idx--;
@@ -1118,7 +1119,7 @@ request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][request[Const.ID_ID]] = ret;
                 // Update current total length
                 total_len = source.length;
             }
-            
+
             idx++;
         }
         console.timeEnd('filter_max');

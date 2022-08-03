@@ -81,7 +81,7 @@ class PanelPatterns {
     #result_data;
     #query = {};
 
-    #model_key;
+    #modelKey;
     #prev_count = 0;
     #current_name;
     #current_order;
@@ -137,10 +137,10 @@ class PanelPatterns {
             if(disabled) {
                 this.#enable_explorer();
             }
-            $(PanelPatterns.ELEMENT_PATTERNS_SECTION_VISUALIZATION).children().removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(PanelPatterns.ELEMENT_PATTERNS_SECTION_VISUALIZATION).children().removeClass(Const.CLASS_SELECTED);
             // $(PanelPatterns.ELEMENT_PATTERNS_SECTION_VISUALIZATION).children().addClass(Const.CLASS_HOVERABLE_ICON);
             if(mode) {
-                $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED); // + ' ' + Const.CLASS_HOVERABLE_ICON);
+                $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + mode + ']').toggleClass(Const.CLASS_SELECTED); // + ' ' + Const.CLASS_HOVERABLE_ICON);
             }
             if(mode != PanelPatterns.TEXT_SELECTION) {
                 this.#hide_visualization_selection();
@@ -244,7 +244,7 @@ class PanelPatterns {
     }
     
     #init_explorer_values(name) {
-        let data = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name];
+        let data = this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name];
         this.#explorer[name] = {};
         this.#explorer[name][Const.OK_ID] = {};
 
@@ -288,7 +288,7 @@ class PanelPatterns {
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_OK_COUNT).text(this.ok);
         $(PanelPatterns.ELEMENT_PATTERNS_RESULTS_EXPLORER_NOK_COUNT).text(this.nok);
         this.#visual_conf.mode = PanelPatterns.TEXT_ONLY_CURRENT;
-        $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + this.#visual_conf.mode + ']').toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED); // + ' ' + Const.CLASS_HOVERABLE_ICON);
+        $(PanelPatterns.ELEMENT_CLASS_PATTERNS_VISUALIZATION_SHOW_MODE + '[name=' + this.#visual_conf.mode + ']').toggleClass(Const.CLASS_SELECTED); // + ' ' + Const.CLASS_HOVERABLE_ICON);
         this.#hide_visualization_selection();
     }
 
@@ -399,7 +399,7 @@ class PanelPatterns {
             
             // if( (this.#current_name) && (this.#current_model[this.#current_name]) ) {
             if( (this.#current_name)
-                && (this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][this.#current_name])
+                && (this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][this.#current_name])
                 && (this.#results_selected.length))
             {
                 console.time('update current');
@@ -432,9 +432,9 @@ class PanelPatterns {
                 do {
                     if(name) {
                         let trend = Const.TREND_VAL[this.trend];
-                        let curr_query = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name][Const.QUERY_ID];
+                        let curr_query = this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name][Const.QUERY_ID];
 
-                        data_plot[name] = Object.assign(new RetracementData(), this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name]);
+                        data_plot[name] = Object.assign(new RetracementData(), this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name]);
                         // If showing multiple results, son data (ex:PHY) should be always OK data (instead NOK (ex:TARGETS)) ...
                         // ... we search NOK in previous valid results, not previous NOK results
                         let current_result_data = this.result_data;
@@ -449,23 +449,33 @@ class PanelPatterns {
                         });
 
 
-                        data_plot[name][Const.DATA_ID] = { };
-                        data_plot[name][Const.NOK_ID] = { };
+                        data_plot[name].data = { };
+                        data_plot[name].nok = { };
 
                         if(!parent_info) {
                             // Filters selected trend and results from retracement data
-                            data_plot[name][Const.DATA_ID][this.level] = data.filter( (v, i) => selected_data.includes(i));
+                            // data_plot[name][Const.DATA_ID][this.level] = data.filter( (v, i) => selected_data.includes(i));
+                            // data_plot[name][current_result_data][this.level] = data.filter( (v, i) => selected_data.includes(i));
+                            data_plot[name].data[this.level] = data.filter( (v, i) => selected_data.includes(i));
                         }
                         else {
-                            let parent_name = parent_info[Const.ID_ID];
-                            let from = parent_info[Const.FROM_ID];
-                            let { from_ref, until_ref, from_new, until_new } = Retracements.get_comparison_fields(from);
-                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [until_ref], [until_new]);
-                            data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [from_ref, until_ref], [from_new, until_new]);
+                            let parent_name = parent_info.ID;
+                            let from = parent_info.from;
+                            // let { fromRef, untilRef, fromNew, untilNew } = Retracements.get_comparison_fields(from);
+                            let { fromRef, untilRef, fromNew, untilNew } = RetracementsAnalysis.getComparisonFields(from);
+                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [untilRef], [untilNew]);
+                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [fromRef, untilRef], [fromNew, untilNew]);
+                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][this.result_data][this.level], [fromRef, untilRef], [fromNew, untilNew]);
+                            data_plot[name].data[this.level] = RetracementsAnalysis.filter({r1: data,
+                                                                                            //   r2: data_plot[parent_name][this.result_data][this.level],
+                                                                                            r2: data_plot[parent_name].data[this.level],
+                                                                                            f1: [fromRef, untilRef],
+                                                                                            f2: [fromNew, untilNew],
+                                                                                            compareHash: false});
                         }
 
                         parent_info = Object.assign({}, curr_query);
-                        name = parent_info[Const.SEARCH_IN_ID];
+                        name = parent_info.searchin;
                     }
                 } while(name);
 
@@ -473,7 +483,7 @@ class PanelPatterns {
                 // Deletes unselected results from final data
                 Object.keys(data_plot).forEach( name => {
                     if(this.#results_selected.includes(name) == false) {
-                        data_plot[name][Const.DATA_ID] = {}
+                        data_plot[name].data = {}
                     }
                 });
 
@@ -491,10 +501,13 @@ class PanelPatterns {
                     let dateMin = Object.values(data_plot).map( r => (r.data[this.level]) ?
                                                     r.data[this.level].map(t => t[Const.INIT_ID].time) : undefined)
                                                     .filter( d => d != undefined);
+                    dateMin = dateMin.filter(f => f.length);
                     dateMin = dateMin.reduce( (a,b) => a < b ? a : b)[0];
+
                     let dateMax = Object.values(data_plot).map( r => (r.data[this.level]) ?
                                                     r.data[this.level].map(t => t[Const.CORRECTION_ID].time) : undefined)
                                                     .filter( d => d != undefined);
+                    dateMax.filter(f => f.length);
                     dateMax = dateMax.reduce( (a,b) => a > b ? a : b)[0];
                     this.#visual_conf.zoom = {
                         startValue: {x: dateMin, y:priceMin},
@@ -556,7 +569,7 @@ class PanelPatterns {
             let sbear = (data.stats[this.level] != undefined) ? data.stats[this.level].filter(s => s[Const.TREND_ID] == Const.BEAR)[0] : JSON.parse(PanelPatterns.STATS_TEMPLATE);
 
             stats = {
-                model_info: this.#model_key,
+                model_info: this.#modelKey,
                 // title: data[Const.NAME_ID],
                 title: data[Const.ID_ID],
                 header: [Const.BULL_ID.toUpperCase(), Const.BEAR_ID.toUpperCase()],
@@ -578,7 +591,7 @@ class PanelPatterns {
             let name = $(el).text();
             let tree_order;
             let name_order;
-            $(el).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(el).toggleClass(Const.CLASS_SELECTED);
 
             // Stores all previous reuslts names selected (to manager chart deletion)
             if(this.#results_selected.length > 0) {
@@ -589,7 +602,7 @@ class PanelPatterns {
             }
 
             // If new data is selected
-            if($(el).hasClass(Const.CLASS_HOVERABLE_ICON_SELECTED)) {
+            if($(el).hasClass(Const.CLASS_SELECTED)) {
                 // Insert new selected into correct order tree
                 name_order = this.#set_result_tree_order(name);
             }
@@ -704,7 +717,7 @@ class PanelPatterns {
     }
 
     #create_names_tree(name) {
-        let data = this.#models[this.#model_key][Const.PATTERN_RESULTS_ID][name];
+        let data = this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name];
         if(data) {
             this.#data_tree.push(name);
             let parent = data[Const.SEARCH_IN_ID];
@@ -721,7 +734,7 @@ class PanelPatterns {
 
     #reset_panel() {
         this.#is_initilized = false;
-        this.#model_key = null;
+        this.#modelKey = null;
         this.#data_tree = [];
         this.#current_name = null;
         this.#current_order = null;
@@ -754,7 +767,7 @@ class PanelPatterns {
                 this.#reset_panel();
                 if(query) {
                     this.query = query;
-                    this.#model_key = query.model_key;
+                    this.#modelKey = query.modelKey;
                     this.level = query[Const.LEVEL_ID];
                     // let name = query[Const.NAME_ID];
                     let name = query[Const.ID_ID];
@@ -922,7 +935,7 @@ class PanelPatterns {
 //     get current_match() {
 //         if(this.#current_name) {
 //             let trend_name = (this.trend == Const.BULL_ID) ? '_BULL_' : '_BEAR_';
-//             let id = this.#model_key + trend_name + this.current;
+//             let id = this.#modelKey + trend_name + this.current;
 //             let data = {
 //                 dataType: Const.RETRACEMENTS_ID,
 //                 data_y: [this.#current_model[this.#current_name].data_y[this.trend][this.current]],

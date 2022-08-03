@@ -125,8 +125,8 @@ class MenuMovs {
     #close_menu() {
         if($(MenuMovs.MENU).is(':visible')) {
             $(MenuMovs.MENU).toggle();
-            // $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_HOVERABLE_ICON_SELECTED);
-            $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            // $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_SELECTED);
+            $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_SELECTED);
             this.#options.active = false;
         }
     }
@@ -150,14 +150,14 @@ class MenuMovs {
 
             $(document).on(MenuMovs.EVENT_CLOSE_MENU, e => this.#close_menu());
 
-            $(document).on(ControlSettings.EVENT_MOVS_MENU, (e, active, model_key) => {
+            $(document).on(ControlSettings.EVENT_MOVS_MENU, (e, active, modelKey) => {
                 if($(MenuMovs.MENU).is(':visible') == false) {
-                    that.update_active(active, model_key);
+                    that.update_active(active, modelKey);
                 }
                 that.#options.active = !that.#options.active;
                 $(MenuMovs.MENU).toggle();
-                // $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_HOVERABLE_ICON_SELECTED);
-                $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                // $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_HOVERABLE_ICON + ' ' + Const.CLASS_SELECTED);
+                $(MenuMovs.MENU_ICON).toggleClass(Const.CLASS_SELECTED);
                 $(document).trigger(MenuMovs.EVENT_SHOW_MOVEMENTS, that.options);
             });
             console.log('Movs menu initialized OK.');
@@ -167,9 +167,9 @@ class MenuMovs {
         }
     }
 
-    update_active(active, model_key) {
+    update_active(active, modelKey) {
         this.active = active;
-        this.id = model_key; //KeyTicker(this.active, model_key);
+        this.id = modelKey; //KeyTicker(this.active, modelKey);
         this.set_active_label(this.active);
     }
 

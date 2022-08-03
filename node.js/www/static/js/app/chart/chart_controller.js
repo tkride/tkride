@@ -123,10 +123,10 @@ class ChartController {
 
     #process_patterns_ret(ops, that) {
         return new Promise((resolve, reject) => {
-            // let model_key = that.activeChart.modelKey; // TODO XXX PASAR CHART
-            let model_key = ops.model_key;
-            // let result = that.#chart_models[model_key].get_pattern_result(ops[Const.ID_ID]);
-            let result = that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]];
+            // let modelKey = that.activeChart.modelKey; // TODO XXX PASAR CHART
+            let modelKey = ops.modelKey;
+            // let result = that.#chart_models[modelKey].getPatternResult(ops[Const.ID_ID]);
+            let result = that.#models[modelKey][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]];
             let in_memory = false;
             // If result exists, check same parameters and values in query
             if(result) {
@@ -147,25 +147,41 @@ class ChartController {
             }
             else {
                 try {
-                    // ops[Const.DATA_ID] = that.#models[model_key][Const.MOVS_ID]; //[level];
-                    ops[Const.MODEL_ID] = that.#models[model_key];
+                    // ops[Const.DATA_ID] = that.#models[modelKey][Const.MOVS_ID]; //[level];
+                    ops[Const.MODEL_ID] = that.#models[modelKey];
                     ops[Const.PATTERNS_ID] = that.#models[Const.PATTERNS_ID];
                     // Process recursively all parent results
-                    let ret = Retracements.process(ops);
+                    // let ret = Retracements.process(ops);
+
+                    let ops2 = JSON.parse(JSON.stringify(ops));
+                    // Process all parent dependant results for request
+                    let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops2, model: that.#models});
+                    Object.values(resultsTree).forEach( (request) => {
+                        let ra = new RetracementsAnalysis();
+                        let retb = ra.process({request, model: that.#models});
+                        // Stores result in model
+                        that.#models[modelKey].patternResults[retb.ID] = retb;
+                    });
+                    // let ra = new RetracementsAnalysis();
+                    // let retb = ra.process({request: ops2, model: that.#models});
+                    // let retb = ra.process({request: ops2, model: that.#models[modelKey], patterns: that.#models[Const.PATTERNS_ID]});
+
                     //TODO MOVER PATTERN RESULT DE #chart_models A #models
-                    // that.#models[model_key][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
+                    // that.#models[modelKey][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
                     // Store retracements results
                     // ops[Const.DATA_ID] = ret;
-                    if(!ret.error) resolve(ret);
-                    // else reject(`ERROR processing retracements. Data returned: ${ret.error}`);
-                    else reject(`${ret.error}`);
+
+                    // if(!ret.error) resolve(ret);
+                    // if(!ret.error) resolve(retb);
+                    // else reject(`${ret.error}`);
+                    resolve();
                 }
                 catch(err) {
                     // reject(`ERROR processing retracements: ${err}`);
                     reject(`${err}`);
                 }
-                // that.load_movements(model_key, ops[Const.NIVEL_ID], that.#menus[MenuMovs.NAME].level_max)
-                // .then( () => that.interface.select_movements(model_key, ops[Const.NIVEL_ID]))
+                // that.load_movements(modelKey, ops[Const.NIVEL_ID], that.#menus[MenuMovs.NAME].level_max)
+                // .then( () => that.interface.select_movements(modelKey, ops[Const.NIVEL_ID]))
                 // .then(() => that.load_retracements(ops))
                 // .then( data => resolve(data))
                 // .catch( error => reject(error));
@@ -238,8 +254,8 @@ class ChartController {
             // Get initial date time
             let end_time = Time.now(Time.FORMAT_STR);
             // let init_time = Time.subtract_value(end_time, 100000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
-            let init_time = Time.subtract_value(end_time, 15000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
-            // let init_time = Time.subtract_value(end_time, 150, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
+            // let init_time = Time.subtract_value(end_time, 15000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
+            let init_time = Time.subtract_value(end_time, 150, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
 
             let query = { [Const.ACTIVE_ID]:chartInfo.active[Const.ID_ID],
                         [Const.BROKER_ID]:chartInfo.active[Const.BROKER_ID],
@@ -390,9 +406,9 @@ class ChartController {
             $(document).on(ControlSettings.EVENT_CHART_AUTO_SCALE, (e, key) => {
                 //TODO HAY QUE GUARDAR LA CONF DE ZOOM COMPLETA EN CTES, Y QUITAR LA PARTE DE ZOOM Y (yAxisIndex) PARA QUE HAGA AUTOSCALE EN Y
                 console.log('AUTOSCALE');
-                let model_key = this.activeChart.modelKey;
-                let y_max = Math.max(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
-                let y_min = Math.min(... that.#chart_models[model_key].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
+                let modelKey = this.activeChart.modelKey;
+                let y_max = Math.max(... that.#chart_models[modelKey].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
+                let y_min = Math.min(... that.#chart_models[modelKey].ohlc.data_y.map(h => h[3]).filter(d => d!=undefined).filter(d => d!= NaN) );
                 that.activeChart.chart.setOption({ yAxis: { scale: true, min: y_min, max: y_max} });
                 // that.activeChart.chart.setOption({ dataZoom: [ ChartView.DATA_ZOOM_X_INSIDE_FILTER/*, ChartView.DATA_ZOOM_X_SLIDER*/ ] }, { replaceMerge: ['dataZoom']} );
                 that.activeChart.chart.setOption(ChartView.CHART_ZOOM_Y_DISABLED);
@@ -415,7 +431,7 @@ class ChartController {
         if(!$._data(document, 'events')[ChartController.EVENT_ADD_CHART]) {
             $(document).on(ChartController.EVENT_ADD_CHART, (e, ops) => {
                 console.log('EVENT_ADD_CHART');
-                let id = this.create_chart({place: {col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+                let id = this.createChart({place: {col:ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
                 let prevActive = this.activeChart.active;
                 this.selectChart({id})
                 this.updateChartActive({
@@ -450,7 +466,7 @@ class ChartController {
 
         $(Const.ELEMENT_ID_PERSIST_MODE).on('click', (e) => {
             this.persistMode = !this.persistMode;
-            $(e.target).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(e.target).toggleClass(Const.CLASS_SELECTED);
             // // Manages cancel operation
             // if(this.persistMode) { $(document).on(Const.EVENT_CLOSE, (e) => $(Const.ELEMENT_ID_PERSIST_MODE).trigger('click')); }
             // else { $(document).off(Const.EVENT_CLOSE); }
@@ -458,7 +474,7 @@ class ChartController {
 
         $(Const.ELEMENT_ID_MAGNET_MODE).on('click', (e) => {
             this.magnetMode = !this.magnetMode;
-            $(e.target).toggleClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(e.target).toggleClass(Const.CLASS_SELECTED);
             let graphics = Object.values(this.#view.chart_tree[this.activeChart.chart.id][Const.GRAPHICS_ID]);
             if(graphics.length) {
                 graphics.forEach(g => g.setMagnetMode(this.magnetMode));
@@ -482,8 +498,9 @@ class ChartController {
         
         // Declare create event
         $(document).on(ChartComponent.EVENT_CREATE, (e, graphicClass) => {
-            let conf = (this.#menus[graphicClass.NAME]) ? this.#menus[graphicClass.NAME].prev_template : {};
-            $(document).trigger(Const.EVENT_CLOSE);
+            // let conf = (this.#menus[graphicClass.NAME]) ? this.#menus[graphicClass.NAME].prev_template : {};
+            let conf = (this.#menus[graphicClass.NAME]) ? this.#menus[graphicClass.NAME].template : {};
+            conf = (conf.name && conf.name.length) ? conf : (this.#menus[graphicClass.NAME].prev_template || {});
             graphicClass.create({ chart: this.activeChart.chart, template: conf, timeFrame: this.activeChart.active[Const.TIME_FRAME_ID], magnetMode: this.magnetMode });
         });
         
@@ -499,18 +516,29 @@ class ChartController {
             }
         });
 
+        $(document).on(ChartComponent.EVENT_DOUBLE_CLICK, (e, params) => {
+            let menuName = params.constructor.name;
+            if(this.#menus[menuName]) {
+                $(document).trigger(MenuChartGraphic.EVENT_OPEN_SETTINGS, [this.#menus[menuName].ref])
+            }
+        });
+
         $(document).on(ChartComponent.EVENT_UNSELECTED, (e, params) => {
             params = params || this.selected.at(-1);
             let menu_name = params.constructor.name;
             if(this.#menus[menu_name]) {
-                this.#menus[menu_name].hide_float();
-                this.#menus[menu_name].hide();
+                // Removes from selected list
                 let idx = this.selected.indexOf(params);
                 if(idx != -1) {
                     this.selected.splice(idx, 1);
                 }
-                this.keyManager.setContext({})
-                $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
+                // If no more selections, hides menus
+                if(this.selected.length == 0) {
+                    this.#menus[menu_name].hide_float();
+                    this.#menus[menu_name].hide();
+                    this.keyManager.setContext({})
+                    $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
+                }
             }
         });
 
@@ -522,7 +550,7 @@ class ChartController {
             if((!this.persistMode) || (param == Const.EVENT_CANCELED)) {
                 let icon = this.#MENUS_ICON_GRAPHIC[type];
                 if(icon) {
-                    $(icon).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                    $(icon).removeClass(Const.CLASS_SELECTED);
                 }
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             }
@@ -534,11 +562,17 @@ class ChartController {
         });
             
         $(document).on(MenuChartGraphic.EVENT_OPEN_SETTINGS, (e, params) => {
-            let menu_name = params.constructor.name;
-            if(this.#menus[menu_name]) {
+            let menuName = params.constructor.name;
+            this.keyManager.setContext({ context: [menuName], sub: [ChartComponent.STATUS_EDITING] })
+            if(this.#menus[menuName]) {
                 $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
-                this.#menus[menu_name].show(params);
+                this.#menus[menuName].show(params);
             }
+        });
+
+        $(document).on(MenuChartGraphic.EVENT_MENU_CLOSE, (e, params) => {
+            let menuName = params;
+            this.keyManager.setContext({ context: [menuName], sub: [ChartComponent.STATUS_SELECTED] })
         });
 
         $(document).on(MenuChartGraphic.EVENT_REMOVE, (e, graphic) => {
@@ -730,10 +764,10 @@ class ChartController {
             //TODO REFACTORIZAR CONTENIDO A METODO
             $(document).on(MenuMovs.EVENT_SHOW_MOVEMENTS, (e, opt) => {
                 console.log('CONTROLLER EVENT SHOW MOVEMENTS', e, opt);
-                let model_key = this.activeChart.modelKey;
+                let modelKey = this.activeChart.modelKey;
                 let series_to_del = [];
-                if(that.#chart_models[model_key].movs) {
-                    series_to_del = Object.keys(that.#chart_models[model_key].movs).map(k => that.#chart_models[model_key].movs[k].id);
+                if(that.#chart_models[modelKey].movs) {
+                    series_to_del = Object.keys(that.#chart_models[modelKey].movs).map(k => that.#chart_models[modelKey].movs[k].id);
                 }
 
                 if(opt.active) {
@@ -770,7 +804,7 @@ class ChartController {
             $(document).on(MenuPatterns.EVENT_SHOW_PATTERNS, function(e, query) {
                 let start_time = 0;
                 that.writeStatus({info:'Buscando coincidencias...', loading:1});
-                query.model_key = that.activeChart.modelKey;
+                query.modelKey = that.activeChart.modelKey;
                 start_time = performance.now();
                 if(that.#patterns_cb[query[Const.TIPO_PARAM_ID]]) {
                     that.#patterns_cb[query[Const.TIPO_PARAM_ID]](query, that)
@@ -806,8 +840,8 @@ class ChartController {
 
                 series_to_del = [];
                 Object.keys(pattern).forEach(k => {
-                    if(that.#models[this.activeChart.modelKey].patternresults[pattern[k][Const.ID_ID]].data[pattern[k].level]) {
-                        series_to_del.push(that.#models[this.activeChart.modelKey].patternresults[pattern[k][Const.ID_ID]][Const.ID_ID]);
+                    if(that.#models[this.activeChart.modelKey].patternResults[pattern[k][Const.ID_ID]].data[pattern[k].level]) {
+                        series_to_del.push(that.#models[this.activeChart.modelKey].patternResults[pattern[k][Const.ID_ID]][Const.ID_ID]);
                     }
                 });
                 
@@ -862,7 +896,9 @@ class ChartController {
                 }
             });
 
-            $(document).on(ChartComponent.EVENT_UNSELECTED, (e) => this.#view.unselect({ chart: this.activeChart, items:[Const.WILDCARD] }) );
+            // $(document).on(ChartComponent.EVENT_UNSELECTED, (e) => this.#view.unselect({ chart: this.activeChart, items:[Const.WILDCARD] }) );
+
+            $(document).on(ChartView.EVENT_MAXIMIZE_CHART, (e, id) => this.toggleMaximizeChart(id) );
 
             this.#init_events_models();
             console.log("Chart Controller Initialized OK.");
@@ -981,8 +1017,8 @@ class ChartController {
     //----------------------------- CHART METHODS -----------------------------
 
     generate_model_key({active, chartId}) {
-        let model_key = KeyTicker(active) + chartId;
-        return model_key;
+        let modelKey = KeyTicker(active) + chartId;
+        return modelKey;
     }
     
     updateChartActive({chartInfo, newActive, zoom}) {
@@ -1004,17 +1040,23 @@ class ChartController {
         this.updateChartActive({chartInfo, newActive});
     }
 
-    updateLayout(row) {
-        let w = (100 / this.#chart_layout[row]) + '%';
+    updateLayout() {
         let h = (100 / this.#chart_layout.length) + '%';
-        $('.'+ChartController.CLASS_CHART_LAYOUT).css({
-            'width': w,
-            'height': h
+        this.#chart_layout.forEach( row => {
+            let w = (100 / row) + '%';
+            $('.'+ChartController.CLASS_CHART_LAYOUT).css({
+                width: w,
+                height: h,
+                display: 'block'
+            });
         });
-
+            
+        // Updates all charts sizes to new layout
+        // Object.values(this.#chartFrames).forEach( cf => cf.chart.resize());
+        $(window).trigger('resize');
     }
 
-    generate_layout({id, place}) {
+    addFrame({id, place}) {
         let row = 0;
         let frame = $('<div />',
                     { 'id':id, class: `${ChartController.CLASS_CHART_LAYOUT}` });
@@ -1043,7 +1085,7 @@ class ChartController {
         }
         
         this.#chart_layout[row] += 1;
-        this.updateLayout(row);
+        this.updateLayout();
         // this.#chart_layout[row] += 1;
         // let w = (100 / this.#chart_layout[row]) + '%';
         // let h = (100 / this.#chart_layout.length) + '%';
@@ -1052,18 +1094,36 @@ class ChartController {
         //     'height': h
         // });
 
-        // Updates all charts sizes to new layout
-        let charts = Object.keys(this.#chartFrames);
-        charts.forEach( c => this.#chartFrames[c].chart.resize());
+        // // Updates all charts sizes to new layout
+        // let charts = Object.keys(this.#chartFrames);
+        // charts.forEach( c => this.#chartFrames[c].chart.resize());
 
         return frame;
     }
 
-    create_chart({id, place}) {
+    toggleMaximizeChart(id) {
+        // If more than 1 chart, maximized selected one
+        if(Object.keys(this.#chartFrames).length > 1) {
+            this.#chartFrames[id].maximized = !this.#chartFrames[id].maximized;
+            if(this.#chartFrames[id].maximized) {
+                let dispBkp = this.#chartFrames[id].frame.css('display');
+                this.#chart_layout.forEach( () => {
+                    $('.'+ChartController.CLASS_CHART_LAYOUT).css({ display: 'none' });
+                });
+                this.#chartFrames[id].frame.css({ display: dispBkp });
+                $(window).trigger('resize');
+            }
+            else {
+                this.updateLayout();
+            }
+        }
+    }
+
+    createChart({id, place}) {
         try {
             id = id || (this.#n_frames + '_' + Date.now());
-            let frame = this.generate_layout({id, place});
-            let chart = this.#view.create_chart({ id: id, frame: frame })
+            let frame = this.addFrame({id, place});
+            let chart = this.#view.initChart({ id: id, frame: frame })
             this.#create_header({id, frame});
 
             // Stores chart information in array
@@ -1072,7 +1132,8 @@ class ChartController {
                 num: this.#n_frames,
                 frame: frame,
                 chart: chart,
-                zoom: {}
+                zoom: {},
+                maximized: false,
             };
 
             // Increase number of total frames
@@ -1213,7 +1274,7 @@ class ChartController {
                     let model = new ModelChart();
                     this.#chart_models[modelKey] = model;
                     this.#chart_models[modelKey].splitOhlcData({query:query, data: rawData});
-                    // this.#chart_models[model_key].split_ohlc_data(rawData);
+                    // this.#chart_models[modelKey].split_ohlc_data(rawData);
                     console.timeEnd('historic');
                     resolve(this.#chart_models[modelKey].ohlc);
             })
@@ -1368,7 +1429,7 @@ class ChartController {
                 // TODO PROCESAR CARGA DE HISTORICO (AGREGAR ACTIVO EN this.#chartFrames[id_frame])
                 // TODO AGREGAR MARCO AL FRAME
                 // TODO CREAR WEB SOCKET
-                this.create_chart({id: id, place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+                this.createChart({id: id, place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
                 this.selectChart({id});
                 this.updateChartActive({
                     chartInfo: this.activeChart,
@@ -1390,6 +1451,11 @@ class ChartController {
                             catch(error) { console.error(`Error deserializing graphic control: ${error}`); }
                         });
                         this.#view.draw_chart_component(graphics, this.#chartFrames[frameId].chart);
+                        graphics.forEach( g => {
+                            if(g.isSelected()) {
+                                $(document).trigger(ChartComponent.EVENT_SELECTED, [g]);
+                            }
+                        });
                     }
                 });
             })
@@ -1401,7 +1467,7 @@ class ChartController {
         }
         // If no session loaded
         else {
-            let id = this.create_chart({place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
+            let id = this.createChart({place: { col: ChartController.LAYOUT_RIGHT, row: ChartController.LAYOUT_ON_ROW }});
             this.selectChart({id});
             this.updateChartActive({
                 chartInfo: this.activeChart,

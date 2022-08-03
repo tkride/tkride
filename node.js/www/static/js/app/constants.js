@@ -183,7 +183,8 @@ class Const {
     static CLASS_DISABLED = 'disabled';
     static CLASS_HOVERABLE_CLOSE = 'hoverable-close';
     static CLASS_HOVERABLE_ICON = 'hoverable-icon';
-    static CLASS_HOVERABLE_ICON_SELECTED = 'selected';
+    static CLASS_SELECTED = 'selected';
+    // static CLASS_HOVERABLE_ICON_SELECTED = 'selected';
     static CLASS_BUTTON_GENERAL = 'button-general';
     static CLASS_BUTTON_SLIM = 'button-general slim';
     static CLASS_HOVERABLE_TEXT = 'hoverable-text';
@@ -238,6 +239,8 @@ class Const {
     static BULL = 1;
     static BEAR = -1;
     static BOTH = [-1, 1];
+    static TREND_SAME = 1;
+    static TREND_CHANGE = -1;
     static BULL_ID = 'bull';
     static BEAR_ID = 'bear';
     static BOTH_ID = 'both';
@@ -277,7 +280,7 @@ class Const {
     static TRADES_ID = 'trades';
 
     // GENERIC DEFINITIONS
-    static MODEL_KEY_ID = 'model_key';
+    static MODEL_KEY_ID = 'modelKey';
     static MODEL_ID = 'model';
     static QUERY_ID = 'query';
     static DATA_ID = 'data';
@@ -310,20 +313,21 @@ class Const {
     static LEVEL_ID = 'level';
     static RET_LEVELS_ID = 'levels';
     static SEARCH_IN_ID = 'searchin';
-    static SEARCH_IN_DATA_ID = 'searchindata';
+    static SEARCH_IN_DATA_ID = 'searchInData';
     static ITERATE_ID = 'iterate';
     static ONLY_MAX_ID = 'onlymax';
     static FILTER_MODE_ID = 'filtermode';
-    static PATTERN_RESULTS_ID = 'patternresults';
+    static PATTERN_RESULTS_ID = 'patternResults';
     static PATTERNS_ID = 'patterns';
-    static RET_LEVELS_DATA_SOURCE_ID = 'levelsdatasource';
+    static RET_LEVELS_DATA_SOURCE_NAME_ID = 'levelsDataSourceName';
+    static RET_LEVELS_DATA_SOURCE_ID = 'levelsDataSource';
     static RET_LEVELS_FROM_ID = 'levelsfrom';
     
     static RET_DATA_SOURCE_ID = 'datasource';
 
     static LOGICAL_ID = 'logical';
-    static RET_MIN_ID = 'ret_min';
-    static RET_MAX_ID = 'ret_max';
+    static RET_MIN_ID = 'retMin';
+    static RET_MAX_ID = 'retMax';
     
     static HASH_SEP_STR = '-';
 
@@ -406,8 +410,17 @@ class Const {
 
     static WILDCARD = '*';
 
+    static DOUBLE_CLICK_TIMEOUT = 200; //ms
+    static DOUBLE_CLICK_WAIT = 200*2/3; //ms
 }
 
+
+/**
+ * Conf
+ * @abstract Manages graphic controls events for creation and menu binding
+ * Initialized @ main ChartController, and composed by dictionary with each:
+ * [GraphicControl]: MenuGraphicControl
+ */
 class Conf {
     static GRAPHIC_CONTROLS = {};
     //  = {

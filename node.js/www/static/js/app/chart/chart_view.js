@@ -106,6 +106,7 @@ class ChartView {
 
     static EVENT_CHART_FRAME_CLICKED = 'event-chart-frame-clicked';
     static EVENT_SELECT_CHART = 'event-select-chart';
+    static EVENT_MAXIMIZE_CHART = 'event-maximize-chart';
 
     static lastSelectedChart;
 
@@ -176,7 +177,7 @@ class ChartView {
                 // level: level_,
                 // search_in: query[Const.SEARCH_IN_ID],
                 // query: query,
-                // model_key: model_key,
+                // modelKey: modelKey,
             };
         }
         catch(error) {
@@ -243,7 +244,7 @@ class ChartView {
 
 
     //----------------------------- PUBLIC METHODS -----------------------------
-    create_chart(params) {
+    initChart(params) {
         let id = params.id;
         let frame = params.frame[0];
         let chart = echarts.init(frame, null, {
@@ -1364,11 +1365,13 @@ class ChartView {
         var x1 = 0, y1 = 0;
         var x2 = 0, y2 = 0;
         var that = this;
+        let lastClickTime = 0;
+        let idTimer = 0;
 
         chart.getZr().on('mousedown', (e) => {
             let [x, y] = chart.convertFromPixel({ xAxisIndex:0, yAxisIndex:0}, [e.offsetX, e.offsetY]);
-            let xzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_X_INSIDE_ID))[0];
-            let yzoom = chart._model.option.dataZoom.filter(z => z.id.includes(ChartView.DATA_ZOOM_Y_INSIDE_ID))[0];
+            let xzoom = chart._model.option.dataZoom.filter(z => z.id && z.id.includes(ChartView.DATA_ZOOM_X_INSIDE_ID))[0];
+            let yzoom = chart._model.option.dataZoom.filter(z => z.id && z.id.includes(ChartView.DATA_ZOOM_Y_INSIDE_ID))[0];
             if( (x > xzoom.endValue) && (y < yzoom.startValue)) {
             }
             else if(x > xzoom.endValue) {
@@ -1381,22 +1384,37 @@ class ChartView {
                 chart.getZr().setCursorStyle('e-resize');
                 chart.getZr().on('mousemove', dragAxisZoom);
             }
-            // Unselect all graphic's controls except clicked one
             else {
-                if(chart.id != ChartView.lastSelectedChart) {
-                    $(document).trigger(ChartView.EVENT_SELECT_CHART, [chart.id]);
-                    ChartView.lastSelectedChart = chart.id;
+                // If double click in blank chart zone, maximizes selected chart
+                if((!e.target) && (performance.now() - lastClickTime) < Const.DOUBLE_CLICK_TIMEOUT) {
+                    if(idTimer) clearTimeout(idTimer);
+                    $(document).trigger(ChartView.EVENT_MAXIMIZE_CHART, [chart.id]);
                 }
-                Object.values(this.chart_tree[chart.id][Const.GRAPHICS_ID]).forEach( g => {
-                    let target_name = (e.target) ? e.target.parent.name : '';
+                else {
+                    // Unselect all graphic's controls except clicked one
+                    idTimer = setTimeout( () => processClick.call(this, e), Const.DOUBLE_CLICK_WAIT);
+                }
+                lastClickTime = performance.now();
+            }
+        });
+
+        function processClick(e) {
+            if(chart.id != ChartView.lastSelectedChart) {
+                $(document).trigger(ChartView.EVENT_SELECT_CHART, [chart.id]);
+                ChartView.lastSelectedChart = chart.id;
+            }
+
+            let target_name = (e.target) ? e.target.parent.name : '';
+            Object.keys(this.chart_tree).forEach( chartId => {
+                Object.values(this.chart_tree[chartId][Const.GRAPHICS_ID]).forEach( g => {
                     if(g[Const.ID_ID] != target_name) {
                         if(typeof g.unselect == "function") {
                             g.unselect();
                         }
                     }
                 });
-            }
-        });
+            });
+        }
 
         function dragAxisZoom(e) {
             if(x1) {

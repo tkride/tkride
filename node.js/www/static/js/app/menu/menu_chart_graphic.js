@@ -264,17 +264,14 @@ class MenuChartGraphic {
     updateLock() {
         try {
             if(this.ref.controlStatus.blocked) {
-                this.block.removeClass(`${Const.CLASS_ICON_UNLOCK}`); // ${Const.CLASS_HOVERABLE_ICON}`);
-                this.block.addClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
-                this.remove.removeClass(Const.CLASS_HOVERABLE_ICON);
-                this.remove.addClass(Const.CLASS_DISABLED);
+                this.block.removeClass(`${Const.CLASS_ICON_UNLOCK}`);
+                this.block.addClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_SELECTED}`);
             }
             else {
-                this.block.removeClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_HOVERABLE_ICON_SELECTED}`);
-                this.block.addClass(`${Const.CLASS_ICON_UNLOCK}`);// ${Const.CLASS_HOVERABLE_ICON}`);
-                this.remove.addClass(Const.CLASS_HOVERABLE_ICON);
-                this.remove.removeClass(Const.CLASS_DISABLED);
+                this.block.removeClass(`${Const.CLASS_ICON_LOCK} ${Const.CLASS_SELECTED}`);
+                this.block.addClass(`${Const.CLASS_ICON_UNLOCK}`)
             }
+            this.remove.toggleClass(Const.CLASS_DISABLED, this.ref.controlStatus.blocked);
         }
         catch(error) {
             console.error(error);
@@ -352,6 +349,7 @@ class MenuChartGraphic {
         this.settings.on('click', e => $(document).trigger(MenuChartGraphic.EVENT_OPEN_SETTINGS, [this.ref]));
         
         // Remove
+        // TODO AGREGAR DIÁLOGO DE CONFIRMACIÓN
         this.remove = $('<div>', {
             id: MenuChartGraphic.ID_MENU_FLOAT_REMOVE+this.name,
             class: `${Const.CLASS_ICON_REMOVE} ${Const.CLASS_HOVERABLE_ICON}`,
@@ -384,6 +382,9 @@ class MenuChartGraphic {
             id: MenuChartGraphic.ID_MENU_FLOAT_STORED_TEMPLATES+this.name,
             items: [],
             event: MenuChartGraphic.EVENT_STORED_SELECTED_FLOAT+this.name,
+            // TODO GENERAR UN NOMBRE PARA CADA OBJETO, NO SE MOSTRARÁ PLANTILLA BASE.
+            // TODO SI SE MODIFICA, SE HACE SOBRE SU PROPIA PLANTILLA, NO SOBRE LA PLANTILLA BASE
+            // header: { arrow: true, },
             header: { selected: true },
             select_unknown: true,
             class: `${Const.CLASS_HOVERABLE_ICON}`,
@@ -427,7 +428,9 @@ class MenuChartGraphic {
             close_cb: this.hide.bind(this),
         });
 
-        this.menu.element_handle_close.on('click', e =>  $(document).trigger(MenuChartGraphic.EVENT_MENU_CLOSE+this.name, [this.name]) );
+        // this.menu.element_handle_close.on('click', e =>  $(document).trigger(MenuChartGraphic.EVENT_MENU_CLOSE+this.name, [this.name]) );
+        this.menu.element_handle_close.on('click', e =>  $(document).trigger(MenuChartGraphic.EVENT_MENU_CLOSE, [this.name]) );
+
         this.menu.control.hide();
 
         // Add separator

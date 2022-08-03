@@ -66,10 +66,10 @@ class Fibonacci extends GraphicComponent {
                 graphic[Const.RET_ID] = Math.abs(graphic[Const.DELTA_END_ID] / graphic[Const.DELTA_INIT_ID]);
                 
                 let ret_levels = graphic[Const.RET_LEVELS_ID];
-                graphic[Const.RET_LEVELS_DATA_SOURCE_ID] = [];
+                graphic[Const.RET_LEVELS_DATA_SOURCE_NAME_ID] = [];
                 Object.keys(ret_levels).forEach(l => {
                     let level_yvalue = graphic[Const.END_ID].price - (graphic[Const.DELTA_INIT_ID] * l);
-                    graphic[Const.RET_LEVELS_DATA_SOURCE_ID][l] = level_yvalue;
+                    graphic[Const.RET_LEVELS_DATA_SOURCE_NAME_ID][l] = level_yvalue;
                 });
             }
 
@@ -77,7 +77,7 @@ class Fibonacci extends GraphicComponent {
 
             this.template = { ...this.template, ...template };
 
-            let ret_levels = (graphic[Const.RET_LEVELS_DATA_SOURCE_ID]) ? graphic[Const.RET_LEVELS_DATA_SOURCE_ID] : graphic[Const.RET_LEVELS_ID];
+            let ret_levels = (graphic[Const.RET_LEVELS_DATA_SOURCE_NAME_ID]) ? graphic[Const.RET_LEVELS_DATA_SOURCE_NAME_ID] : graphic[Const.RET_LEVELS_ID];
             this.values.yvalues = Object.values(ret_levels).filter(l => l);
             if(this.template.levels == undefined) {
                 this.template.levels = Object.keys(graphic[Const.RET_LEVELS_ID]);

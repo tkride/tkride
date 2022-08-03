@@ -32,23 +32,23 @@ class EventController {
 
     #set_icons(sel_icon) {
         this.#menus_icons.each( (i, mi) => {
-            $(mi).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(mi).removeClass(Const.CLASS_SELECTED);
             // $(mi).addClass(Const.CLASS_HOVERABLE_ICON);
         });
-        $(sel_icon).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+        $(sel_icon).addClass(Const.CLASS_SELECTED);
     }
 
     #manage_patterns_menu() {
         if(MenuPatterns.is_visible()) {
             $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).hide();
-            $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_SELECTED);
             // $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
             $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
         }
         else {
             $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).show();
             $(document).trigger(MenuPatterns.EVENT_BUILD_MENU);
-            $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+            $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_SELECTED);
             // $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
             $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
             $(document).trigger(Const.EVENT_UPDATE_MODEL, [MenuPatterns.NAME]);
@@ -100,14 +100,13 @@ class EventController {
                 $(document).trigger(PanelPatterns.EVENT_PATTERNS_RESULTS_AVAILABLE);
             });
 
-            // TODO XXX GESTIONAR EVENTO DE FORMA GENERICA
             Conf.getGraphicControlsNames().forEach( g => {
                 let menuClass = Conf.getGraphicControlsMenu(g);
                 let graphicClass = eval(g);
                 $(document).on('click', menuClass.MENU_ICON, e => {
                     // $(document).trigger(graphicClass.EVENT_CREATE);
                     $(document).trigger(ChartComponent.EVENT_CREATE, graphicClass);
-                    $(menuClass.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                    $(menuClass.MENU_ICON).addClass(Const.CLASS_SELECTED);
                     // $(menuClass.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON);
                     $(document).trigger(ChartController.EVENT_DISABLE_KEYS);
                     $(document).trigger(Const.EVENT_UPDATE_MODEL, [g]);
@@ -126,7 +125,7 @@ class EventController {
 
             $(document).on(MenuPatterns.EVENT_MENU_CLOSE, e => {
                 $(MenuPatterns.ELEMENT_ID_MENU_PATTERNS).hide();
-                $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_HOVERABLE_ICON_SELECTED);
+                $(MenuPatterns.MENU_ICON).removeClass(Const.CLASS_SELECTED);
                 // $(MenuPatterns.MENU_ICON).addClass(Const.CLASS_HOVERABLE_ICON);
                 $(document).trigger(ChartController.EVENT_ENABLE_KEYS);
             });

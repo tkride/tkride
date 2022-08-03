@@ -193,6 +193,7 @@ class MenuFibonacci extends MenuChartGraphic {
 
         levelAdd.on('click', e => {
             this.template.levels.push( this.template.levels.at(-1) || 1);
+            this.template.colors.push( this.template.colors.at(-1) || 1);
             this.inputColors.push(this.addLevelControl(this.template.levels.at(-1), this.template.levels.length-1));
         })
 
@@ -209,6 +210,8 @@ class MenuFibonacci extends MenuChartGraphic {
                 this.menu.remove(this.levelControlLines.at(-1)[0]);
                 this.levelControlLines.pop();
             }
+            this.ref.setTemplate(this.template);
+            this.lastLevelSide = !this.lastLevelSide;
         })
 
         this.createLevelControls();
@@ -247,7 +250,7 @@ class MenuFibonacci extends MenuChartGraphic {
 
     addLevelControl(level, i) {
         let lc = new InputColor({
-            id: `${MenuFibonacci.LEVEL_CONTROL_NAME}${level}-${i}`,
+            id: `${MenuFibonacci.LEVEL_CONTROL_NAME}-${this.name}-${this.template.name}-${i}`,
             // classControl: Const.CLASS_MENU_FIELD,
             input: {
                 input: { text: level },

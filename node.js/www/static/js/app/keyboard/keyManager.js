@@ -134,6 +134,7 @@ class KeyManager {
         this.#current = { context, sub };
     }
     
+    // TODO HACER MENÚ CONFIGURACIÓN, SERÁ NECESARIO LEER TODA LA CONFIGURACIÓN, CONTEXTOS Y LOS COMANDOS DEL TECLADO
     get shortcuts() { this.#shortcuts; }
     set shortcuts({context, sub, command, keys}) {
         if(this.#shortcuts[context]) {

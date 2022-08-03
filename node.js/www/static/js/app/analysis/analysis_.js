@@ -24,10 +24,9 @@
  }
  */
 
-class AnalysisData {
+class AnalysisData_ {
     data = {};
     nok = {};
-    searchindata = {};
     stats = {};
     searchin = '';
     iterate = 0;
@@ -37,17 +36,18 @@ class AnalysisData {
     limit_min = -Infinity;
     limit_max = Infinity;
     logical = '';
+    trend;
 
     sourceData = {};
     validationData = {};
-    searchInData = {};
+    searchInData; // = {};
 }
 
 
 
 /** 'analysis.js' */
 
-class Analysis {
+class Analysis_ {
     
     //----------------------------- STATIC, CONSTANTS -----------------------------
     
@@ -61,42 +61,93 @@ class Analysis {
     constructor() {
     }
 
-    //----------------------------- PRIVATE METHODS -----------------------------
+    //----------------------------- STATIC METHODS -----------------------------
 
-    static #process(request) {
-        var ret = new AnalysisData();
-
+    static getFamilyRequestTree({request, model, force = false}) {
+        let res = [];
         try {
-            Analysis.parseRequest(ret, request);
-            ret = Analysis.#process(request);
-        }
-        catch(error) {
+            // If searches in previous pattern results, copy them or process parent requests recursively to get them
+            let parentRequest = request.patterns[request.searchin];
+            while(parentRequest) {
+                let level = request.level;
+                parentRequest.modelKey = request.modelKey;
+                let searchInModel = model[parentRequest.modelKey].patternResults[parentRequest.ID];
+                
+                // If no parent source data available or forces process, will add request to request vector
+                if( ((searchInModel ? searchInModel.data[level] : undefined) === undefined) || force) {
+                    res.push(parentRequest);
+                }
+                parentRequest = model.patterns[parentRequest.searchin];
+            }
 
+            // Stores current request
+            res.push(request);
         }
+        catch (error) {
+            console.error(error);
+        }
+        return res;
     }
+
+    //----------------------------- PRIVATE METHODS -----------------------------
 
     //----------------------------- PUBLIC METHODS -----------------------------
     
-    static process(request) {
-        var ret = {};
+    process(request) {
+        let ret = {};
         try {
-            console.time(`Analysis ${request[Const.ID_ID]}`);
+            console.time(`Analisys_${this.constructor.name}-${request[Const.ID_ID]}`);
             ret = this.parseRequest(request);
-            ret = Analysis.#process(request);
+            this.prepareData(ret);
+            this.buildIterators(ret);
+            while(this.iterate()) {
+
+            }
         }
         catch(error) {
-            // ret.error = `Retracements process ERROR: ${error}.`;
             ret.error = `${error}.`;
             console.error(ret.error);
         }
-        console.timeEnd(`Analysis ${request[Const.ID_ID]}`);
+        console.timeEnd(`Analisys_${this.constructor.name}-${request[Const.ID_ID]}`);
         return ret;
     }
 
 
-    static parseRequest(request) {
-        var ret;
+
+    /**
+     * parseRequest
+     * @abstract Parses request into valid values to perform analisys.
+     * @param request Base request.
+     * @returns 
+     */
+     parseRequest(request) {
+        let ret = new AnalysisData_();
         try {
+            console.time('analysis-parseRequest');
+
+            // ---- WORKAROUND: Infinity is not JSON parseable value
+            ret = JSON.parse(JSON.stringify(request, (k, v) => (v == Infinity) ? "Infinity" : v),
+                             (k, v) => (v == "Infinity") ? Infinity : v);
+            ret = Object.assign(new AnalysisData_(), ret);
+            // ----
+
+            console.timeEnd('analysis-parseRequest');
+            ret.datatype = AnalysisData_.name;
+
+            // let { until_ref } = this.#getComparisonFields(ret[Const.FROM_ID]);
+            // ret[Const.UNTIL_ID] = until_ref;
+
+            //Set requested level
+            // ret.level = ret.level ? (parseInt(ret.level)-1) : 0;
+            ret.level = ret.level ? parseInt(ret.level) : 0;
+
+            // // Get query fields
+            // ret[Const.QUERY_ID] = JSON.parse(JSON.stringify(ret));
+
+            // // Store model information by reference
+            // ret[Const.MODEL_ID] = request[Const.MODEL_ID];
+            // ret[Const.PATTERNS_ID] = request[Const.PATTERNS_ID];
+            // ret[Const.MODEL_KEY_ID] = request[Const.MODEL_KEY_ID];
         }
         catch (error) {
             ret.error = `${error}.`;
@@ -107,7 +158,6 @@ class Analysis {
 
 
     static prepareData() {
-
     }
 
 
@@ -136,7 +186,7 @@ class Analysis {
      * append_hash: Appends hash count identificator, to family results.
      * @param {*} m Movement.
      */
-     static append_hash(m) {
+     static appendHash(m) {
         m[Const.HASH_ID] = m[Const.HASH_ID] + Const.HASH_SEP_STR + 0;
     }
 

@@ -197,7 +197,7 @@ class MenuPatterns {
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected = pattern[Const.ONLY_MAX_ID];
         $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MODE).data('RadioButton').selected = pattern[Const.FILTER_MODE_ID];
         // this.set_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX, pattern[Const.ONLY_MAX_ID]);
-        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').select(pattern[Const.RET_LEVELS_DATA_SOURCE_ID]);
+        $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').select(pattern[Const.RET_LEVELS_DATA_SOURCE_NAME_ID]);
         // $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected = pattern[Const.RET_LEVELS_FROM_ID];
     }
 
@@ -239,7 +239,7 @@ class MenuPatterns {
         pattern[Const.ONLY_MAX_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MAX).data('RadioButton').selected;
         // pattern[Const.ONLY_MAX_ID] = that.get_radio(MenuPatterns.ID_PATTERNS_MENU_RET_FILTER_MAX);
         pattern[Const.FILTER_MODE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_FILTER_MODE).data('RadioButton').selected;
-        pattern[Const.RET_LEVELS_DATA_SOURCE_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').selected;
+        pattern[Const.RET_LEVELS_DATA_SOURCE_NAME_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_DATA_SOURCE).data('Dropdown').selected;
         // pattern[Const.RET_LEVELS_FROM_ID] = $(MenuPatterns.ELEMENT_ID_PATTERNS_MENU_RET_LEVELS_FROM).data('RadioButton').selected;
         return pattern;
     }
