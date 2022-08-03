@@ -409,7 +409,8 @@ class RetracementsAnalysis extends Analysis_ {
      */
     sort(data) {
         try {
-            Object.values(data).forEach( d => d.sort());
+            // Object.values(data).forEach( d => d.sort()); // Do not modifies object!
+            Object.keys(data).forEach( k => data[k].sort());
         }
         catch (error) {
             console.error(error);    
@@ -431,10 +432,80 @@ class RetracementsAnalysis extends Analysis_ {
             console.log(`Apply filter ► type: ${type},  mode: ${mode}.`);
             // retracements = Retracements.filter_max_movements({source: retracements, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
             // nok = Retracements.filter_max_movements({source: nok, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
+
+            Object.keys(data).forEach( k => {
+                console.time('filterResults');
+                let dataLen = data[k].length;
+                let idx = 0;
+                mode = (mode != undefined) ? mode : Const.FILTER_INTERVAL;
+                while(idx < dataLen) {
+                    // Get first init current time
+                    // let init_current_time = source[idx][Const.INIT_ID].time;
+                    let initTime = data[k][idx].timestamp;
+                    let trend = data[k][idx].trend;
+                    let group = [];
+
+                    // Select all retracements which starts at same time that current init with same trend
+                    // let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
+                    let init = data[k].filter( m => (m.timestamp == initTime) && (m.trend == trend) );
+
+                    if(init.length > 1) {
+                        // Get last correction instant for all movements that start at same time
+                        let correctionTime = init.reduce( (a, b) => (a.correction.time > b.correction.time) ? a : b );
+                        correctionTime = correctionTime.correction.time;
+
+                        // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
+                        // let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
+                        //                                         && (m.correction.time <= corr_current_time)
+                        //                                         && (m.trend == trend_current) );
+
+                        group = data[k].filter(m => {
+                            let res = (mode == Const.FILTER_FAMILY) ?
+                                        (m.timestamp == initTime)
+                                        : (m.timestamp >= initTime);
+                            res &= (m.correction.time <= correctionTime)
+                                    && (m.trend == trend);
+                            return res;
+                        });
+
+                        // If more than 1 result, max filter can be applied
+                        if(group.length > 1) {
+                            // Delete from source current movement group
+                            // source.splice(idx, group_current.length);
+                            data[k] = data[k].filter( m => group.includes(m) == false);
+
+                            // Get max
+                            if(type == Const.ONLY_MAX_MOVEMENT) {
+                                // From this group, greater movement
+                                group = group.reduce( (prev, curr) => {
+                                    let max_prev = Math.abs(prev.deltainit) + Math.abs(prev.deltaend)
+                                    let max_curr = Math.abs(curr.deltainit) + Math.abs(curr.deltaend)
+                                    if(max_prev > max_curr) return prev;
+                                    return curr;
+                                });
+                            }
+                            else if(type == Const.ONLY_MAX_RETRACEMENT) {
+                                // From this group, greater retracement
+                                group = group.reduce( (prev, curr) => (prev.retracement > curr.retracement) ? prev: curr);
+                            }
+
+                            // Re-insert filtered max
+                            data[k].splice(idx, 0, group);
+
+                            // Update current total length
+                            dataLen = data[k].length;
+                        }
+                    }
+                    
+                    idx++;
+                }
+                console.timeEnd('filterResults');
+            });
         }
         catch (error) {
-            console.error(error);
+            console.error(error);    
         }
+        // return data;
     }
 
     /**
@@ -503,6 +574,251 @@ class RetracementsAnalysis extends Analysis_ {
         }
     }
 
+    /**
+     * getComparisonFields: Get fields to be compared, based on truth table build from 'from' field.
+     * @param {*} from 'from' field from query.
+     * @returns Object { fromRef, untilRef, fromNew, untilNew }
+     */
+     static getComparisonFields(from) {
+        let untilRef;
+        let untilNew;
+        let fromRef;
+        let fromNew;
+        if(from == Const.INIT_ID) {
+            fromRef = Const.INIT_ID;
+            untilRef = Const.END_ID;
+            fromNew = Const.INIT_ID;
+            untilNew = Const.END_ID;
+        }
+        else if(from == Const.END_ID) {
+            fromRef = Const.END_ID;
+            untilRef = Const.CORRECTION_ID;
+            fromNew = Const.INIT_ID;
+            untilNew = Const.END_ID;
+        }
+        else if(from == Const.CORRECTION_ID) {
+            fromRef = Const.CORRECTION_ID;
+            untilRef = Const.CORRECTION_ID;
+            fromNew = Const.INIT_ID;
+            untilNew = Const.INIT_ID;
+        }
+        return { fromRef, untilRef, fromNew, untilNew };
+    }
+
+    /**
+     * get_projected_retracement_limits: Get retracement limits projected from another movement
+     * @param parent Parent movement information.
+     * @param movement Current analized movement information.
+     * @param retmax Current max retracement value for parent movement.
+     * @param retmin Current min retracement value for parent movement.
+     * @param trend_sign Stored equivalent trend sign, based on first pattern.
+     * @param levels_from Point from movement, where retracement starts: [ init | end | correction ].
+     * @returns Object with { retMax, valueMax, retMin, valueMin, (TimePrice)init, (TimePrice)end } values.
+     */
+     static getProjectedRetracementLimits({parent, mov, retMax, retMin, trendSign, levelsFrom}) {
+        let value_max;
+        let value_min;
+        let init;
+        let end;
+        try {
+            if(Math.abs(retMax) != Infinity) {
+                value_max = parent.end.price - (parent.deltainit * retMax);
+                let new_delta_end_max = (value_max - mov.end.price);
+                retMax = ((new_delta_end_max * mov.trend) < 0) ?
+                                    Math.abs(new_delta_end_max / mov.deltainit) : 0;
+            }
+            if(Math.abs(retMin) != Infinity) {
+                value_min = parent.end.price - (parent.deltainit * retMin);
+                let new_delta_end_min = (value_min - mov.end.price);
+                retMin = ((new_delta_end_min * mov.trend * trendSign) < 0) ?
+                                    Math.abs(new_delta_end_min / mov.deltainit) : 0;
+            }
+
+            if(levelsFrom == Const.END_ID) {
+                let ret_min_tmp = (Math.abs(retMax) == Infinity) ? 0 : retMax;
+                retMax = (Math.abs(retMin) == Infinity) ? 0 : retMin;
+                retMin = ret_min_tmp;
+            }
+
+            init = parent[Const.INIT_ID];
+            end = parent.end;
+        }
+        catch(error) {
+            let msg = `ERROR: @RetracementsAnalysis::get_parent_retracement_limits: ${error}.`;
+            console.error(msg);
+            throw(msg);
+        }
+
+        return { retMax, valueMax, retMin, valueMin, init, end };
+    }
+
+    /**
+     * filter: Filters data based in another source data, compairing specified fields.
+     * @pre Sorted data
+     * @param r1 Data to be filtered
+     * @param r2 Filter reference
+     * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
+     * @param f2 Specific fields comparison for r2. If omitted = f1.
+     * @param compareHash true: Check hash id relationship matches. false: othercase. (Default value: true).
+     * @param duplicates If set to true, may return duplicate movements in results. (Default value: false).
+     * @returns Array r1 filtered with movs/retracements given in r2
+     */
+     static filter({r1, r2, f1, f2, compareHash = true, duplicates = false}) {
+        if(!f1 || !f1.length) f1 = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
+        if(!f2 || !f2.length) f2 = f1;
+         let res = [];
+         try {
+            r2.map(m2 => {
+                // let idx;
+                r1.map( (m1, j) => {
+                    let checkRes = true;
+                    for(let i = 0; i < f1.length; i++) {
+                        let c1 = f1[i];
+                        let c2 = f2[i];
+                        if((c1 != undefined) && (c2 != undefined)) {
+                            if((m1[c1].time != undefined) && (m1[c1].price != undefined)) {
+                                if ((m2[c2].time != m1[c1].time) || (m2[c2].price) != m1[c1].price) {
+                                    checkRes = false;
+                                    break;
+                                }
+                            }
+                            else if(m2[c2] != m1[c1]) {
+                                checkRes = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(checkRes) {
+                        if(compareHash) {
+                            if(m1.hash.length > m2.hash.length) {
+                                checkRes = m1.hash.includes(m2.hash);
+                            }
+                            else {
+                                checkRes = m2.hash.includes(m1.hash);
+                            }
+                        }
+                        if(checkRes) { res.push(m1); }
+                    }
+                });
+            });
+            
+            res.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
+
+            if(!duplicates && (res.length > 1)) {
+                res = res.filter( (m, i) => res.indexOf(m) === i);
+            }
+        }
+        catch(error) {
+            let msg = `${this.constructor.name}::filter: ${error}`;
+            console.error(msg);
+            throw(msg);
+        }
+        return res;
+    }
+
+    /**
+     * mergeMovement
+     * @abstract Merges 2 movements. Mergin rules are applied based on trend of first movement.
+     * @param m1 Base start movement information.
+     * @param m2 End movement information.
+     * @param endFixed Fixed end point of movement. If new one cannot fit, ends iteration. Default value: true.
+     * @param copy true: Works with copy of m1 object. false: overwrites m1 movement object. true if omitted.
+     * @returns
+     * @ New movement result of merging rules*: { value: merged, done: false }.
+     * @ If m1 equals m2, returns { value: m1, done: false }.
+     * @ If merging rules ends movement, returns { value: merged, done: true }.
+     * @ If m1 or m2 are missing, returns { value: undefined, done: true }.
+     */
+    static mergeMovement({m1, m2, endFixed = true, copy = true}) {
+        let m;
+        let done = false;
+        let valid = true;
+        try {
+            // Check both movements exists
+            if(m1 && m2) {
+                if(copy) { m = JSON.parse(JSON.stringify(m1)); }
+                else { m = m1; }
+                
+                // m1 & m2 are different movements, apply merging
+                if((m1.init.time != m2.init.time) || (m1.end.time != m2.end.time) || (m1.correction.time != m2.correction.time)) {
+                    // Bull trend movements
+                    let initGreater = (m1.init.price < m2.init.price);
+                    let endGreater = (m1.end.price < m2.end.price);
+                    let correctionGreater = (m1.correction.price < m2.correction.price);
+                    // If bear trend
+                    if (m.init.price > m.end.price) {
+                        initGreater = !initGreater;
+                        endGreater = !endGreater;
+                        correctionGreater = !correctionGreater;
+                    }
+
+                    if(initGreater) {
+                        if(endGreater) {
+                            if(endFixed) {
+                                done = true;
+                            }
+                            else {
+                                m.end = m2.end;
+                                m.correction = m2.correction;
+                                m.deltainit = m.end.price - m.init.price;
+                                m.deltaend = m.correction.price - m.end.price;
+                            }
+                        }
+                        else {
+                            if(correctionGreater) {
+                                valid = false;
+                            }
+                            else {
+                                m.correction = m2.correction;
+                                m.deltaend = m.correction.price - m.end.price;
+                            }
+                        }
+                    }
+                    else {
+                        if(endGreater) {
+                            done = true;
+                        }
+                        else {
+                            if(correctionGreater) {
+                                valid = false;
+                                // if(Math.abs(m2.deltainit) > Math.abs(m.deltainit)) {
+                                    done = true;
+                                // }
+                            }
+                            else {
+                                m.correction = m2.correction;
+                                m.deltaend = m.correction.price - m.end.price;
+                            }
+                        }
+                    }
+                    
+                    if(m && valid) {
+                        m.retracement = m.deltaend / m.deltainit;
+                        if(m.retracement > 0) {
+                            done = true;
+                        }
+                        else {
+                            m.retracement = Math.abs(m.retracement);
+                        }
+                    }
+                } // if m1 & m2 different movements
+            }
+            // At least 1 source movements is missing
+            else {
+                done = true;
+            }
+
+            if(done) {
+                m = undefined;
+            }
+        }
+        catch(error) {
+            console.error(error);
+        }
+        return { value: m, valid: valid, done: done };
+    }
+
 
     //----------------------------- PRIVATE METHODS -----------------------------
     
@@ -530,37 +846,6 @@ class RetracementsAnalysis extends Analysis_ {
             // throw(error);
             console.error(error);
         }
-    }
-    
-    /**
-     * getComparisonFields: Get fields to be compared, based on truth table build from 'from' field.
-     * @param {*} from 'from' field from query.
-     * @returns Object { fromRef, untilRef, fromNew, untilNew }
-     */
-    static getComparisonFields(from) {
-        let untilRef;
-        let untilNew;
-        let fromRef;
-        let fromNew;
-        if(from == Const.INIT_ID) {
-            fromRef = Const.INIT_ID;
-            untilRef = Const.END_ID;
-            fromNew = Const.INIT_ID;
-            untilNew = Const.END_ID;
-        }
-        else if(from == Const.END_ID) {
-            fromRef = Const.END_ID;
-            untilRef = Const.CORRECTION_ID;
-            fromNew = Const.INIT_ID;
-            untilNew = Const.END_ID;
-        }
-        else if(from == Const.CORRECTION_ID) {
-            fromRef = Const.CORRECTION_ID;
-            untilRef = Const.CORRECTION_ID;
-            fromNew = Const.INIT_ID;
-            untilNew = Const.INIT_ID;
-        }
-        return { fromRef, untilRef, fromNew, untilNew };
     }
 
     /**
@@ -612,6 +897,7 @@ class RetracementsAnalysis extends Analysis_ {
                             // Increment family result hash identification.
                             Analysis_.increment_hash(value);
 // TODO AL ITERAR PATRON HIJO, NO TIENE EN CUENTA EL STOP DEL PADRE! UN TARGET PUEDE LLEGAR A ALARGAR EL PHY DEBAJO DEL STOP
+// TODO AL FIJAR PUNTO end DEL MOVIMIENTO, ESTO NO PASA, PERO SI SE UTILIZA fixedEnd = false, HABRIA QUE PASAR LOS STOPS...DE MAS DE 1 PADRE?
                             if(this.checkStop(value)) {
                                 done = true;
                             }
@@ -830,220 +1116,6 @@ class RetracementsAnalysis extends Analysis_ {
     }
 
     /**
-     * get_projected_retracement_limits: Get retracement limits projected from another movement
-     * @param parent Parent movement information.
-     * @param movement Current analized movement information.
-     * @param retmax Current max retracement value for parent movement.
-     * @param retmin Current min retracement value for parent movement.
-     * @param trend_sign Stored equivalent trend sign, based on first pattern.
-     * @param levels_from Point from movement, where retracement starts: [ init | end | correction ].
-     * @returns Object with { retMax, valueMax, retMin, valueMin, (TimePrice)init, (TimePrice)end } values.
-     */
-    static getProjectedRetracementLimits({parent, mov, retMax, retMin, trendSign, levelsFrom}) {
-        let value_max;
-        let value_min;
-        let init;
-        let end;
-        try {
-            if(Math.abs(retMax) != Infinity) {
-                value_max = parent.end.price - (parent.deltainit * retMax);
-                let new_delta_end_max = (value_max - mov.end.price);
-                retMax = ((new_delta_end_max * mov.trend) < 0) ?
-                                    Math.abs(new_delta_end_max / mov.deltainit) : 0;
-            }
-            if(Math.abs(retMin) != Infinity) {
-                value_min = parent.end.price - (parent.deltainit * retMin);
-                let new_delta_end_min = (value_min - mov.end.price);
-                retMin = ((new_delta_end_min * mov.trend * trendSign) < 0) ?
-                                    Math.abs(new_delta_end_min / mov.deltainit) : 0;
-            }
-
-            if(levelsFrom == Const.END_ID) {
-                let ret_min_tmp = (Math.abs(retMax) == Infinity) ? 0 : retMax;
-                retMax = (Math.abs(retMin) == Infinity) ? 0 : retMin;
-                retMin = ret_min_tmp;
-            }
-
-            init = parent[Const.INIT_ID];
-            end = parent.end;
-        }
-        catch(error) {
-            let msg = `ERROR: @RetracementsAnalysis::get_parent_retracement_limits: ${error}.`;
-            console.error(msg);
-            throw(msg);
-        }
-
-        return { retMax, valueMax, retMin, valueMin, init, end };
-    }
-
-    /**
-     * filter: Filters data based in another source data, compairing specified fields.
-     * @pre Sorted data
-     * @param r1 Data to be filtered
-     * @param r2 Filter reference
-     * @param f1 Specific fields for r1. If omitted = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
-     * @param f2 Specific fields comparison for r2. If omitted = f1.
-     * @param compareHash true: Check hash id relationship matches. false: othercase. (Default value: true).
-     * @param duplicates If set to true, may return duplicate movements in results. (Default value: false).
-     * @returns Array r1 filtered with movs/retracements given in r2
-     */
-     static filter({r1, r2, f1, f2, compareHash = true, duplicates = false}) {
-        if(!f1 || !f1.length) f1 = [Const.INIT_ID, Const.END_ID, Const.CORRECTION_ID];
-        if(!f2 || !f2.length) f2 = f1;
-         let res = [];
-         try {
-            r2.map(m2 => {
-                // let idx;
-                r1.map( (m1, j) => {
-                    let checkRes = true;
-                    for(let i = 0; i < f1.length; i++) {
-                        let c1 = f1[i];
-                        let c2 = f2[i];
-                        if((c1 != undefined) && (c2 != undefined)) {
-                            if((m1[c1].time != undefined) && (m1[c1].price != undefined)) {
-                                if ((m2[c2].time != m1[c1].time) || (m2[c2].price) != m1[c1].price) {
-                                    checkRes = false;
-                                    break;
-                                }
-                            }
-                            else if(m2[c2] != m1[c1]) {
-                                checkRes = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(checkRes) {
-                        if(compareHash) {
-                            if(m1.hash.length > m2.hash.length) {
-                                checkRes = m1.hash.includes(m2.hash);
-                            }
-                            else {
-                                checkRes = m2.hash.includes(m1.hash);
-                            }
-                        }
-                        if(checkRes) { res.push(m1); }
-                    }
-                });
-            });
-            
-            res.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
-
-            if(!duplicates && (res.length > 1)) {
-                res = res.filter( (m, i) => res.indexOf(m) === i);
-            }
-        }
-        catch(error) {
-            let msg = `${this.constructor.name}::filter: ${error}`;
-            console.error(msg);
-            throw(msg);
-        }
-        return res;
-    }
-
-    /**
-     * mergeMovement
-     * @abstract Merges 2 movements. Mergin rules are applied based on trend of first movement.
-     * @param m1 Base start movement information.
-     * @param m2 End movement information.
-     * @param endFixed Fixed end point of movement. If new one cannot fit, ends iteration. Default value: true.
-     * @param copy true: Works with copy of m1 object. false: overwrites m1 movement object. true if omitted.
-     * @returns
-     * @ New movement result of merging rules*: { value: merged, done: false }.
-     * @ If m1 equals m2, returns { value: m1, done: false }.
-     * @ If merging rules ends movement, returns { value: merged, done: true }.
-     * @ If m1 or m2 are missing, returns { value: undefined, done: true }.
-     */
-    static mergeMovement({m1, m2, endFixed = true, copy = true}) {
-        let m;
-        let done = false;
-        let valid = true;
-        try {
-            // Check both movements exists
-            if(m1 && m2) {
-                if(copy) { m = JSON.parse(JSON.stringify(m1)); }
-                else { m = m1; }
-                
-                // m1 & m2 are different movements, apply merging
-                if((m1.init.time != m2.init.time) || (m1.end.time != m2.end.time) || (m1.correction.time != m2.correction.time)) {
-                    // Bull trend movements
-                    let initGreater = (m1.init.price < m2.init.price);
-                    let endGreater = (m1.end.price < m2.end.price);
-                    let correctionGreater = (m1.correction.price < m2.correction.price);
-                    // If bear trend
-                    if (m.init.price > m.end.price) {
-                        initGreater = !initGreater;
-                        endGreater = !endGreater;
-                        correctionGreater = !correctionGreater;
-                    }
-
-                    if(initGreater) {
-                        if(endGreater) {
-                            if(endFixed) {
-                                done = true;
-                            }
-                            else {
-                                m.end = m2.end;
-                                m.correction = m2.correction;
-                                m.deltainit = m.end.price - m.init.price;
-                                m.deltaend = m.correction.price - m.end.price;
-                            }
-                        }
-                        else {
-                            if(correctionGreater) {
-                                valid = false;
-                            }
-                            else {
-                                m.correction = m2.correction;
-                                m.deltaend = m.correction.price - m.end.price;
-                            }
-                        }
-                    }
-                    else {
-                        if(endGreater) {
-                            done = true;
-                        }
-                        else {
-                            if(correctionGreater) {
-                                valid = false;
-                                // if(Math.abs(m2.deltainit) > Math.abs(m.deltainit)) {
-                                    done = true;
-                                // }
-                            }
-                            else {
-                                m.correction = m2.correction;
-                                m.deltaend = m.correction.price - m.end.price;
-                            }
-                        }
-                    }
-                    
-                    if(m && valid) {
-                        m.retracement = m.deltaend / m.deltainit;
-                        if(m.retracement > 0) {
-                            done = true;
-                        }
-                        else {
-                            m.retracement = Math.abs(m.retracement);
-                        }
-                    }
-                } // if m1 & m2 different movements
-            }
-            // At least 1 source movements is missing
-            else {
-                done = true;
-            }
-
-            if(done) {
-                m = undefined;
-            }
-        }
-        catch(error) {
-            console.error(error);
-        }
-        return { value: m, valid: valid, done: done };
-    }
-
-    /**
      * #getStats
      * @abstract Get statistics values from processed results.
      * @param ok Results matches.
@@ -1087,8 +1159,6 @@ class RetracementsAnalysis extends Analysis_ {
         });
         return res;
     }
-
-
     
     /**
      * #getFamilyTrend
@@ -1110,6 +1180,5 @@ class RetracementsAnalysis extends Analysis_ {
         }
         return trendSign;
     }
-
 }
 
