@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <link rel="shortcut icon" href="#">
+        <title>TKRide TESTS</title>
+        <!-- <link rel="stylesheet" href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" type="text/css" media="screen"> -->
+        <!-- <link rel="stylesheet" type="text/css" href="http://github.com/jquery/QUnit/raw/master/QUnit/QUnit.css" media="all" /> -->
+        <!-- <script type="text/javascript" src="http://github.com/jquery/QUnit/raw/master/QUnit/QUnit.js"></script> -->
+        <!-- <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.19.1.css"> -->
+        <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.19.1.css">
+        <!-- <link rel="stylesheet" type="text/html" href="static/css/qunit-2.19.1.ccs"/> -->
+
+        <!-- Your project file goes here -->
+        <link rel="stylesheet" type="text/css" href="/static/css/reset.css"/>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp">
+        <link rel="stylesheet" href="/static/css//icon-font/bootstrap-icons.css">
+        <link rel="stylesheet" type="text/css" href="/static/css//icon-font/lineicons.css"/>
+        <link rel="stylesheet" type="text/css" href="/static/css/site.css"/>
+        <link rel="stylesheet" type="text/css" href="/static/css/patterns.css"/>
+        <link rel="stylesheet" type="text/css" href="/static/css/controls.css"/>
+        <link rel="stylesheet" type="text/css" href="static/js/extern/jquery-ui-1.13.0.custom/jquery-ui.min.css"/>
+        <link rel="stylesheet" type="text/css" href="static/js/extern/jquery-ui-1.13.0.custom/jquery-ui.structure.min.css"/>
+        <link rel="stylesheet" type="text/css" href="static/js/extern/jquery-ui-1.13.0.custom/jquery-ui.theme.min.css"/>
+        <link rel="stylesheet" type="text/css" href="static/js/extern/spectrum-2.0.8/spectrum.min.css"/>
+        
+        
+        <script src="static/js/app/constants.js"></script>
+        <!-- <script src="/static/js/app/time/moment-with-locales.min.js"></script>
+        <script src="/static/js/app/ajax_worker.js"></script>
+        <script src="/static/js/app/ajax.js"></script>
+        <script src="/static/js/app/brokers.js"></script>
+        <script src="/static/js/app/event_controller.js"></script>
+        <script src="/static/js/app/chart/resources/chart_component.js"></script>
+        <script src="/static/js/app/chart/resources/alert_component.js"></script>
+        <script src="/static/js/app/chart/resources/graphic_component.js"></script>
+        <script src="/static/js/app/chart/resources/fibonacci.js"></script>
+        <script src="/static/js/app/chart/resources/trend_line.js"></script>
+        <script src="/static/js/app/chart/resources/rectangle_graphic.js"></script>
+        <script src="/static/js/app/chart/resources/circle_graphic.js"></script>
+        <script src="/static/js/app/menu/panel_patterns.js"></script>
+        <script src="/static/js/app/menu/menu_chart_graphic.js"></script>
+        <script src="/static/js/app/menu/menu_alert_component.js"></script>
+        <script src="/static/js/app/menu/menu_fibonacci.js"></script>
+        <script src="/static/js/app/menu/menu_trend_line.js"></script>
+        <script src="/static/js/app/menu/menu_rectangle_graphic.js"></script>
+        <script src="/static/js/app/menu/menu_circle_graphic.js"></script>
+        <script src="/static/js/app/menu/menu_patterns.js"></script>
+        <script src="/static/js/app/menu/menu_movs.js"></script>
+        <script src="/static/js/app/menu/menu_settings.js"></script>
+        <script src="/static/js/app/menu/menu_status.js"></script>
+        <script src="/static/js/app/control_settings.js"></script>
+        <script src="/static/js/app/keyboard/keyManager.js"></script>
+        <script src="/static/js/app/menu/models/patterns_dao.js"></script>
+        <script src="/static/js/app/menu/models/templates_dao.js"></script>
+        <script src="/static/js/app/menu/models/keysDao.js"></script>
+        <script src="/static/js/app/controls.js"></script> -->
+        <script src="/static/js/app/analysis/analysis.js"></script>
+        <script src="/static/js/app/analysis/movements.js"></script>
+        <script src="/static/js/app/analysis/retracements.js"></script>
+        <script src="/static/js/app/analysis/analysis_.js"></script>
+        <script src="/static/js/app/analysis/retracementsAnalysis.js"></script>
+        <script src="/static/js/app/chart/chart_model.js"></script>
+        <!-- <script src="/static/js/app/chart/chart_view.js"></script>
+        <script src="/static/js/app/chart/time_frame_panel.js"></script>
+        <script src="/static/js/app/chart/ticker_filter.js"></script>
+        <script src="/static/js/app/chart/chart_settings.js"></script>
+        <script src="/static/js/app/broker-api/binance/binance.js"></script>
+        <script src="/static/js/app/interfaces/TSQL_node.js"></script>
+        <script src="/static/js/app/interfaces/interface_tsql.js"></script>
+        <script src="/static/js/app/interfaces/interface_ddbb.js"></script>
+        <script src="/static/js/app/chart/chart_controller.js"></script>
+        <script src="/static/js/app/keyboard/key_config.js"></script>
+        <script src="/static/js/app/main.js"></script> -->
+
+        <!-- QUnit library goes here -->
+        <!-- <script type="module" href="static/js/extern/qunit-2.19.1.js"></script> -->
+        <!-- QUnit library goes here -->
+    </head>
+
+    <body>
+        <h1 id="qunit-header">TKRide Test Suite</h1>
+        <!-- <h2 id="qunit-banner"></h2>
+        <div id="qunit-testrunner-toolbar"></div>
+        <h2 id="qunit-userAgent"></h2>
+        <ol id="qunit-tests"></ol> -->
+
+        <div id="qunit"></div>
+        <!-- <div id="qunit-fixture"></div> -->
+
+        <script src="https://code.jquery.com/qunit/qunit-2.19.1.js"></script>
+
+        
+        <!-- Your tests file goes here -->
+        <script src="/static/js/app/tests/analysis/analysis_.test.request.js"></script>
+        <script src="/static/js/app/tests/analysis/analysis_.test.data.js"></script>
+        <script src="/static/js/app/tests/analysis/analysis_.test.js"></script>
+        <script src="/static/js/app/tests/analysis/retracementsAnalysis.test.js"></script>
+        <!-- Your tests file goes here -->
+    </div>
+    </body>
+</html>

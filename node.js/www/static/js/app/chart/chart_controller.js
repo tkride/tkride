@@ -155,7 +155,8 @@ class ChartController {
 
                     let ops2 = JSON.parse(JSON.stringify(ops));
                     // Process all parent dependant results for request
-                    let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops2, model: that.#models});
+                    // let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops2, model: that.#models});
+                    let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops2, results: that.#models[ops.modelKey], patterns: that.#models.patterns});
                     Object.values(resultsTree).forEach( (request) => {
                         let ra = new RetracementsAnalysis();
                         let retb = ra.process({request, model: that.#models});
@@ -255,7 +256,8 @@ class ChartController {
             let end_time = Time.now(Time.FORMAT_STR);
             // let init_time = Time.subtract_value(end_time, 100000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
             // let init_time = Time.subtract_value(end_time, 15000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
-            let init_time = Time.subtract_value(end_time, 150, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
+            let init_time = Time.subtract_value(end_time, 10000, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
+            // let init_time = Time.subtract_value(end_time, 150, chartInfo.active[Const.TIME_FRAME_ID]).format(Time.FORMAT_STR);
 
             let query = { [Const.ACTIVE_ID]:chartInfo.active[Const.ID_ID],
                         [Const.BROKER_ID]:chartInfo.active[Const.BROKER_ID],

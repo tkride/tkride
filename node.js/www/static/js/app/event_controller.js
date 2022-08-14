@@ -184,7 +184,7 @@ class EventController {
                         $(document).trigger(cmd.event, e);
                     });
                     e.stopPropagation();
-                    e.preventDefault();
+                    // e.preventDefault();
                 }
                 else {
                     $(document).trigger(ChartController.EVENT_KEYUP, e);
@@ -202,7 +202,7 @@ class EventController {
                         $(document).trigger(cmd.event);
                     });
                     e.stopPropagation();
-                    e.preventDefault();
+                    // e.preventDefault();
                 }
                 else {
                     $(document).trigger(ChartController.EVENT_KEYDOWN, e);

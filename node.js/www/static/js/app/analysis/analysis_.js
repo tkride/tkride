@@ -63,7 +63,8 @@ class Analysis_ {
 
     //----------------------------- STATIC METHODS -----------------------------
 
-    static getFamilyRequestTree({request, model, force = false}) {
+    // static getFamilyRequestTree({request, model, force = false}) {
+    static getFamilyRequestTree({request, results, patterns, force = false}) {
         let res = [];
         try {
             // If searches in previous pattern results, copy them or process parent requests recursively to get them
@@ -71,13 +72,15 @@ class Analysis_ {
             while(parentRequest) {
                 let level = request.level;
                 parentRequest.modelKey = request.modelKey;
-                let searchInModel = model[parentRequest.modelKey].patternResults[parentRequest.ID];
+                // let searchInModel = model[parentRequest.modelKey].patternResults[parentRequest.ID];
+                let searchInModel = results[parentRequest.ID];
                 
                 // If no parent source data available or forces process, will add request to request vector
                 if( ((searchInModel ? searchInModel.data[level] : undefined) === undefined) || force) {
-                    res.push(parentRequest);
+                    res.splice(0, 0, parentRequest);
                 }
-                parentRequest = model.patterns[parentRequest.searchin];
+                // parentRequest = model.patterns[parentRequest.searchin];
+                parentRequest = patterns[parentRequest.searchin];
             }
 
             // Stores current request
@@ -157,17 +160,16 @@ class Analysis_ {
     }
 
 
-    static prepareData() {
+    prepareData() {
     }
 
 
     static iterate({data, ops}) {
         while( (item = Analisys.next({data, index})) != undefined) {
-            Analisys.checkStop(item, ops);
-            Analisys.checkStop({item, ops});
-            Analisys.validate({item, ops});
+            Analisys_.checkStop({item, ops});
+            Analisys_.validate({item, ops});
         }
-        Analisys.report({finalResult});
+        Analisys_.report({finalResult});
     }
 
     static next({data, index}) {

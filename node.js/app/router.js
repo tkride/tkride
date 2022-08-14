@@ -13,5 +13,8 @@ router.post(conf.root_path, login_user)
 router.post('/tsql', process_query)
 router.post('/ddbb', process_ddbb)
 
+const { loadTests } = require('./tests/tests');
+router.get('/tests', loadTests)
+
 module.exports = router
 

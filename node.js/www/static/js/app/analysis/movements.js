@@ -257,10 +257,10 @@ class Movements {
     //----------------------------- PROPERTIES -----------------------------
 
     #id = '';
-    #level = 0;
-    #rel_max = [];
-    #max_filtered = [];
-    #movs = [];
+    level = 0;
+    rel_max = [];
+    max_filtered = [];
+    movs = [];
 
     //----------------------------- CONSTRUCTOR -----------------------------
 
@@ -272,14 +272,14 @@ class Movements {
         }
 
         this.#id = id;
-        this.#level = level;
+        this.level = level;
         let max = new MaxRelative(data, this.level);
-        this.#rel_max = max.data;
+        this.rel_max = max.data;
         console.time('Filter consecutive max');
-        this.#max_filtered = this.#filter_consecutive_max(this.#rel_max);
+        this.max_filtered = this.#filter_consecutive_max(this.rel_max);
         console.timeEnd('Filter consecutive max');
         console.time('Movements');
-        this.#process(this.#max_filtered);
+        this.#process(this.max_filtered);
         console.timeEnd('Movements');
     }
 
@@ -321,7 +321,7 @@ class Movements {
                 }
                 level_movs.push(mov);
             });
-            this.#movs.push(level_movs);
+            this.movs.push(level_movs);
         });
     }
 
@@ -446,18 +446,18 @@ class Movements {
     //----------------------------- GETTERS & SETTERS -----------------------------
     get id() { return this.#id; }
 
-    get level() { return this.#level };
+    get level() { return this.level };
 
-    get max() { return this.#rel_max; }
+    get max() { return this.rel_max; }
 
-    get max_filtered() { return this.#max_filtered; }
+    get max_filtered() { return this.max_filtered; }
 
-    get data() { return this.#movs; }
+    get data() { return this.movs; }
 
     get_data(level=1) {
-        if(level <= this.#level) {
+        if(level <= this.level) {
             if(level <= 0) level = 1;
-            return this.#movs[level-1];
+            return this.movs[level-1];
         }
         return null;
     }

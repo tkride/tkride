@@ -195,82 +195,56 @@ class RetracementsAnalysis extends Analysis_ {
             
             // copy parent pattern results if needed, or throw exception if don't exists
             if(this.request.searchin) {
-                // let searchInModel = this.request[Const.MODEL_ID][Const.PATTERN_RESULTS_ID][this.request.searchin];
-                let searchInModel = this.model.patternResults[this.request.searchin];
-                this.request.searchInData = {};
+                let searchInModel = this.#getParentData({patternResults: this.model.patternResults,
+                                                        query: this.request.query,
+                                                        finalParent: this.request.searchin});
                 this.request.searchInData = searchInModel
-                                        ? JSON.parse(JSON.stringify(searchInModel.data[level]))
+                                        ? JSON.parse(JSON.stringify(searchInModel[level]))
                                         : undefined;
                 // If no parent source data available, calls recursively process
-                if(!this.request.searchInData) {
-                    console.error(`ERROR: No parent result data found for: ${this.request.searchin}.`);
-                    // this.#processParentPattern(this.request);
+                if(this.request.searchInData == undefined) {
+                    let msg = `ERROR: No parent result data found for: ${this.request.searchin}.`;
+                    throw msg;
                 }
-                else {
-                    // if(this.request.searchInData) {
-                    try {
-                        // Filters data from reference parent results (searchInData)
-                        this.request.sourceData = RetracementsAnalysis.filter({ r1: this.request.sourceData,
-                                                                                r2: this.request.searchInData,
-                                                                                // f1: [this.request.until, Const.TREND_ID],
-                                                                                // f2: [this.request.untilSearch, Const.TREND_ID],
-                                                                                // f1: [this.request.until],
-                                                                                // f2: [this.request.untilSearch],
-                                                                                f1: [this.request.untilSearch],
-                                                                                f2: [this.request.until],
-                                                                                compareHash: false });
-                        
-                        // Build real movement, based on result (results obtained from iteration, may not fit with regular movements)
-                        let parentData = this.request.searchInData;
-                        this.request.sourceData.map( (m, i) => {
-                            let p = parentData.find( v => {
-                                return (v[this.request.until].time == m[this.request.untilSearch].time) &&
-                                       (v[this.request.until].price == m[this.request.untilSearch].price);
-                            });
-                            if(p) {
-                                m.timestamp = p.timestamp;
-                                m.hash = p.hash; // + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
-                                if(this.request.from) {
-                                    m.init = p[this.request.from];
-                                    // m.timestamp = m.init.time;
-                                }
-                                if(this.request.until) { m.end = p[this.request.until]; }
-                                if(m.init && m.end) { m.deltainit = m.end.price - m.init.price; }
-                                if(m.end && m.correction) { m.deltaend = m.correction.price - m.end.price; }
-                                if((m.deltainit != undefined) && (m.deltaend != undefined)) {
-                                    m.retracement = Math.abs(m.deltaend / m.deltainit);
-                                }
-                                RetracementsAnalysis.appendHash(m);
-                            }
-                        });
-    
-                        this.request.sourceData.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
-    
-// TODO LA DIFERENCIA ENTRE TENDENCIAS DEL PADRE AL HIJO, HACE QUE SE DEBA BUSCAR DESDE end O init. CAMBIAR PARA DESACOPLAR ESTA PARTE DEL CÓDIGO
-                        // Assign parent pattern trend, depending of search from values
-                        let trendSign = RetracementsAnalysis.#getFamilyTrend({model: this.model.patternResults, request: this.request});
-                        if(trendSign == Const.TREND_CHANGE) {
-                            let i = 0;
-                            while(i < this.request.sourceData.length) {
-                                this.request.sourceData[i].trend *= Const.TREND_CHANGE;
-                                i++;
-                            }
+
+                try {
+                    // Filters data from reference parent results (searchInData)
+                    this.request.sourceData = RetracementsAnalysis.filter({ r1: this.request.sourceData,
+                                                                            r2: this.request.searchInData,
+                                                                            // f1: [this.request.until, Const.TREND_ID],
+                                                                            // f2: [this.request.untilSearch, Const.TREND_ID],
+                                                                            // f1: [this.request.until],
+                                                                            // f2: [this.request.untilSearch],
+                                                                            f1: [this.request.untilSearch],
+                                                                            f2: [this.request.until],
+                                                                            compareHash: false });
+                    
+                    // Build real movement, based on result (results obtained from iteration, may not fit with regular movements)
+                    this.request.sourceData = this.#buildSonMovements({parent: this.request.searchInData, data: this.request.sourceData});
+
+                    // TODO LA DIFERENCIA ENTRE TENDENCIAS DEL PADRE AL HIJO, HACE QUE SE DEBA BUSCAR DESDE end O init. CAMBIAR PARA DESACOPLAR ESTA PARTE DEL CÓDIGO
+                    // Assign parent pattern trend, depending of search from values
+                    let trendSign = RetracementsAnalysis.#getFamilyTrend({model: this.model.patternResults, request: this.request});
+                    if(trendSign == Const.TREND_CHANGE) {
+                        let i = 0;
+                        while(i < this.request.sourceData.length) {
+                            this.request.sourceData[i].trend *= Const.TREND_CHANGE;
+                            i++;
                         }
                     }
-                    catch(err) {
-                        console.error(err);
-                        throw(err);
-                    }
+                }
+                catch(err) {
+                    console.error(err);
+                    throw(err);
                 }
             }
 
             // If limits defined in another pattern result, get it
-            let levelsTrend;
             if(this.request.levelsDataSourceName) {
                 this.request.levelsDataSource = this.#filterParentData({
                                                     patternResults: this.model.patternResults,
                                                     query: this.request.query,
-                                                    finalParent: this.request.levelsdatasource,
+                                                    finalParent: this.request.levelsDataSourceName,
                                                     filterParams: {
                                                         dataLevel: level,
                                                         dataRef: this.request.sourceData, // mov_source,
@@ -279,13 +253,7 @@ class RetracementsAnalysis extends Analysis_ {
                                                         fieldsRef: [Const.INIT_ID, Const.END_ID] //, Const.TREND_ID]
                                                     },
                 });
-                // if(levelSource.length) {
-                    // levelsTrend = ((levelSource[0].end.price - levelSource[0].init.price) > 0) ? Const.BULL : Const.BEAR;
-                // }
                 if(this.request.levelsDataSource.length) {
-                    levelsTrend = ((this.request.levelsDataSource[0].end.price - this.request.levelsDataSource[0].init.price) > 0) ? Const.BULL : Const.BEAR;
-
-// TODO NO TIENE SENTIDO AQUI, levelsTrend NO ESTA DEFINIDO SI NO HAY levelsDataSource, Y LA TENDENCIA NO SE OBTIENE DEL PRIMER DATO
                     // If base parent data, and levels from any parent, check levels trend vs current data trend, to determine from configuration
                     if(this.request.sourceData.length) {
                         let movTrend = ((this.request.sourceData[0].end.price - this.request.sourceData[0].init.price) > 0) ? Const.BULL : Const.BEAR;
@@ -428,79 +396,81 @@ class RetracementsAnalysis extends Analysis_ {
     filterResults(data) {
         try {
             let type = this.request.onlymax;
-            let mode = this.request.filtermode;
-            console.log(`Apply filter ► type: ${type},  mode: ${mode}.`);
-            // retracements = Retracements.filter_max_movements({source: retracements, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
-            // nok = Retracements.filter_max_movements({source: nok, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
+            if(type > 0) {
+                let mode = this.request.filtermode;
+                console.log(`Apply filter ► type: ${type},  mode: ${mode}.`);
+                // retracements = Retracements.filter_max_movements({source: retracements, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
+                // nok = Retracements.filter_max_movements({source: nok, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
 
-            Object.keys(data).forEach( k => {
-                console.time('filterResults');
-                let dataLen = data[k].length;
-                let idx = 0;
-                mode = (mode != undefined) ? mode : Const.FILTER_INTERVAL;
-                while(idx < dataLen) {
-                    // Get first init current time
-                    // let init_current_time = source[idx][Const.INIT_ID].time;
-                    let initTime = data[k][idx].timestamp;
-                    let trend = data[k][idx].trend;
-                    let group = [];
+                Object.keys(data).forEach( k => {
+                    console.time('filterResults');
+                    let dataLen = data[k].length;
+                    let idx = 0;
+                    mode = (mode != undefined) ? mode : Const.FILTER_INTERVAL;
+                    while(idx < dataLen) {
+                        // Get first init current time
+                        // let init_current_time = source[idx][Const.INIT_ID].time;
+                        let initTime = data[k][idx].timestamp;
+                        let trend = data[k][idx].trend;
+                        let group = [];
 
-                    // Select all retracements which starts at same time that current init with same trend
-                    // let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
-                    let init = data[k].filter( m => (m.timestamp == initTime) && (m.trend == trend) );
+                        // Select all retracements which starts at same time that current init with same trend
+                        // let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
+                        let init = data[k].filter( m => (m.timestamp == initTime) && (m.trend == trend) );
 
-                    if(init.length > 1) {
-                        // Get last correction instant for all movements that start at same time
-                        let correctionTime = init.reduce( (a, b) => (a.correction.time > b.correction.time) ? a : b );
-                        correctionTime = correctionTime.correction.time;
+                        if(init.length > 1) {
+                            // Get last correction instant for all movements that start at same time
+                            let correctionTime = init.reduce( (a, b) => (a.correction.time > b.correction.time) ? a : b );
+                            correctionTime = correctionTime.correction.time;
 
-                        // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
-                        // let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
-                        //                                         && (m.correction.time <= corr_current_time)
-                        //                                         && (m.trend == trend_current) );
+                            // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
+                            // let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
+                            //                                         && (m.correction.time <= corr_current_time)
+                            //                                         && (m.trend == trend_current) );
 
-                        group = data[k].filter(m => {
-                            let res = (mode == Const.FILTER_FAMILY) ?
-                                        (m.timestamp == initTime)
-                                        : (m.timestamp >= initTime);
-                            res &= (m.correction.time <= correctionTime)
-                                    && (m.trend == trend);
-                            return res;
-                        });
+                            group = data[k].filter(m => {
+                                let res = (mode == Const.FILTER_FAMILY) ?
+                                            (m.timestamp == initTime)
+                                            : (m.timestamp >= initTime);
+                                res &= (m.correction.time <= correctionTime)
+                                        && (m.trend == trend);
+                                return res;
+                            });
 
-                        // If more than 1 result, max filter can be applied
-                        if(group.length > 1) {
-                            // Delete from source current movement group
-                            // source.splice(idx, group_current.length);
-                            data[k] = data[k].filter( m => group.includes(m) == false);
+                            // If more than 1 result, max filter can be applied
+                            if(group.length > 1) {
+                                // Delete from source current movement group
+                                // source.splice(idx, group_current.length);
+                                data[k] = data[k].filter( m => group.includes(m) == false);
 
-                            // Get max
-                            if(type == Const.ONLY_MAX_MOVEMENT) {
-                                // From this group, greater movement
-                                group = group.reduce( (prev, curr) => {
-                                    let max_prev = Math.abs(prev.deltainit) + Math.abs(prev.deltaend)
-                                    let max_curr = Math.abs(curr.deltainit) + Math.abs(curr.deltaend)
-                                    if(max_prev > max_curr) return prev;
-                                    return curr;
-                                });
+                                // Get max
+                                if(type == Const.ONLY_MAX_MOVEMENT) {
+                                    // From this group, greater movement
+                                    group = group.reduce( (prev, curr) => {
+                                        let max_prev = Math.abs(prev.deltainit) + Math.abs(prev.deltaend)
+                                        let max_curr = Math.abs(curr.deltainit) + Math.abs(curr.deltaend)
+                                        if(max_prev > max_curr) return prev;
+                                        return curr;
+                                    });
+                                }
+                                else if(type == Const.ONLY_MAX_RETRACEMENT) {
+                                    // From this group, greater retracement
+                                    group = group.reduce( (prev, curr) => (prev.retracement > curr.retracement) ? prev: curr);
+                                }
+
+                                // Re-insert filtered max
+                                data[k].splice(idx, 0, group);
+
+                                // Update current total length
+                                dataLen = data[k].length;
                             }
-                            else if(type == Const.ONLY_MAX_RETRACEMENT) {
-                                // From this group, greater retracement
-                                group = group.reduce( (prev, curr) => (prev.retracement > curr.retracement) ? prev: curr);
-                            }
-
-                            // Re-insert filtered max
-                            data[k].splice(idx, 0, group);
-
-                            // Update current total length
-                            dataLen = data[k].length;
-                        }
-                    }
-                    
-                    idx++;
-                }
-                console.timeEnd('filterResults');
-            });
+                        } // if(init.length > 1)
+                        
+                        idx++;
+                    } // while(idx < dataLen)
+                    console.timeEnd('filterResults');
+                });
+            } // if (type > 0)
         }
         catch (error) {
             console.error(error);    
@@ -1026,14 +996,14 @@ class RetracementsAnalysis extends Analysis_ {
 
                 // First parent data don't need to be filtered
                 if(!parentData) {
-                    let dataBaseLevels = this.#getParentData(patternResults, query, parentName);
+                    let dataBaseLevels = this.#getParentData({patternResults, query, finalParent: parentName});
                     // Works with copy of level parent data
                     parentData = JSON.parse(JSON.stringify(dataBaseLevels[level]));
                 }
                 // Higher level parent data, must be filtered matching valid son's results
                 else {
                     let database = parentData;
-                    let dataParentLevels = this.#getParentData(patternResults, query, parentName);
+                    let dataParentLevels = this.#getParentData({patternResults, query, finalParent: parentName});
                     // Works with copy of level parent data
                     parentData = JSON.parse(JSON.stringify(dataParentLevels[level]));
 
@@ -1068,16 +1038,16 @@ class RetracementsAnalysis extends Analysis_ {
      * @param {*} finalParent Parent data name where stop search.
      * @returns Parent data.
      */
-    #getParentData(patternResults, query, finalParent) {
+    #getParentData({patternResults, query, finalParent}) {
         let res;
         try {
             // Check is valid result AND parent of current base data
             let name = query[Const.SEARCH_IN_ID];
-            if(name && finalParent && this.#checkPatternIsParent(patternResults, query, finalParent)) {
+            if(name && finalParent && this.#checkPatternIsParent({patternResults, query, finalParent})) {
                 while(name != finalParent) {
-                    name = patternResults[name][Const.QUERY_ID][Const.SEARCH_IN_ID];
+                    name = patternResults[name].query.searchin;
                 }
-                res = patternResults[name][Const.DATA_ID];
+                res = patternResults[name].data;
             }
             else {
                 let msg = '';
@@ -1104,7 +1074,7 @@ class RetracementsAnalysis extends Analysis_ {
      * @param {*} finalParent Final parent data name.
      * @returns true: final_parent is ascendant from base data. | false: other case.
      */
-     #checkPatternIsParent(patternResults, query, finalParent) {
+     #checkPatternIsParent({patternResults, query, finalParent}) {
         let res = false;
         while(query && finalParent && !res) {
             let parent_name = query[Const.SEARCH_IN_ID];
@@ -1113,6 +1083,38 @@ class RetracementsAnalysis extends Analysis_ {
                             patternResults[parent_name][Const.QUERY_ID] : undefined;
         }
         return res;
+    }
+
+    #buildSonMovements({parent, data}) {
+        try {
+            data.map( (m, i) => {
+                let p = parent.find( v => {
+                    return (v[this.request.until].time == m[this.request.untilSearch].time) &&
+                            (v[this.request.until].price == m[this.request.untilSearch].price);
+                });
+                if(p) {
+                    m.timestamp = p.timestamp;
+                    m.hash = p.hash; // + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
+                    if(this.request.from) {
+                        m.init = p[this.request.from];
+                        // m.timestamp = m.init.time;
+                    }
+                    if(this.request.until) { m.end = p[this.request.until]; }
+                    if(m.init && m.end) { m.deltainit = m.end.price - m.init.price; }
+                    if(m.end && m.correction) { m.deltaend = m.correction.price - m.end.price; }
+                    if((m.deltainit != undefined) && (m.deltaend != undefined)) {
+                        m.retracement = Math.abs(m.deltaend / m.deltainit);
+                    }
+                    RetracementsAnalysis.appendHash(m);
+                }
+            });
+
+            data.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
+        }
+        catch(error) {
+            throw(error)
+        }
+        return data;
     }
 
     /**
