@@ -129,55 +129,35 @@ class ChartView {
 
     //----------------------------- PRIVATE METHODS -----------------------------
 
-    format_retracements(data_source) {
+    format_retracements(data) {
         let res;
         console.time('split_retracements');
         
-        let data = [];
+        let dataRes = [];
         let data_ret = [];
-        let trend = [];
-        // let data_delta_ini = {};
-        // let data_delta_fin = {};
-        // let data_ret_levels = [];
-        // let data_ret_values = {};
-        // let stats = {}
-        // let level_;
 
-        console.log(data_source);
+        console.log(data);
 
         try {
-            if(!data_source) {
+            if(!data) {
                 throw ('No data available.');
             }
 
             // Iterates over all retracement patterns names
-            Object.keys(data_source).forEach(n => {
+            Object.keys(data).forEach(n => {
                 // Iterates over all levels available in each retracement pattern
-                Object.keys(data_source[n][Const.DATA_ID]).forEach(l => {
-                    let dl = data_source[n][Const.DATA_ID][l];
-                    data_ret.push(...dl.map(r => [[r[Const.END_ID].time, r[Const.END_ID].price], r[Const.RET_ID], Const.TREND_STR[r[Const.TREND_ID]], n] ));
-                    data.push(...dl.map(d => [ d[Const.INIT_ID], d[Const.END_ID], d[Const.CORRECTION_ID], Const.TREND_STR[d[Const.TREND_ID]], d[Const.RET_LEVELS_ID], n ]
+                Object.keys(data[n].data).forEach(l => {
+                    let dl = data[n].data[l];
+                    data_ret.push(...dl.map( r => [[r.end.time, r.end.price], r.retracement, Const.TREND_STR[r.trend], n] ));
+                    dataRes.push(...dl.map(d => [ d.init, d.end, d.correction, Const.TREND_STR[d.trend], d.levels, n ]
                                         .map(dd => dd.time ? [dd.time, dd.price] : dd) ));
                 });
             });
 
             res = {
-                // id: query[Const.ID_ID],
-                // name: data_source[Const.NAME_ID],
-                data: data,
+                data: dataRes,
                 data_ret: data_ret,
-                trend: trend,
                 levels: [0],
-                // dataType: data_source.dataType,
-                // stats: stats,
-                // data_ret_levels: data_ret_levels,
-                // data_ret_values: data_ret_values,
-                // delta_ini: data_delta_ini,
-                // delta_fin: data_delta_fin,
-                // level: level_,
-                // search_in: query[Const.SEARCH_IN_ID],
-                // query: query,
-                // modelKey: modelKey,
             };
         }
         catch(error) {

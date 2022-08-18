@@ -37,3 +37,35 @@ QUnit.test( 'parseRequest', (assert) => {
 
 // STATIC METHODS TESTS
 
+Qunit.test( 'calcProjectedRetracementLevels', (assert) => {
+    let baseTime = new Date('16 Aug 2022 10:00:00').getTime();
+    let tinit = baseTime / 1000;
+    let tend = tinit + (3600 * 4);
+    let tcorrection = tend + (3600 * 3);
+    let levelMovement = {
+        timestamp: tinit,
+        init: new TimePrice(tinit, 100),
+        end: new TimePrice(tend, 200),
+        correction: new TimePrice(tcorrection, 50),
+    }
+    baseTime = tinit + (3600*7);
+    tinit = baseTime;
+    tend = tinit + (3600*2);
+    tcorrection = tend + (3600*5);
+    let movement = {
+        timestamp: baseTime,
+        init: new TimePrice(tinit, 50),
+        end: new TimePrice(tend, 25),
+        correction: new TimePrice(tcorrection, 100),
+    }
+    let levels = [0.5, 0.618, 1];
+    let levelsTrend = -1;
+    let [limitMax, limitMin] = RetracementsAnalysis.calcProjectedRetracementLevels({
+        levelMovement,
+        movement,
+        levels,
+        levelsTrend,
+    });
+
+    assert.equal(limitMax, 200, `Nivel proyectado máximo ${limitMax} sobre 200 correcto.`);
+});

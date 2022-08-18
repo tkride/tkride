@@ -33,8 +33,8 @@ class AnalysisData_ {
     query;
     from;
     until;
-    limit_min = -Infinity;
-    limit_max = Infinity;
+    limitMin = -Infinity;
+    limitMax = Infinity;
     logical = '';
     trend;
 

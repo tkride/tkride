@@ -147,25 +147,17 @@ class ChartController {
             }
             else {
                 try {
-                    // ops[Const.DATA_ID] = that.#models[modelKey][Const.MOVS_ID]; //[level];
                     ops[Const.MODEL_ID] = that.#models[modelKey];
                     ops[Const.PATTERNS_ID] = that.#models[Const.PATTERNS_ID];
-                    // Process recursively all parent results
-                    // let ret = Retracements.process(ops);
 
-                    let ops2 = JSON.parse(JSON.stringify(ops));
                     // Process all parent dependant results for request
-                    // let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops2, model: that.#models});
-                    let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops2, results: that.#models[ops.modelKey], patterns: that.#models.patterns});
+                    let resultsTree = RetracementsAnalysis.getFamilyRequestTree({request: ops, results: that.#models[ops.modelKey], patterns: that.#models.patterns});
                     Object.values(resultsTree).forEach( (request) => {
                         let ra = new RetracementsAnalysis();
                         let retb = ra.process({request, model: that.#models});
                         // Stores result in model
                         that.#models[modelKey].patternResults[retb.ID] = retb;
                     });
-                    // let ra = new RetracementsAnalysis();
-                    // let retb = ra.process({request: ops2, model: that.#models});
-                    // let retb = ra.process({request: ops2, model: that.#models[modelKey], patterns: that.#models[Const.PATTERNS_ID]});
 
                     //TODO MOVER PATTERN RESULT DE #chart_models A #models
                     // that.#models[modelKey][Const.PATTERN_RESULTS_ID][ops[Const.ID_ID]] = ret;
@@ -835,36 +827,34 @@ class ChartController {
                 let prev = visual_conf.prev_name;
                 let zoom = visual_conf.zoom;
 
+                // Forces deletion for previous plots (need to be here, data may be empty, and therefore won t enter in next forEach loop)
                 let series_to_del = [];
                 if(prev) series_to_del.push(...prev);
-                // Forces deletion for previous plots (need to be here, data may be empty, and therefore won t enter in next forEach loop)
                 that.#view.clear_chart(that.activeChart.chart, series_to_del);
-
                 series_to_del = [];
                 Object.keys(pattern).forEach(k => {
                     if(that.#models[this.activeChart.modelKey].patternResults[pattern[k][Const.ID_ID]].data[pattern[k].level]) {
                         series_to_del.push(that.#models[this.activeChart.modelKey].patternResults[pattern[k][Const.ID_ID]][Const.ID_ID]);
                     }
                 });
-                
                 that.#view.clear_chart(that.activeChart.chart, series_to_del);
 
-                // if(zoom) that.#view.zoom_chart(zoom, that.activeChart.chart);
-                // let min = 0; // XXX
-                // let max = 0;
-                // if(zoom) { that.#view.zoomChart({zoom, chart: that.activeChart.chart, max, min}); }
                 if(zoom) { that.#view.zoomChart({zoom, chart: that.activeChart.chart}); }
 
                 let ret_plot = that.#view.format_retracements(pattern);
                 that.#view.plot_retracements(ret_plot, that.activeChart.chart);
-                // let fibo_ret = that.#view.format_fibo_retracement_data(pattern);
-                // that.#view.draw_chart_component(ret_plot, fibo_ret, query, that.activeChart.chart);
                 let fibos = [];
                 Object.values(pattern).forEach(p => {
                     if(Object.keys(p[Const.DATA_ID]).length) {
-                        Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach(r => {
-                            // fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}_${r[Const.TIMESTAMP_ID]}`, opacity: 0.1 }}) );
-                            fibos.push(new Fibonacci({ graphic:r, template:{ name:`${p[Const.ID_ID]}`, opacity: 30 }, timeFrame: that.activeChart.active[Const.TIME_FRAME_ID]}) );
+                        Object.values(p[Const.DATA_ID][p[Const.LEVEL_ID]]).forEach( (r, i) => {
+                            let mov = JSON.parse(JSON.stringify(r));
+                            // Merges projected prices and movement time to generate correct Fibonacci Retracement
+                            if(p.levelsDataSource && p.levelsDataSource[i]) {
+                                mov.init.price = p.levelsDataSource[i].init.price;
+                                mov.end.price = p.levelsDataSource[i].end.price;
+                                mov.correction.price = p.levelsDataSource[i].correction.price;
+                            }
+                            fibos.push(new Fibonacci({ graphic:mov, template:{ name:`${p[Const.ID_ID]}`, opacity: 5 }, timeFrame: that.activeChart.active[Const.TIME_FRAME_ID]}) );
                         });
                     }
                 });

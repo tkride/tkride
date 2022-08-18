@@ -395,7 +395,7 @@ class PanelPatterns {
     #update_current() {
         if(this.#is_initilized == false) { return}
         try {
-            let data_plot = {};
+            let dataPlot = {};
             
             // if( (this.#current_name) && (this.#current_model[this.#current_name]) ) {
             if( (this.#current_name)
@@ -427,84 +427,83 @@ class PanelPatterns {
                 }
 
                 // Add all patterns selected data to output
-                let parent_info;
+                let parentInfo;
                 let name = this.#current_name;
                 do {
                     if(name) {
                         let trend = Const.TREND_VAL[this.trend];
                         let curr_query = this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name][Const.QUERY_ID];
 
-                        data_plot[name] = Object.assign(new RetracementData(), this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name]);
+                        dataPlot[name] = Object.assign(new RetracementData(), this.#models[this.#modelKey][Const.PATTERN_RESULTS_ID][name]);
                         // If showing multiple results, son data (ex:PHY) should be always OK data (instead NOK (ex:TARGETS)) ...
                         // ... we search NOK in previous valid results, not previous NOK results
                         let current_result_data = this.result_data;
-                        if(parent_info) {
+                        if(parentInfo) {
                             current_result_data = Const.DATA_ID;
                         }
 
                         // Filters by selected trend
-                        let data = data_plot[name][current_result_data][this.level].filter(df => {
+                        let data = dataPlot[name][current_result_data][this.level].filter(df => {
                             if(trend != undefined)
                                 return trend.includes(df[Const.TREND_ID]);
                         });
 
 
-                        data_plot[name].data = { };
-                        data_plot[name].nok = { };
+                        dataPlot[name].data = { };
+                        dataPlot[name].nok = { };
 
-                        if(!parent_info) {
+                        if(!parentInfo) {
                             // Filters selected trend and results from retracement data
-                            // data_plot[name][Const.DATA_ID][this.level] = data.filter( (v, i) => selected_data.includes(i));
-                            // data_plot[name][current_result_data][this.level] = data.filter( (v, i) => selected_data.includes(i));
-                            data_plot[name].data[this.level] = data.filter( (v, i) => selected_data.includes(i));
+                            dataPlot[name].data[this.level] = data.filter( (v, i) => selected_data.includes(i))
+                            if(dataPlot[name].levelsDataSourceName) {
+                                dataPlot[name].levelsDataSource = dataPlot[name].levelsDataSource.filter( ld => (dataPlot[name].data[this.level].filter( dp => dp.hash.includes(ld.hash) ).length > 0) );
+                            }
                         }
                         else {
-                            let parent_name = parent_info.ID;
-                            let from = parent_info.from;
-                            // let { fromRef, untilRef, fromNew, untilNew } = Retracements.get_comparison_fields(from);
+                            let parentName = parentInfo.ID;
+                            let from = parentInfo.from;
                             let { fromRef, untilRef, fromNew, untilNew } = RetracementsAnalysis.getComparisonFields(from);
-                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [untilRef], [untilNew]);
-                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][Const.DATA_ID][this.level], [fromRef, untilRef], [fromNew, untilNew]);
-                            // data_plot[name][Const.DATA_ID][this.level] = Retracements.filter(data, data_plot[parent_name][this.result_data][this.level], [fromRef, untilRef], [fromNew, untilNew]);
-                            data_plot[name].data[this.level] = RetracementsAnalysis.filter({r1: data,
-                                                                                            //   r2: data_plot[parent_name][this.result_data][this.level],
-                                                                                            r2: data_plot[parent_name].data[this.level],
+                            dataPlot[name].data[this.level] = RetracementsAnalysis.filter({r1: data,
+                                                                                            r2: dataPlot[parentName].data[this.level],
                                                                                             f1: [fromRef, untilRef],
                                                                                             f2: [fromNew, untilNew],
                                                                                             compareHash: false});
+                            if(dataPlot[name].levelsDataSourceName) {
+                                dataPlot[name].levelsDataSource = dataPlot[name].levelsDataSource.filter( ld => (dataPlot[name].data[this.level].filter( dp => dp.hash.includes(ld.hash) ).length > 0) );
+                            }
                         }
 
-                        parent_info = Object.assign({}, curr_query);
-                        name = parent_info.searchin;
+                        parentInfo = Object.assign({}, curr_query);
+                        name = parentInfo.searchin;
                     }
                 } while(name);
 
                 //TODO TEMPORAL ? ELIMINAR DATOS NO INCLUIDOS
                 // Deletes unselected results from final data
-                Object.keys(data_plot).forEach( name => {
+                Object.keys(dataPlot).forEach( name => {
                     if(this.#results_selected.includes(name) == false) {
-                        data_plot[name].data = {}
+                        dataPlot[name].data = {}
                     }
                 });
 
                 // Zoom settings
-                if((data_plot[this.#current_name] != undefined)
-                        && (data_plot[this.#current_name].data[this.level] != undefined)
-                        && (data_plot[this.#current_name].data[this.level].length > 0) )
+                if((dataPlot[this.#current_name] != undefined)
+                        && (dataPlot[this.#current_name].data[this.level] != undefined)
+                        && (dataPlot[this.#current_name].data[this.level].length > 0) )
                     {
-                    let priceMin = [].concat(...data_plot[this.#current_name].data[this.level]
+                    let priceMin = [].concat(...dataPlot[this.#current_name].data[this.level]
                                                             .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
                                                 .reduce( (a,b) => a < b ? a : b);
-                    let priceMax = [].concat(...data_plot[this.#current_name].data[this.level]
+                    let priceMax = [].concat(...dataPlot[this.#current_name].data[this.level]
                                                             .map( v => [v[Const.INIT_ID].price, v[Const.END_ID].price, v[Const.CORRECTION_ID].price]))
                                                 .reduce( (a,b) => a > b ? a : b);
-                    let dateMin = Object.values(data_plot).map( r => (r.data[this.level]) ?
+                    let dateMin = Object.values(dataPlot).map( r => (r.data[this.level]) ?
                                                     r.data[this.level].map(t => t[Const.INIT_ID].time) : undefined)
                                                     .filter( d => d != undefined);
                     dateMin = dateMin.filter(f => f.length);
                     dateMin = dateMin.reduce( (a,b) => a < b ? a : b)[0];
 
-                    let dateMax = Object.values(data_plot).map( r => (r.data[this.level]) ?
+                    let dateMax = Object.values(dataPlot).map( r => (r.data[this.level]) ?
                                                     r.data[this.level].map(t => t[Const.CORRECTION_ID].time) : undefined)
                                                     .filter( d => d != undefined);
                     dateMax.filter(f => f.length);
@@ -522,7 +521,7 @@ class PanelPatterns {
                 console.timeEnd('update current');
 
                 // if(Object.keys(data_plot).length > 0) {
-                $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [data_plot, this.#visual_conf, this.query]);
+                $(document).trigger(PanelPatterns.EVENT_PLOT_PATTERN, [dataPlot, this.#visual_conf, this.query]);
                 // }
             }
         }

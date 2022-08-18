@@ -7,8 +7,8 @@ class RetracementAnalysisData extends AnalysisData_ {
     onlymax = 0;
     levelsDataSourceName;
     levelsDataSource;
-    retMin = -Infinity;
-    retMax = Infinity;
+    // limitMin = -Infinity;
+    // limitMax = Infinity;
 }
 
 
@@ -71,7 +71,7 @@ class RetracementsAnalysis extends Analysis_ {
                         }
                         else {
                             // Validates current iterator data as OK / NOK
-                            if (this.validate(movement)) {
+                            if (RetracementsAnalysis.validate({movement, limitMax: this.request.limitMax, limitMin: this.request.limitMin})) {
                                 ok[level].push(movement);
                             }
                             else {
@@ -143,16 +143,16 @@ class RetracementsAnalysis extends Analysis_ {
             });
 
             if(ret.logical == Const.LOGICAL_LOWER_THAN) {
-                ret.retMax = Math.max(...ret.levels);
-                ret.retMin = -Infinity;
+                ret.limitMax = Math.max(...ret.levels);
+                ret.limitMin = -Infinity;
             }
             else if(ret.logical == Const.LOGICAL_HIGHER_THAN) {
-                ret.retMax = Infinity;
-                ret.retMin = Math.min(...ret.levels);
+                ret.limitMax = Infinity;
+                ret.limitMin = Math.min(...ret.levels);
             }
             else {
-                ret.retMin = Math.min(...ret.levels);
-                ret.retMax = Math.max(...ret.levels);
+                ret.limitMin = Math.min(...ret.levels);
+                ret.limitMax = Math.max(...ret.levels);
             }
 
             // Store model information by reference
@@ -195,37 +195,35 @@ class RetracementsAnalysis extends Analysis_ {
             
             // copy parent pattern results if needed, or throw exception if don't exists
             if(this.request.searchin) {
-                let searchInModel = this.#getParentData({patternResults: this.model.patternResults,
-                                                        query: this.request.query,
-                                                        finalParent: this.request.searchin});
+                let searchInModel = RetracementsAnalysis.#getParentData({patternResults: this.model.patternResults,
+                                                                        query: this.request.query,
+                                                                        finalParent: this.request.searchin});
                 this.request.searchInData = searchInModel
                                         ? JSON.parse(JSON.stringify(searchInModel[level]))
                                         : undefined;
                 // If no parent source data available, calls recursively process
                 if(this.request.searchInData == undefined) {
-                    let msg = `ERROR: No parent result data found for: ${this.request.searchin}.`;
-                    throw msg;
+                    throw msg(`ERROR: No parent result data found for: ${this.request.searchin}.`);
                 }
 
                 try {
                     // Filters data from reference parent results (searchInData)
                     this.request.sourceData = RetracementsAnalysis.filter({ r1: this.request.sourceData,
                                                                             r2: this.request.searchInData,
-                                                                            // f1: [this.request.until, Const.TREND_ID],
-                                                                            // f2: [this.request.untilSearch, Const.TREND_ID],
-                                                                            // f1: [this.request.until],
-                                                                            // f2: [this.request.untilSearch],
                                                                             f1: [this.request.untilSearch],
                                                                             f2: [this.request.until],
                                                                             compareHash: false });
                     
                     // Build real movement, based on result (results obtained from iteration, may not fit with regular movements)
-                    this.request.sourceData = this.#buildSonMovements({parent: this.request.searchInData, data: this.request.sourceData});
+                    this.request.sourceData = RetracementsAnalysis.#buildSonMovements({parent: this.request.searchInData,
+                                                                                        data: this.request.sourceData,
+                                                                                        request: this.request});
 
                     // TODO LA DIFERENCIA ENTRE TENDENCIAS DEL PADRE AL HIJO, HACE QUE SE DEBA BUSCAR DESDE end O init. CAMBIAR PARA DESACOPLAR ESTA PARTE DEL CÓDIGO
                     // Assign parent pattern trend, depending of search from values
-                    let trendSign = RetracementsAnalysis.#getFamilyTrend({model: this.model.patternResults, request: this.request});
-                    if(trendSign == Const.TREND_CHANGE) {
+                    this.request.trendSign = RetracementsAnalysis.#getFamilyTrend({model: this.model.patternResults, request: this.request});
+
+                    if(this.request.trendSign == Const.TREND_CHANGE) {
                         let i = 0;
                         while(i < this.request.sourceData.length) {
                             this.request.sourceData[i].trend *= Const.TREND_CHANGE;
@@ -253,14 +251,16 @@ class RetracementsAnalysis extends Analysis_ {
                                                         fieldsRef: [Const.INIT_ID, Const.END_ID] //, Const.TREND_ID]
                                                     },
                 });
-                if(this.request.levelsDataSource.length) {
-                    // If base parent data, and levels from any parent, check levels trend vs current data trend, to determine from configuration
-                    if(this.request.sourceData.length) {
-                        let movTrend = ((this.request.sourceData[0].end.price - this.request.sourceData[0].init.price) > 0) ? Const.BULL : Const.BEAR;
-                        this.request.levelsFrom = (levelsTrend != movTrend) ? Const.END_ID : Const.INIT_ID;
-                    }
+                if(this.request.levelsDataSource.length === 0) {
+                    throw(`ERROR: no parent results in ${this.request.searchin} matches limits defined for ${this.request.ID}.`)
                 }
-                  
+                // Get levels relative trend to source data
+                let levelsRequest = this.patterns[this.request.levelsDataSourceName];
+                if(levelsRequest == undefined) {
+                    throw(`ERROR: No levels request with name ${this.request.levelsDataSourceName} stored in patterns database.`)
+                }
+                let levelsTrend = RetracementsAnalysis.#getFamilyTrend({request: levelsRequest,  model: this.model.patternResults});
+                this.request.levelsTrend = levelsTrend * this.request.trendSign;
             }
         }
         catch (error) {
@@ -272,50 +272,20 @@ class RetracementsAnalysis extends Analysis_ {
     /**
      * checkStop
      * @abstract Check if movement retracement meets stop condition defined in request.
-     * @param movement 
+     * @param movement Movement information.
+     * @param limitMax Maximum retracement allowed before stop processing.
      * @returns true: if stop condition match. false: other case.
      */
-    checkStop(movement) {
+    static checkStop({movement, limitMax}) {
         let stop = true;
         try {
-            let retMax = this.request.retMax;
-            if(retMax === undefined) {
-                throw (`${this.constructor.name}::checkStop: Retracement limit mimssing. Cannot evaluate.`);
+            if(limitMax === undefined) {
+                throw (`RetracementsAnalysis::checkStop: Retracement limit mimssing. Cannot evaluate.`);
             }
             
-            // If checks levels in external data
-            if(this.request.levelsDataSource) {
-                let retMin = this.request.retMin;
-                // TODO NO: PUEDEN HABER MULTIPLES SOLUCIONES
-                let parent_source = level_source[i];
-                // TODO TAMPOCO: PUEDEN HABER MULTIPLES SOLUCIONES
-                // let parent_source = level_source.filter( ls => ls[Const.TIMESTAMP_ID] == m[Const.TIMESTAMP_ID])[0];
-                xxx // TODO GUARDAR EN EL MOVIMIENTO PARAMETRO levelsFrom, PARA CONOCER QUE PUNTO DEL MOVIMIENTO DEBE COINDICIR ENTRE PADRE E HIJO.
-                xxx // TODO trendSign REVISAR PARA VER SI SE PUEDE OMITIR
-                if(parent_source) {
-                        let newRet =
-                        RetracementsAnalysis.getProjectedRetracementLimits({
-                                                                parent: this.request.levelsDataSource,
-                                                                mov: m,
-                                                                retMax,
-                                                                retMin,
-                                                                trendSign,
-                                                                levelsFrom: m.levelsFrom });
-                        retMax = newRet.retMax;
-                        m.levelsProjected = { [newRet.retMax]: newRet.valueMax,
-                                              [newRet.retMin]: newRet.valueMin
-                                            };
-                        // m.datasource = { init: new_ret.init,
-                                        //  end: new_ret.end };
-                }
-                else {
-                    console.warn(`No match level source for: ${level_source[i]}`);
-                }
-            }
-            stop = (movement.retracement > retMax);
+            stop = (movement.retracement > limitMax);
         }
         catch (error) {
-            console.error(error);
             throw (error);
         }
 
@@ -325,25 +295,28 @@ class RetracementsAnalysis extends Analysis_ {
     /**
      * validate
      * @abstract Validates retracement pattern condition in given movement.
-     * @param data Source movement data. Overwrites data, appends 'levels' property to object.
+     * @param movement Source movement data. Overwrites data, appends 'levels' property to object.
+     * @param limitMax Maximum retracement limit allowed.
+     * @param limitMin Minimum retracement limit allowed.
      * @returns true: retracement matches validation condition. false: other case.
      */
-    validate(data) {
+    static validate({movement, limitMax, limitMin}) {
         let ok = false;
         try {
-            let [retMin, retMax] = (this.request.levelsProjected) ?
-                                        [this.request.levelsProjected.retMin, this.request.levelsProjected.retMax] :
-                                        [this.request.retMin, this.request.retMax];
+            if((movement.limitMax != undefined) && (movement.limitMin != undefined)) {
+                [limitMax, limitMin] = [movement.limitMax, movement.limitMin];
+            }
 
-            if((retMin === undefined) || (retMax === undefined)) {
-                throw (`${this.constructor.name}::validate: Retracement limit mimssing. Cannot evaluate.`);
+            if((limitMin === undefined) || (limitMax === undefined)) {
+                throw (`RetracementsAnalysis::validate: Retracement limit missing. Cannot evaluate.`);
             }
             // Append retracement levels item list
-            data.levels = {};
-            ok = ((data.retracement >= retMin) && (data.retracement <= retMax));
+            if(!movement.levels) {
+                movement.levels = {};
+            }
+            ok = ((movement.retracement >= limitMin) && (movement.retracement <= limitMax));
         }
         catch (error) {
-            console.error(error);
             throw (error);
         }
         return ok;
@@ -399,8 +372,6 @@ class RetracementsAnalysis extends Analysis_ {
             if(type > 0) {
                 let mode = this.request.filtermode;
                 console.log(`Apply filter ► type: ${type},  mode: ${mode}.`);
-                // retracements = Retracements.filter_max_movements({source: retracements, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
-                // nok = Retracements.filter_max_movements({source: nok, type: ret[Const.ONLY_MAX_ID], mode: ret[Const.FILTER_MODE_ID]});
 
                 Object.keys(data).forEach( k => {
                     console.time('filterResults');
@@ -415,18 +386,12 @@ class RetracementsAnalysis extends Analysis_ {
                         let group = [];
 
                         // Select all retracements which starts at same time that current init with same trend
-                        // let init_current = source.filter( m => (m[Const.INIT_ID].time == init_current_time) && (m[Const.TREND_ID] == trend_current) );
                         let init = data[k].filter( m => (m.timestamp == initTime) && (m.trend == trend) );
 
                         if(init.length > 1) {
                             // Get last correction instant for all movements that start at same time
                             let correctionTime = init.reduce( (a, b) => (a.correction.time > b.correction.time) ? a : b );
                             correctionTime = correctionTime.correction.time;
-
-                            // Select all retracements with init time equal or after current init (and correction equal or before to current correction), and same trend
-                            // let group_current = source.filter(m => (m[Const.INIT_ID].time >= init_current_time)
-                            //                                         && (m.correction.time <= corr_current_time)
-                            //                                         && (m.trend == trend_current) );
 
                             group = data[k].filter(m => {
                                 let res = (mode == Const.FILTER_FAMILY) ?
@@ -490,7 +455,11 @@ class RetracementsAnalysis extends Analysis_ {
             if(!retLevels) { throw ('Retracement levels not defined')}
             Object.values(data)
             .forEach( d =>
-                d.map( v => retLevels.forEach( l => v.levels[l] = v.end.price - (v.deltainit * l)) )
+                d.map( v => {
+                    if(Object.keys(v.levels).length == 0) {
+                        retLevels.forEach( l => v.levels[l] = v.end.price - (v.deltainit * l));
+                    }
+                })
             );
         }
         catch (error) {
@@ -576,50 +545,96 @@ class RetracementsAnalysis extends Analysis_ {
     }
 
     /**
-     * get_projected_retracement_limits: Get retracement limits projected from another movement
-     * @param parent Parent movement information.
-     * @param movement Current analized movement information.
-     * @param retmax Current max retracement value for parent movement.
-     * @param retmin Current min retracement value for parent movement.
-     * @param trend_sign Stored equivalent trend sign, based on first pattern.
-     * @param levels_from Point from movement, where retracement starts: [ init | end | correction ].
-     * @returns Object with { retMax, valueMax, retMin, valueMin, (TimePrice)init, (TimePrice)end } values.
+     * calcProjectedRetracementLimits
+     * @abstract Get retracement limits projected from another movement.
+     * @param levelMovement Level datas source movement information.
+     * @param movement Current analized movement information. Appends
+     * @param limitMax Current max retracement value for parent movement.
+     * @param limitMin Current min retracement value for parent movement.
+     * @param levelsTrend Levels trend sign.
+     * @returns [limitMax, limitMin]
      */
-     static getProjectedRetracementLimits({parent, mov, retMax, retMin, trendSign, levelsFrom}) {
-        let value_max;
-        let value_min;
-        let init;
-        let end;
+     static calcProjectedRetracementLimits({levelMovement, movement, limitMax, limitMin, levelsTrend}) {
+        let valueMax;
+        let valueMin;
         try {
-            if(Math.abs(retMax) != Infinity) {
-                value_max = parent.end.price - (parent.deltainit * retMax);
-                let new_delta_end_max = (value_max - mov.end.price);
-                retMax = ((new_delta_end_max * mov.trend) < 0) ?
-                                    Math.abs(new_delta_end_max / mov.deltainit) : 0;
+            if(Math.abs(limitMax) != Infinity) {
+                valueMax = levelMovement.end.price - (levelMovement.deltainit * limitMax);
+                let deltaEnd = (valueMax - movement.end.price);
+                limitMax = ((deltaEnd * movement.trend * levelsTrend) > 0) ?
+                                    Math.abs(deltaEnd / movement.deltainit) : 0;
             }
-            if(Math.abs(retMin) != Infinity) {
-                value_min = parent.end.price - (parent.deltainit * retMin);
-                let new_delta_end_min = (value_min - mov.end.price);
-                retMin = ((new_delta_end_min * mov.trend * trendSign) < 0) ?
-                                    Math.abs(new_delta_end_min / mov.deltainit) : 0;
-            }
-
-            if(levelsFrom == Const.END_ID) {
-                let ret_min_tmp = (Math.abs(retMax) == Infinity) ? 0 : retMax;
-                retMax = (Math.abs(retMin) == Infinity) ? 0 : retMin;
-                retMin = ret_min_tmp;
+            if(Math.abs(limitMin) != Infinity) {
+                valueMin = levelMovement.end.price - (levelMovement.deltainit * limitMin);
+                let deltaEnd = (valueMin - movement.end.price);
+                limitMin = ((deltaEnd * movement.trend * levelsTrend) > 0) ?
+                                    Math.abs(deltaEnd / movement.deltainit) : 0;
             }
 
-            init = parent[Const.INIT_ID];
-            end = parent.end;
+            if(levelsTrend == Const.TREND_CHANGE) {
+                let retMinTmp = (Math.abs(limitMax) == Infinity) ? 0 : limitMax;
+                limitMax = (Math.abs(limitMin) == Infinity) ? 0 : limitMin;
+                limitMin = retMinTmp;
+            }
+
+            movement.limitMax = limitMax;
+            movement.limitMin = limitMin;
         }
         catch(error) {
-            let msg = `ERROR: @RetracementsAnalysis::get_parent_retracement_limits: ${error}.`;
-            console.error(msg);
-            throw(msg);
+            throw(`ERROR: @RetracementsAnalysis::calcProjectedRetracementLimits: ${error}.`);
         }
+        return [limitMax, limitMin];
+    }
 
-        return { retMax, valueMax, retMin, valueMin, init, end };
+    /**
+     * calcProjectedRetracementLevels
+     * @abstract Get retracement limits projected from another movement.
+     * @param levelMovement Level datas source movement information.
+     * @param movement Current analized movement information. Appends
+     * @param levels Request retracement levels value for parent movement.
+     * @param limitMax Current max retracement value for parent movement.
+     * @param limitMin Current min retracement value for parent movement.
+     * @param levelsTrend Levels trend sign.
+     * @returns [limitMax, limitMin]
+     */
+     static calcProjectedRetracementLevels({levelMovement, movement, levels, limitMax, limitMin, levelsTrend}) {
+        let price;
+        try {
+            movement.levels = {};
+            let newLevels = [];
+            levels.forEach( l => {
+                let newLevel = l;
+                if(Math.abs(l) != Infinity) {
+                    price = levelMovement.end.price - (levelMovement.deltainit * l);
+                    let deltaEnd = (price - movement.end.price);
+                    newLevel = ((deltaEnd * movement.trend * levelsTrend) > 0) ?
+                                        Math.abs(deltaEnd / movement.deltainit) : 0;
+                }
+
+                if(levelsTrend == Const.TREND_CHANGE) {
+                    newLevel = (Math.abs(newLevel) == Infinity) ? 0 : newLevel;
+                }
+                newLevels.push(newLevel);
+                movement.levels[l] = price;
+            });
+            
+            if(Math.abs(limitMax) != Infinity) {
+                // limitMax = Math.max(...Object.keys(movement.levels));
+                limitMax = Math.max(...newLevels);
+            }
+            
+            if (Math.abs(limitMin) != Infinity) {
+                // limitMin = Math.min(...Object.keys(movement.levels));
+                limitMin = Math.min(...newLevels);
+            }
+
+            movement.limitMax = limitMax;
+            movement.limitMin = limitMin;
+            return [limitMax, limitMin];
+        }
+        catch(error) {
+            throw(`ERROR: @RetracementsAnalysis::calcProjectedRetracementLevels: ${error}.`);
+        }
     }
 
     /**
@@ -841,8 +856,21 @@ class RetracementsAnalysis extends Analysis_ {
                 // Stores base movement
                 let m = movs[idx];
 
+                let limitMax = this.request.limitMax;
+                let limitMin = this.request.limitMin;
+                // If checks levels in external data
+                let levelMovement = (this.request.levelsDataSource != undefined) ? this.request.levelsDataSource.filter( ld => m.hash.includes(ld.hash) )[0] : undefined;
+                if(levelMovement) {
+                    [limitMax, limitMin] = RetracementsAnalysis.calcProjectedRetracementLevels({levelMovement,
+                                                                                                movement: m,
+                                                                                                levels: this.request.levels,
+                                                                                                limitMax: this.request.limitMax,
+                                                                                                limitMin: this.request.limitMin,                                                                                               
+                                                                                                levelsTrend: this.request.levelsTrend});
+                }
+                
                 // Check if current movement is valid
-                if(this.checkStop(m)) {
+                if(RetracementsAnalysis.checkStop({movement: m, limitMax})) {
                     return;
                 }
                 else {
@@ -859,6 +887,15 @@ class RetracementsAnalysis extends Analysis_ {
                 let len = Object.keys(source).length;
                 for( ; (count > 0) && (idx < len); idx++, count--) {
                     let { value, valid, done } = RetracementsAnalysis.mergeMovement({m1: m, m2: source[idx]});
+                    // Calculate projected levels if needed
+                    if(levelMovement && value) {
+                        [limitMax, limitMin] = RetracementsAnalysis.calcProjectedRetracementLevels({levelMovement,
+                                                                                                    movement: value,
+                                                                                                    levels: this.request.levels,
+                                                                                                    limitMax: this.request.limitMax,
+                                                                                                    limitMin: this.request.limitMin,
+                                                                                                    levelsTrend: this.request.levelsTrend});
+                    }
                     // Merging rules could end iteration process.
                     if(!done) {
                         // Not valid movements will not be processed (but may continue iteration process)
@@ -868,7 +905,7 @@ class RetracementsAnalysis extends Analysis_ {
                             Analysis_.increment_hash(value);
 // TODO AL ITERAR PATRON HIJO, NO TIENE EN CUENTA EL STOP DEL PADRE! UN TARGET PUEDE LLEGAR A ALARGAR EL PHY DEBAJO DEL STOP
 // TODO AL FIJAR PUNTO end DEL MOVIMIENTO, ESTO NO PASA, PERO SI SE UTILIZA fixedEnd = false, HABRIA QUE PASAR LOS STOPS...DE MAS DE 1 PADRE?
-                            if(this.checkStop(value)) {
+                            if(RetracementsAnalysis.checkStop({movement: value, limitMax})) {
                                 done = true;
                             }
                         }
@@ -877,10 +914,10 @@ class RetracementsAnalysis extends Analysis_ {
                         }
                     }
 
-                    yield value;
                     if(done) {
                         return;
                     }
+                    yield value;
                 }
             }
             catch (error) {
@@ -996,24 +1033,25 @@ class RetracementsAnalysis extends Analysis_ {
 
                 // First parent data don't need to be filtered
                 if(!parentData) {
-                    let dataBaseLevels = this.#getParentData({patternResults, query, finalParent: parentName});
+                    let dataBaseLevels = RetracementsAnalysis.#getParentData({patternResults, query, finalParent: parentName});
                     // Works with copy of level parent data
                     parentData = JSON.parse(JSON.stringify(dataBaseLevels[level]));
                 }
                 // Higher level parent data, must be filtered matching valid son's results
                 else {
                     let database = parentData;
-                    let dataParentLevels = this.#getParentData({patternResults, query, finalParent: parentName});
+                    let dataParentLevels = RetracementsAnalysis.#getParentData({patternResults, query, finalParent: parentName});
                     // Works with copy of level parent data
                     parentData = JSON.parse(JSON.stringify(dataParentLevels[level]));
 
                     let fields = [];
                     if(filterParams.fieldsDataContent) filterParams.fieldsDataContent.forEach( f => fields.push(query[f]) );
                     if(filterParams.fieldsData) filterParams.fieldsData.forEach( f => fields.push(f) );
-                    parentData = this.filterResults(parentData,
-                                             database,
-                                             fields,
-                                             filterParams.fieldsRef);
+                    // parentData = this.filterResults(parentData,
+                    parentData = RetracementsAnalysis.filter({r1: parentData,
+                                                              r2: database,
+                                                              f1: fields,
+                                                              f2: filterParams.fieldsRef});
                 }
                 // Updates current data query (next parent if exist)
                 if(parentName) {
@@ -1023,11 +1061,11 @@ class RetracementsAnalysis extends Analysis_ {
             } while(parentData && (parentName != finalParent));
         }
         catch(error) {
-            let msg = `${this.constructor.name}::#filterParentData: ${error}`;
+            let msg = `RetracementsAnalysis::#filterParentData: ${error}`;
             console.error(msg);
             throw(msg);
         }
-        return parentData;
+        return parentData || [];
     }
 
     /**
@@ -1038,12 +1076,12 @@ class RetracementsAnalysis extends Analysis_ {
      * @param {*} finalParent Parent data name where stop search.
      * @returns Parent data.
      */
-    #getParentData({patternResults, query, finalParent}) {
+    static #getParentData({patternResults, query, finalParent}) {
         let res;
         try {
             // Check is valid result AND parent of current base data
-            let name = query[Const.SEARCH_IN_ID];
-            if(name && finalParent && this.#checkPatternIsParent({patternResults, query, finalParent})) {
+            let name = query.searchin;
+            if(name && finalParent && RetracementsAnalysis.#checkPatternIsParent({patternResults, query, finalParent})) {
                 while(name != finalParent) {
                     name = patternResults[name].query.searchin;
                 }
@@ -1074,7 +1112,7 @@ class RetracementsAnalysis extends Analysis_ {
      * @param {*} finalParent Final parent data name.
      * @returns true: final_parent is ascendant from base data. | false: other case.
      */
-     #checkPatternIsParent({patternResults, query, finalParent}) {
+     static #checkPatternIsParent({patternResults, query, finalParent}) {
         let res = false;
         while(query && finalParent && !res) {
             let parent_name = query[Const.SEARCH_IN_ID];
@@ -1083,38 +1121,6 @@ class RetracementsAnalysis extends Analysis_ {
                             patternResults[parent_name][Const.QUERY_ID] : undefined;
         }
         return res;
-    }
-
-    #buildSonMovements({parent, data}) {
-        try {
-            data.map( (m, i) => {
-                let p = parent.find( v => {
-                    return (v[this.request.until].time == m[this.request.untilSearch].time) &&
-                            (v[this.request.until].price == m[this.request.untilSearch].price);
-                });
-                if(p) {
-                    m.timestamp = p.timestamp;
-                    m.hash = p.hash; // + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
-                    if(this.request.from) {
-                        m.init = p[this.request.from];
-                        // m.timestamp = m.init.time;
-                    }
-                    if(this.request.until) { m.end = p[this.request.until]; }
-                    if(m.init && m.end) { m.deltainit = m.end.price - m.init.price; }
-                    if(m.end && m.correction) { m.deltaend = m.correction.price - m.end.price; }
-                    if((m.deltainit != undefined) && (m.deltaend != undefined)) {
-                        m.retracement = Math.abs(m.deltaend / m.deltainit);
-                    }
-                    RetracementsAnalysis.appendHash(m);
-                }
-            });
-
-            data.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
-        }
-        catch(error) {
-            throw(error)
-        }
-        return data;
     }
 
     /**
@@ -1172,15 +1178,55 @@ class RetracementsAnalysis extends Analysis_ {
      static #getFamilyTrend({request, model}) {
         let trendSign = Const.TREND_SAME;
         if(request && model) {
-            let parent = request.seachin;
+            let parent = request.searchin;
             if(model[parent]) {
                 let parentRequest = model[parent].query;
-                trendSign *= RetracementsAnalysis.#getFamilyTrend({parentRequest, model})
+                trendSign *= RetracementsAnalysis.#getFamilyTrend({request: parentRequest, model})
             }
             if(request.from == Const.END_ID)
                 trendSign *= Const.TREND_CHANGE;
         }
         return trendSign;
+    }
+
+    /**
+     * #buildSonMovements
+     * @abstract Build new movement from parent base point. Ex. from correction(parent)->end(son), merges end(parent)->init(son).
+     * @param parent Parent source results data, from wich son data is generated.
+     * @param data Results find in movements, from parent source data. Could match with result, or need to be merged.
+     * @param request Pattern request to get this results.
+     * @returns Real son results from parent.
+     */
+    static #buildSonMovements({parent, data, request}) {
+        try {
+            data.map( (m, i) => {
+                let p = parent.find( v => {
+                    return (v[request.until].time == m[request.untilSearch].time) &&
+                            (v[request.until].price == m[request.untilSearch].price);
+                });
+                if(p) {
+                    m.timestamp = p.timestamp;
+                    m.hash = p.hash; // + Const.HASH_SEP_STR + 0; // 0: First family solution (hash)
+                    if(request.from) {
+                        m.init = p[request.from];
+                        // m.timestamp = m.init.time;
+                    }
+                    if(request.until) { m.end = p[request.until]; }
+                    if(m.init && m.end) { m.deltainit = m.end.price - m.init.price; }
+                    if(m.end && m.correction) { m.deltaend = m.correction.price - m.end.price; }
+                    if((m.deltainit != undefined) && (m.deltaend != undefined)) {
+                        m.retracement = Math.abs(m.deltaend / m.deltainit);
+                    }
+                    RetracementsAnalysis.appendHash(m);
+                }
+            });
+
+            data.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
+        }
+        catch(error) {
+            throw(error)
+        }
+        return data;
     }
 }
 
